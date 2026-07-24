@@ -956,4 +956,58 @@ router.delete('/gallery/:id', authMiddleware, (req, res) => {
   }
 });
 
+
+/**
+ * GET /api/admin/settings
+ * Get all settings (protected route)
+ */
+router.get('/settings', authMiddleware, (req, res) => {
+  try {
+    const dbInstance = getDb();
+    const result = dbInstance.exec('SELECT key, value FROM settings');
+    const settings = {};
+    if (result[0]) {
+      result[0].values.forEach(row => {
+        settings[row[0]] = row[1];
+      });
+    }
+    return res.status(200).json({ success: true, settings: settings });
+  } catch (error) {
+    console.error('Error fetching settings:', error);
+    return res.status(500).json({ success: false, message: 'An error occurred while fetching settings.' });
+  }
+});
+
+/**
+ * PUT /api/admin/settings
+ * Update settings (protected route)
+ */
+router.put('/settings', authMiddleware, (req, res) => {
+  try {
+    const { phone, email, location } = req.body;
+    const dbInstance = getDb();
+    const existingCount = dbInstance.exec('SELECT COUNT(*) as count FROM settings')[0];
+    if (existingCount && existingCount.values[0][0] === 0) {
+      const defaults = [
+        ['phone', phone || process.env.COMPANY_PHONE || '(555) 123-4567'],
+        ['email', email || process.env.COMPANY_EMAIL || 'info@minnahelectricals.com'],
+        ['location', location || process.env.COMPANY_LOCATION || 'Serving the Local Area'],
+      ];
+      defaults.forEach(([key, value]) => {
+        dbInstance.run('INSERT INTO settings (key, value) VALUES (?, ?)', [key, value]);
+      });
+    } else {
+      if (phone !== undefined) dbInstance.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['phone', phone]);
+      if (email !== undefined) dbInstance.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['email', email]);
+      if (location !== undefined) dbInstance.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['location', location]);
+    }
+    saveDatabase();
+    r2Sync.sync().catch(err => console.error('R2 sync error:', err.message));
+    console.log('Settings updated');
+    return res.status(200).json({ success: true, message: 'Settings updated successfully' });
+  } catch (error) {
+    console.error('Error updating settings:', error);
+    return res.status(500).json({ success: false, message: 'An error occurred while updating settings.' });
+  }
+});
 module.exports = router;

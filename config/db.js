@@ -105,6 +105,17 @@ async function initializeDatabase() {
     )
   `);
 
+  // Create settings table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS settings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key TEXT UNIQUE NOT NULL,
+      value TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // Create indexes
   db.run(`CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_leads_created_at ON leads(created_at DESC)`);
@@ -128,6 +139,20 @@ async function initializeDatabase() {
     console.log(`  Username: ${username}`);
     console.log(`  Password: ${password}`);
     console.log('  ⚠️  Please change this password immediately after first login!');
+  }
+
+  // Seed default settings if none exist
+  const settingsCount = db.exec('SELECT COUNT(*) as count FROM settings')[0];
+  if (settingsCount && settingsCount.values[0][0] === 0) {
+    const defaultSettings = [
+      ['phone', process.env.COMPANY_PHONE || '(555) 123-4567'],
+      ['email', process.env.COMPANY_EMAIL || 'info@minnahelectricals.com'],
+      ['location', process.env.COMPANY_LOCATION || 'Serving the Local Area'],
+    ];
+    defaultSettings.forEach(([key, value]) => {
+      db.run('INSERT INTO settings (key, value) VALUES (?, ?)', [key, value]);
+    });
+    console.log('✓ Default settings created');
   }
 
   // Save database
@@ -163,3 +188,4 @@ module.exports = {
   getDb,
   saveDatabase,
 };
+//test

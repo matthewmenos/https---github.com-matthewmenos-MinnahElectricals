@@ -16,6 +16,60 @@ mobileLinks.forEach(link => {
   });
 });
 
+// Load settings from API and update contact info throughout the page
+async function loadSettings() {
+  try {
+    const response = await fetch('/api/settings');
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      const settings = data.settings;
+
+      // Update phone numbers (text content)
+      const phoneElements = document.querySelectorAll('[data-setting="phone"]');
+      phoneElements.forEach(el => {
+        el.textContent = settings.phone || el.textContent;
+      });
+
+      // Update phone links (href)
+      const phoneLinks = document.querySelectorAll('[data-setting-href="phone"]');
+      phoneLinks.forEach(el => {
+        const digits = (settings.phone || '').replace(/\D/g, '');
+        el.href = 'tel:' + digits;
+      });
+
+      // Update email addresses (text content)
+      const emailElements = document.querySelectorAll('[data-setting="email"]');
+      emailElements.forEach(el => {
+        el.textContent = settings.email || el.textContent;
+      });
+
+      // Update email links (href)
+      const emailLinks = document.querySelectorAll('[data-setting-href="email"]');
+      emailLinks.forEach(el => {
+        el.href = 'mailto:' + (settings.email || '');
+      });
+
+      // Update location/service area (text content)
+      const locationElements = document.querySelectorAll('[data-setting="location"]');
+      locationElements.forEach(el => {
+        el.textContent = settings.location || el.textContent;
+      });
+
+      // Update meta description with email/phone if present
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc && settings.phone) {
+        const content = metaDesc.getAttribute('content');
+        if (content && content.includes('(555) 123-4567')) {
+          metaDesc.setAttribute('content', content.replace(/\(555\) 123-4567/g, settings.phone));
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error loading settings:', error);
+  }
+}
+
 // Handle quote form submission
 const quoteForm = document.getElementById('quoteForm');
 if (quoteForm) {
@@ -193,5 +247,10 @@ if (contactForm) {
     }
   });
 }
+
+// Load settings on page load
+document.addEventListener('DOMContentLoaded', () => {
+  loadSettings();
+});
 
 console.log('✓ Main JavaScript loaded');

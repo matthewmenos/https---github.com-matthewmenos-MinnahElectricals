@@ -570,6 +570,41 @@ router.get('/gallery', (req, res) => {
 });
 
 /**
+ * GET /api/settings
+ * Get all settings (public route)
+ */
+router.get('/settings', (req, res) => {
+  try {
+    const dbInstance = getDb();
+    const result = dbInstance.exec('SELECT key, value FROM settings');
+    
+    const settings = {};
+    if (result[0]) {
+      result[0].values.forEach(row => {
+        settings[row[0]] = row[1];
+      });
+    }
+
+    // Ensure defaults exist if settings table is empty
+    if (!settings.phone) settings.phone = process.env.COMPANY_PHONE || '(555) 123-4567';
+    if (!settings.email) settings.email = process.env.COMPANY_EMAIL || 'info@minnahelectricals.com';
+    if (!settings.location) settings.location = process.env.COMPANY_LOCATION || 'Serving the Local Area';
+
+    return res.status(200).json({
+      success: true,
+      settings: settings,
+    });
+
+  } catch (error) {
+    console.error('✗ Error fetching settings:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching settings.',
+    });
+  }
+});
+
+/**
  * GET /api/health
  * Health check endpoint
  */
