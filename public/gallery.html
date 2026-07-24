@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Browse our gallery of electrical projects, team photos, and equipment">
+  <title>Gallery | Minnah Electricals</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any">
+  <link rel="icon" type="image/jpeg" href="/assets/logo.jpg" sizes="32x32">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: '#0F172A',
+            amber: '#F59E0B',
+            'amber-dark': '#D97706',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .fade-in { animation: fadeIn 0.5s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="bg-gray-50">
+
+  <!-- Header -->
+  <header class="bg-navy text-white sticky top-0 z-50 shadow-lg">
+    <div class="container mx-auto px-4">
+      <div class="flex items-center justify-between py-4">
+        <!-- Logo -->
+        <div class="flex items-center space-x-3">
+          <img src="/assets/logo.jpg" alt="Minnah Electricals Logo" class="h-12 w-12 rounded-full object-cover border-2 border-amber">
+          <div>
+            <h1 class="text-xl font-bold">Minnah Electricals</h1>
+            <p class="text-xs text-gray-300">Professional Services</p>
+          </div>
+        </div>
+
+        <!-- Desktop Navigation -->
+        <nav class="hidden md:flex items-center space-x-8">
+          <a href="/" class="hover:text-amber transition">Home</a>
+          <a href="/services.html" class="hover:text-amber transition">Services</a>
+          <a href="/portfolio.html" class="hover:text-amber transition">Portfolio</a>
+          <a href="/gallery.html" class="text-amber font-semibold">Gallery</a>
+          <a href="/shop.html" class="hover:text-amber transition">Shop</a>
+          <a href="/contact.html" class="hover:text-amber transition">Contact</a>
+          <a href="tel:5551234567" class="bg-amber hover:bg-amber-dark text-navy px-6 py-2 rounded-lg font-semibold transition flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+            </svg>
+            Call Now
+          </a>
+        </nav>
+
+        <!-- Mobile Menu Button -->
+        <button id="mobileMenuBtn" class="md:hidden text-white">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div id="mobileMenu" class="hidden md:hidden pb-4">
+        <nav class="flex flex-col space-y-3">
+          <a href="/" class="hover:text-amber transition py-2">Home</a>
+          <a href="/services.html" class="hover:text-amber transition py-2">Services</a>
+          <a href="/portfolio.html" class="hover:text-amber transition py-2">Portfolio</a>
+          <a href="/gallery.html" class="text-amber font-semibold py-2">Gallery</a>
+          <a href="/shop.html" class="hover:text-amber transition py-2">Shop</a>
+          <a href="/contact.html" class="hover:text-amber transition py-2">Contact</a>
+          <a href="tel:5551234567" class="bg-amber hover:bg-amber-dark text-navy px-4 py-3 rounded-lg font-semibold text-center flex items-center justify-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+            </svg>
+            Call (555) 123-4567
+          </a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Page Header -->
+  <section class="bg-navy text-white py-16">
+    <div class="container mx-auto px-4 text-center">
+      <h1 class="text-4xl md:text-5xl font-bold mb-4">Photo Gallery</h1>
+      <p class="text-xl text-gray-300">A glimpse into our work and team</p>
+    </div>
+  </section>
+
+  <!-- Gallery Section -->
+  <section class="py-20 bg-white">
+    <div class="container mx-auto px-4">
+      <!-- Category Filter -->
+      <div class="flex flex-wrap justify-center gap-3 mb-12">
+        <button onclick="filterGallery('all')" class="filter-btn active bg-navy text-white px-6 py-2 rounded-lg font-semibold transition">All</button>
+        <button onclick="filterGallery('Projects')" class="filter-btn bg-gray-200 hover:bg-gray-300 text-navy px-6 py-2 rounded-lg font-semibold transition">Projects</button>
+        <button onclick="filterGallery('Team')" class="filter-btn bg-gray-200 hover:bg-gray-300 text-navy px-6 py-2 rounded-lg font-semibold transition">Team</button>
+        <button onclick="filterGallery('Equipment')" class="filter-btn bg-gray-200 hover:bg-gray-300 text-navy px-6 py-2 rounded-lg font-semibold transition">Equipment</button>
+        <button onclick="filterGallery('Events')" class="filter-btn bg-gray-200 hover:bg-gray-300 text-navy px-6 py-2 rounded-lg font-semibold transition">Events</button>
+      </div>
+
+      <!-- Gallery Grid -->
+      <div id="galleryGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <!-- Gallery items will be loaded here -->
+      </div>
+
+      <!-- Empty State -->
+      <div id="galleryEmpty" class="hidden text-center py-16">
+        <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">No gallery images yet</h3>
+        <p class="text-gray-500">Check back soon to see our latest photos.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="py-16 bg-amber">
+    <div class="container mx-auto px-4 text-center">
+      <h2 class="text-3xl md:text-4xl font-bold text-navy mb-4">Want to See Your Project Here?</h2>
+      <p class="text-xl text-navy mb-8">Let us make your electrical project a success story</p>
+      <div class="flex flex-col md:flex-row gap-4 justify-center">
+        <a href="tel:5551234567" class="bg-navy hover:bg-gray-800 text-white px-8 py-4 rounded-lg font-bold text-lg transition flex items-center justify-center">
+          <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+          </svg>
+          Call (555) 123-4567
+        </a>
+        <a href="/contact.html" class="bg-white hover:bg-gray-100 text-navy px-8 py-4 rounded-lg font-bold text-lg transition">
+          Start Your Project
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-navy text-white py-12">
+    <div class="container mx-auto px-4">
+      <div class="grid md:grid-cols-3 gap-8">
+        <div>
+          <div class="flex items-center space-x-3 mb-4">
+            <img src="/assets/logo.jpg" alt="Minnah Electricals Logo" class="h-10 w-10 rounded-full object-cover border-2 border-amber">
+            <h3 class="text-xl font-bold">Minnah Electricals</h3>
+          </div>
+          <p class="text-gray-300">Professional electrical services for residential and commercial properties.</p>
+        </div>
+        <div>
+          <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
+          <ul class="space-y-2">
+            <li><a href="/" class="text-gray-300 hover:text-amber transition">Home</a></li>
+            <li><a href="/services.html" class="text-gray-300 hover:text-amber transition">Services</a></li>
+            <li><a href="/portfolio.html" class="text-gray-300 hover:text-amber transition">Portfolio</a></li>
+            <li><a href="/gallery.html" class="text-amber font-semibold">Gallery</a></li>
+            <li><a href="/contact.html" class="text-gray-300 hover:text-amber transition">Contact</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="text-lg font-semibold mb-4">Contact Info</h4>
+          <ul class="space-y-2 text-gray-300">
+            <li class="flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+              </svg>
+              (555) 123-4567
+            </li>
+            <li class="flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+              </svg>
+              info@minnahelectricals.com
+            </li>
+            <li class="flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+              Serving the Local Area
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+        <p>&copy; <span id="currentYear"></span> Minnah Electricals. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/main.js"></script>
+  <script>
+    // Set current year dynamically
+    document.getElementById('currentYear').textContent = new Date().getFullYear();
+    
+    let allGalleryItems = [];
+
+    // Load gallery data
+    async function loadGallery() {
+      try {
+        const response = await fetch('/api/gallery');
+        const data = await response.json();
+        
+        if (data.success && data.gallery.length > 0) {
+          allGalleryItems = data.gallery;
+          renderGallery(allGalleryItems);
+        } else {
+          document.getElementById('galleryEmpty').classList.remove('hidden');
+        }
+      } catch (error) {
+        console.error('Error loading gallery:', error);
+      }
+    }
+
+    function renderGallery(items) {
+      const grid = document.getElementById('galleryGrid');
+      const emptyState = document.getElementById('galleryEmpty');
+      
+      if (items.length === 0) {
+        grid.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      
+      emptyState.classList.add('hidden');
+      grid.innerHTML = items.map(item => `
+        <div class="relative group fade-in">
+          <img src="${item.image_url}" alt="${item.title || 'Gallery image'}" class="w-full h-64 object-cover rounded-lg border-2 border-amber hover:border-amber-dark transition">
+          <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition rounded-lg flex items-center justify-center">
+            ${item.title || item.description ? `
+              <div class="hidden group-hover:block text-white text-center p-4">
+                ${item.title ? `<h3 class="font-bold text-lg mb-1">${item.title}</h3>` : ''}
+                ${item.description ? `<p class="text-sm">${item.description.substring(0, 100)}${item.description.length > 100 ? '...' : ''}</p>` : ''}
+              </div>
+            ` : ''}
+          </div>
+          ${item.category ? `<div class="absolute top-2 left-2 bg-amber text-navy text-xs px-3 py-1 rounded-full font-semibold">${item.category}</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    function filterGallery(category) {
+      // Update active button
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('bg-navy', 'text-white');
+        btn.classList.add('bg-gray-200', 'text-navy');
+      });
+      event.target.classList.remove('bg-gray-200', 'text-navy');
+      event.target.classList.add('bg-navy', 'text-white');
+      
+      // Filter items
+      if (category === 'all') {
+        renderGallery(allGalleryItems);
+      } else {
+        const filtered = allGalleryItems.filter(item => item.category === category);
+        renderGallery(filtered);
+      }
+    }
+
+    // Load gallery on page load
+    document.addEventListener('DOMContentLoaded', loadGallery);
+
+    // Mobile menu toggle
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    
+    mobileMenuBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Comprehensive electrical services including panel upgrades, EV chargers, emergency repairs, rewiring, lighting installation, and electrical inspections.">
+  <title>Our Services | Minnah Electricals</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any">
+  <link rel="icon" type="image/jpeg" href="/assets/logo.jpg" sizes="32x32">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: '#0F172A',
+            amber: '#F59E0B',
+            'amber-dark': '#D97706',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-50">
+
+  <!-- Header -->
+  <header class="bg-navy text-white sticky top-0 z-50 shadow-lg">
+    <div class="container mx-auto px-4">
+      <div class="flex items-center justify-between py-4">
+        <!-- Logo -->
+        <div class="flex items-center space-x-3">
+          <img src="/assets/logo.jpg" alt="Minnah Electricals Logo" class="h-12 w-12 rounded-full object-cover border-2 border-amber">
+          <div>
+            <h1 class="text-xl font-bold">Minnah Electricals</h1>
+            <p class="text-xs text-gray-300">Professional Services</p>
+          </div>
+        </div>
+
+        <!-- Desktop Navigation -->
+        <nav class="hidden md:flex items-center space-x-8">
+          <a href="/" class="hover:text-amber transition">Home</a>
+          <a href="/services.html" class="text-amber transition">Services</a>
+          <a href="/shop.html" class="hover:text-amber transition">Shop</a>
+          <a href="/contact.html" class="hover:text-amber transition">Contact</a>
+          <a href="tel:5551234567" class="bg-amber hover:bg-amber-dark text-navy px-6 py-2 rounded-lg font-semibold transition flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+            </svg>
+            Call Now
+          </a>
+        </nav>
+
+        <!-- Mobile Menu Button -->
+        <button id="mobileMenuBtn" class="md:hidden text-white">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div id="mobileMenu" class="hidden md:hidden pb-4">
+        <nav class="flex flex-col space-y-3">
+          <a href="/" class="hover:text-amber transition py-2">Home</a>
+          <a href="/services.html" class="text-amber transition py-2">Services</a>
+          <a href="/shop.html" class="hover:text-amber transition py-2">Shop</a>
+          <a href="/contact.html" class="hover:text-amber transition py-2">Contact</a>
+          <a href="tel:5551234567" class="bg-amber hover:bg-amber-dark text-navy px-4 py-3 rounded-lg font-semibold text-center flex items-center justify-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+            </svg>
+            Call (555) 123-4567
+          </a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Page Header -->
+  <section class="bg-navy text-white py-16">
+    <div class="container mx-auto px-4 text-center">
+      <h1 class="text-4xl md:text-5xl font-bold mb-4">Our Services</h1>
+      <p class="text-xl text-gray-300">Comprehensive electrical solutions for residential & commercial properties</p>
+    </div>
+  </section>
+
+  <!-- Services Detail -->
+  <section class="py-20">
+    <div class="container mx-auto px-4">
+      <div class="grid md:grid-cols-2 gap-12">
+        
+        <!-- Service 1 -->
+        <div class="bg-white rounded-lg shadow-lg p-8">
+          <div class="text-amber mb-4">
+            <svg class="w-16 h-16" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-navy mb-4">Panel Upgrades</h3>
+          <p class="text-gray-600 mb-4">Modernize your electrical panel to handle today's power demands safely and efficiently. Our licensed electricians will assess your current system and upgrade to a higher capacity panel that meets all current electrical codes.</p>
+          <ul class="list-disc list-inside text-gray-600 mb-4 space-y-2">
+            <li>200 Amp service upgrades</li>
+            <li>Code compliance updates</li>
+            <li>Increased home value</li>
+            <li>Support for modern appliances</li>
+          </ul>
+          <a href="/contact.html" class="inline-block bg-amber hover:bg-amber-dark text-navy px-6 py-3 rounded-lg font-semibold transition">Get Quote</a>
+        </div>
+
+        <!-- Service 2 -->
+        <div class="bg-white rounded-lg shadow-lg p-8">
+          <div class="text-amber mb-4">
+            <svg class="w-16 h-16" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M7 17h2v-2H7v2zm4-4h2v-2h-2v2zm4-4h2V7h-2v2zM7 13h2v-2H7v2zm4-4h2V7h-2v2zm4-4h2V3h-2v2zM5 21h14v-2H5v2z"/>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-navy mb-4">EV Charger Installation</h3>
+          <p class="text-gray-600 mb-4">Professional installation of electric vehicle charging stations for your home or business. We work with all major EV charger brands and ensure safe, efficient installation.</p>
+          <ul class="list-disc list-inside text-gray-600 mb-4 space-y-2">
+            <li>Level 2 charger installation</li>
+            <li>Tesla, ChargePoint, EVgo compatible</li>
+            <li>Permit handling</li>
+            <li>Electrical panel assessment</li>
+          </ul>
+          <a href="/contact.html" class="inline-block bg-amber hover:bg-amber-dark text-navy px-6 py-3 rounded-lg font-semibold transition">Get Quote</a>
+        </div>
+
+        <!-- Service 3 -->
+        <div class="bg-white rounded-lg shadow-lg p-8">
+          <div class="text-red-600 mb-4">
+            <svg class="w-16 h-16" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-navy mb-4">Emergency Repairs</h3>
+          <p class="text-gray-600 mb-4">24/7 emergency electrical services when you need them most. Power outages, electrical fires, sparking outlets - we respond quickly to keep your family safe.</p>
+          <ul class="list-disc list-inside text-gray-600 mb-4 space-y-2">
+            <li>24/7 availability</li>
+            <li>Fast response time</li>
+            <li>Power outage troubleshooting</li>
+            <li>Safety inspections</li>
+          </ul>
+          <a href="tel:5551234567" class="inline-block bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+            </svg>
+            Emergency: (555) 123-4567
+          </a>
+        </div>
+
+        <!-- Service 4 -->
+        <div class="bg-white rounded-lg shadow-lg p-8">
+          <div class="text-amber mb-4">
+            <svg class="w-16 h-16" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-navy mb-4">Rewiring</h3>
+          <p class="text-gray-600 mb-4">Complete home and commercial rewiring services with modern safety standards. Whether you're renovating or updating outdated wiring, we ensure your electrical system is safe and efficient.</p>
+          <ul class="list-disc list-inside text-gray-600 mb-4 space-y-2">
+            <li>Whole house rewiring</li>
+            <li>Aluminum to copper conversion</li>
+            <li>Knob and tube replacement</li>
+            <li>Code compliant installations</li>
+          </ul>
+          <a href="/contact.html" class="inline-block bg-amber hover:bg-amber-dark text-navy px-6 py-3 rounded-lg font-semibold transition">Get Quote</a>
+        </div>
+
+        <!-- Service 5 -->
+        <div class="bg-white rounded-lg shadow-lg p-8">
+          <div class="text-amber mb-4">
+            <svg class="w-16 h-16" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M9 21c0 .5.4 1 1 1h4c.6 0 1-.5 1-1v-1H9v1zm3-19C8.1 2 5 5.1 5 9c0 2.4 1.2 4.5 3 5.7V17c0 .5.4 1 1 1h6c.6 0 1-.5 1-1v-2.3c1.8-1.3 3-3.4 3-5.7 0-3.9-3.1-7-7-7z"/>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-navy mb-4">Lighting Installation</h3>
+          <p class="text-gray-600 mb-4">Indoor and outdoor lighting solutions to enhance your space. From recessed lighting to landscape lighting, we create the perfect ambiance for your home or business.</p>
+          <ul class="list-disc list-inside text-gray-600 mb-4 space-y-2">
+            <li>Recessed lighting</li>
+            <li>Landscape lighting</li>
+            <li>LED upgrades</li>
+            <li>Smart lighting systems</li>
+          </ul>
+          <a href="/contact.html" class="inline-block bg-amber hover:bg-amber-dark text-navy px-6 py-3 rounded-lg font-semibold transition">Get Quote</a>
+        </div>
+
+        <!-- Service 6 -->
+        <div class="bg-white rounded-lg shadow-lg p-8">
+          <div class="text-amber mb-4">
+            <svg class="w-16 h-16" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-navy mb-4">Electrical Inspection</h3>
+          <p class="text-gray-600 mb-4">Comprehensive electrical inspections for home purchases, insurance requirements, or peace of mind. We identify potential issues before they become costly problems.</p>
+          <ul class="list-disc list-inside text-gray-600 mb-4 space-y-2">
+            <li>Home purchase inspections</li>
+            <li>Insurance compliance</li>
+            <li>Safety audits</li>
+            <li>Detailed reports</li>
+          </ul>
+          <a href="/contact.html" class="inline-block bg-amber hover:bg-amber-dark text-navy px-6 py-3 rounded-lg font-semibold transition">Get Quote</a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="py-16 bg-amber">
+    <div class="container mx-auto px-4 text-center">
+      <h2 class="text-3xl md:text-4xl font-bold text-navy mb-4">Need Electrical Services?</h2>
+      <p class="text-xl text-navy mb-8">Contact us today for a free consultation and estimate</p>
+      <div class="flex flex-col md:flex-row gap-4 justify-center">
+        <a href="tel:5551234567" class="bg-navy hover:bg-gray-800 text-white px-8 py-4 rounded-lg font-bold text-lg transition flex items-center justify-center">
+          <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+          </svg>
+          Call (555) 123-4567
+        </a>
+        <a href="/contact.html" class="bg-white hover:bg-gray-100 text-navy px-8 py-4 rounded-lg font-bold text-lg transition">
+          Send Message
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-navy text-white py-12">
+    <div class="container mx-auto px-4">
+      <div class="grid md:grid-cols-3 gap-8">
+        <div>
+          <div class="flex items-center space-x-3 mb-4">
+            <img src="/assets/logo.jpg" alt="Minnah Electricals Logo" class="h-10 w-10 rounded-full object-cover border-2 border-amber">
+            <h3 class="text-xl font-bold">Minnah Electricals</h3>
+          </div>
+          <p class="text-gray-300">Professional electrical services for residential and commercial properties.</p>
+        </div>
+        <div>
+          <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
+          <ul class="space-y-2">
+            <li><a href="/" class="text-gray-300 hover:text-amber transition">Home</a></li>
+            <li><a href="/services.html" class="text-amber transition">Services</a></li>
+            <li><a href="/contact.html" class="text-gray-300 hover:text-amber transition">Contact</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="text-lg font-semibold mb-4">Contact Info</h4>
+          <ul class="space-y-2 text-gray-300">
+            <li class="flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+              </svg>
+              (555) 123-4567
+            </li>
+            <li class="flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+              </svg>
+              info@minnahelectricals.com
+            </li>
+            <li class="flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+              Serving the Local Area
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+        <p>&copy; <span id="currentYear"></span> Minnah Electricals. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/main.js"></script>
+  <script>
+    // Set current year dynamically
+    document.getElementById('currentYear').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

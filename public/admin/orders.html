@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Admin order management">
+  <title>Order Management | Minnah Electricals</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any">
+  <link rel="icon" type="image/jpeg" href="/assets/logo.jpg" sizes="32x32">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: '#0F172A',
+            amber: '#F59E0B',
+            'amber-dark': '#D97706',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</head>
+<body class="bg-gray-50">
+
+  <!-- Header -->
+  <header class="bg-navy text-white shadow-lg">
+    <div class="container mx-auto px-4">
+      <div class="flex items-center justify-between py-4">
+        <div class="flex items-center space-x-3">
+          <img src="/assets/logo.jpg" alt="Minnah Electricals Logo" class="h-12 w-12 rounded-full object-cover border-2 border-amber">
+          <div>
+            <h1 class="text-xl font-bold">Minnah Electricals</h1>
+            <p class="text-xs text-gray-300">Order Management</p>
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <a href="/admin/dashboard.html" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg font-semibold transition">Dashboard</a>
+          <a href="/admin/products.html" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg font-semibold transition">Products</a>
+          <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-semibold transition">Log Out</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto px-4 py-8">
+    
+    <!-- Stats Cards -->
+    <div class="grid md:grid-cols-4 gap-6 mb-8">
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm font-semibold mb-2">Total Orders</div>
+        <div id="totalOrders" class="text-3xl font-bold text-navy">0</div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm font-semibold mb-2">Pending</div>
+        <div id="pendingOrders" class="text-3xl font-bold text-amber">0</div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm font-semibold mb-2">Confirmed</div>
+        <div id="confirmedOrders" class="text-3xl font-bold text-blue-600">0</div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm font-semibold mb-2">Completed</div>
+        <div id="completedOrders" class="text-3xl font-bold text-green-600">0</div>
+      </div>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-navy text-white">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Order ID</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Date</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Customer</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Contact</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Product</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Qty</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="ordersTableBody" class="bg-white divide-y divide-gray-200">
+            <!-- Orders will be populated here -->
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Empty State -->
+      <div id="emptyState" class="hidden text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No orders yet</h3>
+        <p class="mt-1 text-sm text-gray-500">Orders will appear here when customers submit them.</p>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="/js/admin.js"></script>
+  <script>
+    // Order Management
+    let orders = [];
+
+    // DOM Elements
+    const ordersTableBody = document.getElementById('ordersTableBody');
+    const emptyState = document.getElementById('emptyState');
+
+    // Load orders on page load
+    document.addEventListener('DOMContentLoaded', loadOrders);
+
+    async function loadOrders() {
+      try {
+        const token = localStorage.getItem('adminToken');
+        if (!token) {
+          window.location.href = '/admin/login.html';
+          return;
+        }
+
+        const response = await fetch('/api/admin/orders', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          orders = data.orders;
+          renderOrders();
+          updateStats();
+        }
+      } catch (error) {
+        console.error('Error loading orders:', error);
+        showMessage('Failed to load orders', 'error');
+      }
+    }
+
+    function updateStats() {
+      const total = orders.length;
+      const pending = orders.filter(o => o.status === 'Pending').length;
+      const confirmed = orders.filter(o => o.status === 'Confirmed').length;
+      const completed = orders.filter(o => o.status === 'Completed').length;
+
+      document.getElementById('totalOrders').textContent = total;
+      document.getElementById('pendingOrders').textContent = pending;
+      document.getElementById('confirmedOrders').textContent = confirmed;
+      document.getElementById('completedOrders').textContent = completed;
+    }
+
+    function renderOrders() {
+      if (orders.length === 0) {
+        ordersTableBody.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      ordersTableBody.innerHTML = orders.map(order => `
+        <tr class="hover:bg-gray-50">
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span class="text-sm font-bold text-navy">#${order.id}</span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span class="text-sm text-gray-900">${new Date(order.created_at).toLocaleDateString()}</span>
+          </td>
+          <td class="px-6 py-4">
+            <div class="text-sm font-medium text-navy">${order.customer_name}</div>
+          </td>
+          <td class="px-6 py-4">
+            <div class="text-sm text-gray-900">${order.customer_phone}</div>
+            ${order.customer_email ? `<div class="text-sm text-gray-500">${order.customer_email}</div>` : ''}
+          </td>
+          <td class="px-6 py-4">
+            <div class="text-sm text-gray-900">${order.product_name || 'Product #' + order.product_id}</div>
+            <div class="text-sm text-gray-500">$${parseFloat(order.product_price || 0).toFixed(2)}</div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span class="text-sm text-gray-900">${order.quantity}</span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <select onchange="updateOrderStatus(${order.id}, this.value)" class="text-sm border border-gray-300 rounded-lg px-3 py-1 focus:ring-2 focus:ring-amber focus:border-transparent ${getStatusColor(order.status)}">
+              <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
+              <option value="Confirmed" ${order.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
+              <option value="Completed" ${order.status === 'Completed' ? 'selected' : ''}>Completed</option>
+              <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+            </select>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+            <button onclick="viewOrderDetails(${order.id})" class="text-amber hover:text-amber-dark mr-3">View</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function getStatusColor(status) {
+      switch(status) {
+        case 'Pending': return 'bg-yellow-50 text-yellow-800';
+        case 'Confirmed': return 'bg-blue-50 text-blue-800';
+        case 'Completed': return 'bg-green-50 text-green-800';
+        case 'Cancelled': return 'bg-red-50 text-red-800';
+        default: return 'bg-gray-50 text-gray-800';
+      }
+    }
+
+    async function updateOrderStatus(orderId, newStatus) {
+      const token = localStorage.getItem('adminToken');
+      if (!token) {
+        window.location.href = '/admin/login.html';
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/admin/orders/${orderId}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status: newStatus })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          showMessage(`Order #${orderId} status updated to ${newStatus}`, 'success');
+          await loadOrders();
+        } else {
+          showMessage(data.message || 'Failed to update order status', 'error');
+          await loadOrders(); // Reload to reset the dropdown
+        }
+      } catch (error) {
+        console.error('Error updating order:', error);
+        showMessage('Failed to update order status', 'error');
+        await loadOrders(); // Reload to reset the dropdown
+      }
+    }
+
+    function viewOrderDetails(orderId) {
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      const message = `
+Order Details:
+----------------
+Order ID: #${order.id}
+Date: ${new Date(order.created_at).toLocaleString()}
+
+Customer Information:
+- Name: ${order.customer_name}
+- Phone: ${order.customer_phone}
+- Email: ${order.customer_email || 'N/A'}
+
+Product Information:
+- Product: ${order.product_name || 'Product #' + order.product_id}
+- Price: $${parseFloat(order.product_price || 0).toFixed(2)}
+- Quantity: ${order.quantity}
+- Notes: ${order.notes || 'None'}
+
+Status: ${order.status}
+      `;
+
+      alert(message);
+    }
+
+    function showMessage(message, type) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
+      messageDiv.textContent = message;
+      document.body.appendChild(messageDiv);
+      
+      setTimeout(() => {
+        messageDiv.remove();
+      }, 3000);
+    }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('adminToken');
+      window.location.href = '/admin/login.html';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Admin product management">
+  <title>Product Management | Minnah Electricals</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: '#0F172A',
+            amber: '#F59E0B',
+            'amber-dark': '#D97706',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</head>
+<body class="bg-gray-50">
+
+  <!-- Header -->
+  <header class="bg-navy text-white shadow-lg">
+    <div class="container mx-auto px-4">
+      <div class="flex items-center justify-between py-4">
+        <div class="flex items-center space-x-3">
+          <img src="/assets/logo.jpg" alt="Minnah Electricals Logo" class="h-12 w-12 rounded-full object-cover border-2 border-amber">
+          <div>
+            <h1 class="text-xl font-bold">Minnah Electricals</h1>
+            <p class="text-xs text-gray-300">Product Management</p>
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <a href="/admin/dashboard.html" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg font-semibold transition">Dashboard</a>
+          <a href="/admin/orders.html" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg font-semibold transition">Orders</a>
+          <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-semibold transition">Log Out</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto px-4 py-8">
+    
+    <!-- Add Product Button -->
+    <div class="mb-6">
+      <button id="addProductBtn" class="bg-amber hover:bg-amber-dark text-navy px-6 py-3 rounded-lg font-bold transition flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        Add New Product
+      </button>
+    </div>
+
+    <!-- Product Form Modal -->
+    <div id="productModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-screen overflow-y-auto">
+        <div class="p-8">
+          <div class="flex justify-between items-center mb-6">
+            <h2 id="modalTitle" class="text-2xl font-bold text-navy">Add New Product</h2>
+            <button id="closeModal" class="text-gray-500 hover:text-gray-700">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          
+          <form id="productForm" class="space-y-4">
+            <input type="hidden" id="productId">
+            
+            <div>
+              <label class="block text-gray-700 text-sm font-semibold mb-2">Product Name *</label>
+              <input type="text" id="productName" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="e.g., LED Light Bulb">
+            </div>
+
+            <div>
+              <label class="block text-gray-700 text-sm font-semibold mb-2">Description</label>
+              <textarea id="productDescription" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="Product description..."></textarea>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-gray-700 text-sm font-semibold mb-2">Price (₵) *</label>
+                <input type="number" id="productPrice" step="0.01" min="0" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="0.00">
+              </div>
+
+              <div>
+                <label class="block text-gray-700 text-sm font-semibold mb-2">Category *</label>
+                <select id="productCategory" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
+                  <option value="">Select a category</option>
+                  <option value="Lighting">Lighting</option>
+                  <option value="Wiring">Wiring</option>
+                  <option value="Switches">Switches</option>
+                  <option value="Outlets">Outlets</option>
+                  <option value="Circuit Breakers">Circuit Breakers</option>
+                  <option value="Tools">Tools</option>
+                  <option value="Safety Equipment">Safety Equipment</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-gray-700 text-sm font-semibold mb-2">Product Image</label>
+              <input type="file" id="productImage" accept="image/*" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
+              <p class="text-xs text-gray-500 mt-1">Upload an image from your device (JPG, PNG, GIF)</p>
+              <div id="imagePreview" class="mt-2 hidden">
+                <img id="previewImg" src="" alt="Preview" class="h-32 w-32 object-cover rounded-lg border-2 border-amber">
+              </div>
+            </div>
+
+            <div class="flex items-center">
+              <input type="checkbox" id="productInStock" checked class="w-4 h-4 text-amber border-gray-300 rounded focus:ring-amber">
+              <label for="productInStock" class="ml-2 text-gray-700">In Stock</label>
+            </div>
+
+            <div class="flex gap-3 pt-4">
+              <button type="submit" class="flex-1 bg-amber hover:bg-amber-dark text-navy font-bold py-3 rounded-lg transition">Save Product</button>
+              <button type="button" id="cancelBtn" class="flex-1 bg-gray-300 hover:bg-gray-400 text-navy font-bold py-3 rounded-lg transition">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Products Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-navy text-white">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Image</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Name</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Category</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Price</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="productsTableBody" class="bg-white divide-y divide-gray-200">
+            <!-- Products will be populated here -->
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Empty State -->
+      <div id="emptyState" class="hidden text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No products yet</h3>
+        <p class="mt-1 text-sm text-gray-500">Get started by adding your first product.</p>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="/js/admin.js"></script>
+  <script>
+    // Product Management
+    let products = [];
+    let editingProductId = null;
+    let editingProductImageUrl = null;
+
+    // DOM Elements
+    const addProductBtn = document.getElementById('addProductBtn');
+    const productModal = document.getElementById('productModal');
+    const closeModal = document.getElementById('closeModal');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const productForm = document.getElementById('productForm');
+    const modalTitle = document.getElementById('modalTitle');
+    const productsTableBody = document.getElementById('productsTableBody');
+    const emptyState = document.getElementById('emptyState');
+    const productImageInput = document.getElementById('productImage');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+
+    // Load products on page load
+    document.addEventListener('DOMContentLoaded', loadProducts);
+
+    // Event Listeners
+    addProductBtn.addEventListener('click', () => openModal());
+    closeModal.addEventListener('click', closeModalFn);
+    cancelBtn.addEventListener('click', closeModalFn);
+    productForm.addEventListener('submit', handleProductSubmit);
+    
+    // Image preview
+    productImageInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          previewImg.src = event.target.result;
+          imagePreview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      } else {
+        imagePreview.classList.add('hidden');
+      }
+    });
+
+    function openModal(product = null) {
+      editingProductId = product ? product.id : null;
+      modalTitle.textContent = product ? 'Edit Product' : 'Add New Product';
+      
+      if (product) {
+        document.getElementById('productId').value = product.id;
+        document.getElementById('productName').value = product.name;
+        document.getElementById('productDescription').value = product.description || '';
+        document.getElementById('productPrice').value = product.price;
+        document.getElementById('productCategory').value = product.category || '';
+        document.getElementById('productInStock').checked = product.in_stock == 1;
+        editingProductImageUrl = product.image_url || '';
+        
+        // Show existing image preview
+        if (product.image_url) {
+          previewImg.src = product.image_url;
+          imagePreview.classList.remove('hidden');
+        } else {
+          imagePreview.classList.add('hidden');
+        }
+      } else {
+        productForm.reset();
+        document.getElementById('productId').value = '';
+        document.getElementById('productInStock').checked = true;
+        editingProductImageUrl = null;
+        imagePreview.classList.add('hidden');
+      }
+      
+      productModal.classList.remove('hidden');
+    }
+
+    function closeModalFn() {
+      productModal.classList.add('hidden');
+      editingProductId = null;
+      editingProductImageUrl = null;
+    }
+
+    async function loadProducts() {
+      try {
+        const token = localStorage.getItem('adminToken');
+        if (!token) {
+          window.location.href = '/admin/login.html';
+          return;
+        }
+
+        const response = await fetch('/api/admin/products', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          products = data.products;
+          renderProducts();
+        }
+      } catch (error) {
+        console.error('Error loading products:', error);
+        showMessage('Failed to load products', 'error');
+      }
+    }
+
+    function renderProducts() {
+      if (products.length === 0) {
+        productsTableBody.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      productsTableBody.innerHTML = products.map(product => `
+        <tr class="hover:bg-gray-50">
+          <td class="px-6 py-4 whitespace-nowrap">
+            ${product.image_url ? 
+              `<img src="${product.image_url}" alt="${product.name}" class="h-12 w-12 rounded-full object-cover border-2 border-amber">` :
+              `<div class="h-12 w-12 rounded-full bg-gray-200 border-2 border-amber flex items-center justify-center">
+                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>`
+            }
+          </td>
+          <td class="px-6 py-4">
+            <div class="text-sm font-medium text-navy">${product.name}</div>
+            <div class="text-sm text-gray-500">${product.description ? product.description.substring(0, 50) + '...' : ''}</div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span class="text-sm text-gray-900">${product.category || 'N/A'}</span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span class="text-sm font-bold text-amber">₵${parseFloat(product.price).toFixed(2)}</span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.in_stock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+              ${product.in_stock ? 'In Stock' : 'Out of Stock'}
+            </span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+            <button onclick="editProduct(${product.id})" class="text-amber hover:text-amber-dark mr-3">Edit</button>
+            <button onclick="deleteProduct(${product.id})" class="text-red-600 hover:text-red-800">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function handleProductSubmit(e) {
+      e.preventDefault();
+      
+      const token = localStorage.getItem('adminToken');
+      if (!token) {
+        window.location.href = '/admin/login.html';
+        return;
+      }
+
+      const productData = {
+        name: document.getElementById('productName').value,
+        description: document.getElementById('productDescription').value,
+        price: parseFloat(document.getElementById('productPrice').value),
+        category: document.getElementById('productCategory').value,
+        in_stock: document.getElementById('productInStock').checked
+      };
+
+      // Handle image upload
+      const imageFile = document.getElementById('productImage').files[0];
+      if (imageFile) {
+        try {
+          showMessage('Uploading image...', 'success');
+          const formData = new FormData();
+          formData.append('image', imageFile);
+          
+          const uploadResponse = await fetch('/api/admin/upload', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
+            body: formData
+          });
+
+          const uploadData = await uploadResponse.json();
+          
+          if (uploadData.success) {
+            productData.image_url = uploadData.url;
+          } else {
+            showMessage(uploadData.message || 'Failed to upload image', 'error');
+            return;
+          }
+        } catch (error) {
+          console.error('Error uploading image:', error);
+          showMessage('Failed to upload image', 'error');
+          return;
+        }
+      } else if (editingProductImageUrl) {
+        // Keep existing image if no new image uploaded
+        productData.image_url = editingProductImageUrl;
+      }
+
+      try {
+        const url = editingProductId ? `/api/admin/products/${editingProductId}` : '/api/admin/products';
+        const method = editingProductId ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+          method: method,
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(productData)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          showMessage(editingProductId ? 'Product updated successfully!' : 'Product created successfully!', 'success');
+          closeModalFn();
+          await loadProducts();
+        } else {
+          showMessage(data.message || 'Failed to save product', 'error');
+        }
+      } catch (error) {
+        console.error('Error saving product:', error);
+        showMessage('Failed to save product', 'error');
+      }
+    }
+
+    async function editProduct(id) {
+      const product = products.find(p => p.id === id);
+      if (product) {
+        openModal(product);
+      }
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm('Are you sure you want to delete this product?')) {
+        return;
+      }
+
+      const token = localStorage.getItem('adminToken');
+      if (!token) {
+        window.location.href = '/admin/login.html';
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/admin/products/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          showMessage('Product deleted successfully!', 'success');
+          await loadProducts();
+        } else {
+          showMessage(data.message || 'Failed to delete product', 'error');
+        }
+      } catch (error) {
+        console.error('Error deleting product:', error);
+        showMessage('Failed to delete product', 'error');
+      }
+    }
+
+    function showMessage(message, type) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
+      messageDiv.textContent = message;
+      document.body.appendChild(messageDiv);
+      
+      setTimeout(() => {
+        messageDiv.remove();
+      }, 3000);
+    }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('adminToken');
+      window.location.href = '/admin/login.html';
+    });
+  </script>
+</body>
+</html>

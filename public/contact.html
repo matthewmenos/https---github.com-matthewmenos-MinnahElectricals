@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Contact Minnah Electricals for all your electrical needs. 24/7 emergency service available. Call (555) 123-4567 or send us a message.">
+  <title>Contact Us | Minnah Electricals</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any">
+  <link rel="icon" type="image/jpeg" href="/assets/logo.jpg" sizes="32x32">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: '#0F172A',
+            amber: '#F59E0B',
+            'amber-dark': '#D97706',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-50">
+
+  <!-- Header -->
+  <header class="bg-navy text-white sticky top-0 z-50 shadow-lg">
+    <div class="container mx-auto px-4">
+      <div class="flex items-center justify-between py-4">
+        <!-- Logo -->
+        <div class="flex items-center space-x-3">
+          <img src="/assets/logo.jpg" alt="Minnah Electricals Logo" class="h-12 w-12 rounded-full object-cover border-2 border-amber">
+          <div>
+            <h1 class="text-xl font-bold">Minnah Electricals</h1>
+            <p class="text-xs text-gray-300">Professional Services</p>
+          </div>
+        </div>
+
+        <!-- Desktop Navigation -->
+        <nav class="hidden md:flex items-center space-x-8">
+          <a href="/" class="hover:text-amber transition">Home</a>
+          <a href="/services.html" class="hover:text-amber transition">Services</a>
+          <a href="/shop.html" class="hover:text-amber transition">Shop</a>
+          <a href="/contact.html" class="text-amber transition">Contact</a>
+          <a href="tel:5551234567" class="bg-amber hover:bg-amber-dark text-navy px-6 py-2 rounded-lg font-semibold transition flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+            </svg>
+            Call Now
+          </a>
+        </nav>
+
+        <!-- Mobile Menu Button -->
+        <button id="mobileMenuBtn" class="md:hidden text-white">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div id="mobileMenu" class="hidden md:hidden pb-4">
+        <nav class="flex flex-col space-y-3">
+          <a href="/" class="hover:text-amber transition py-2">Home</a>
+          <a href="/services.html" class="hover:text-amber transition py-2">Services</a>
+          <a href="/shop.html" class="hover:text-amber transition py-2">Shop</a>
+          <a href="/contact.html" class="text-amber transition py-2">Contact</a>
+          <a href="tel:5551234567" class="bg-amber hover:bg-amber-dark text-navy px-4 py-3 rounded-lg font-semibold text-center flex items-center justify-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+            </svg>
+            Call (555) 123-4567
+          </a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Page Header -->
+  <section class="bg-navy text-white py-16">
+    <div class="container mx-auto px-4 text-center">
+      <h1 class="text-4xl md:text-5xl font-bold mb-4">Contact Us</h1>
+      <p class="text-xl text-gray-300">Get in touch for a free consultation and estimate</p>
+    </div>
+  </section>
+
+  <!-- Contact Section -->
+  <section class="py-20">
+    <div class="container mx-auto px-4">
+      <div class="grid md:grid-cols-2 gap-12">
+        
+        <!-- Contact Form -->
+        <div>
+          <h2 class="text-3xl font-bold text-navy mb-6">Send Us a Message</h2>
+          <form id="contactForm" class="bg-white rounded-lg shadow-lg p-8">
+            <div class="space-y-4">
+              <div>
+                <label class="block text-gray-700 text-sm font-semibold mb-2">Full Name *</label>
+                <input type="text" name="full_name" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="John Doe">
+              </div>
+              <div>
+                <label class="block text-gray-700 text-sm font-semibold mb-2">Phone *</label>
+                <input type="tel" name="phone" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="(555) 123-4567">
+              </div>
+              <div>
+                <label class="block text-gray-700 text-sm font-semibold mb-2">Email</label>
+                <input type="email" name="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="john@example.com">
+              </div>
+              <div>
+                <label class="block text-gray-700 text-sm font-semibold mb-2">Service Needed *</label>
+                <select name="service_needed" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
+                  <option value="">Select a service...</option>
+                  <option value="Panel Upgrade">Panel Upgrade</option>
+                  <option value="EV Charger Installation">EV Charger Installation</option>
+                  <option value="Emergency Repair">Emergency Repair</option>
+                  <option value="Rewiring">Rewiring</option>
+                  <option value="Lighting Installation">Lighting Installation</option>
+                  <option value="Inspection">Electrical Inspection</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-gray-700 text-sm font-semibold mb-2">Urgency</label>
+                <select name="urgency" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
+                  <option value="Standard">Standard</option>
+                  <option value="Emergency">Emergency</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-gray-700 text-sm font-semibold mb-2">Message</label>
+                <textarea name="message" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="Tell us about your project..."></textarea>
+              </div>
+              <button type="submit" class="w-full bg-amber hover:bg-amber-dark text-navy font-bold py-4 rounded-lg transition">
+                Send Message
+              </button>
+            </div>
+          </form>
+          <div id="formMessage" class="mt-4 hidden"></div>
+        </div>
+
+        <!-- Contact Info -->
+        <div>
+          <h2 class="text-3xl font-bold text-navy mb-6">Get In Touch</h2>
+          
+          <!-- Emergency Contact -->
+          <div class="bg-red-50 border-l-4 border-red-600 p-6 rounded-lg mb-6">
+            <h3 class="text-xl font-bold text-red-900 mb-2">24/7 Emergency Service</h3>
+            <p class="text-red-800 mb-3">For electrical emergencies, call us immediately</p>
+            <a href="tel:5551234567" class="inline-block bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold transition flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+              </svg>
+              (555) 123-4567
+            </a>
+          </div>
+
+          <!-- Contact Details -->
+          <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
+            <h3 class="text-xl font-bold text-navy mb-4">Contact Information</h3>
+            <div class="space-y-4">
+              <div class="flex items-start space-x-3">
+                <div class="text-amber text-2xl">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <p class="font-semibold text-navy">Phone</p>
+                  <a href="tel:5551234567" class="text-gray-600 hover:text-amber transition">(555) 123-4567</a>
+                </div>
+              </div>
+              <div class="flex items-start space-x-3">
+                <div class="text-amber text-2xl">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <p class="font-semibold text-navy">Email</p>
+                  <a href="mailto:info@minnahelectricals.com" class="text-gray-600 hover:text-amber transition">info@minnahelectricals.com</a>
+                </div>
+              </div>
+              <div class="flex items-start space-x-3">
+                <div class="text-amber text-2xl">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <p class="font-semibold text-navy">Service Area</p>
+                  <p class="text-gray-600">Serving the local metropolitan area and surrounding communities</p>
+                </div>
+              </div>
+              <div class="flex items-start space-x-3">
+                <div class="text-amber text-2xl">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <p class="font-semibold text-navy">Business Hours</p>
+                  <p class="text-gray-600">Mon-Fri: 7:00 AM - 6:00 PM</p>
+                  <p class="text-gray-600">Sat: 8:00 AM - 2:00 PM</p>
+                  <p class="text-red-600 font-semibold">24/7 Emergency Service Available</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trust Badges -->
+          <div class="bg-navy text-white rounded-lg shadow-lg p-8">
+            <h3 class="text-xl font-bold mb-4">Why Choose Us?</h3>
+            <div class="space-y-3">
+              <div class="flex items-center space-x-2">
+                <svg class="w-5 h-5 text-amber" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                </svg>
+                <span>Licensed, Bonded & Insured</span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <svg class="w-5 h-5 text-amber" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                </svg>
+                <span>Free Estimates</span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <svg class="w-5 h-5 text-amber" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                </svg>
+                <span>Satisfaction Guaranteed</span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <svg class="w-5 h-5 text-amber" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                </svg>
+                <span>Upfront Pricing</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="py-16 bg-amber">
+    <div class="container mx-auto px-4 text-center">
+      <h2 class="text-3xl md:text-4xl font-bold text-navy mb-4">Ready to Get Started?</h2>
+      <p class="text-xl text-navy mb-8">Contact us today for a free, no-obligation quote</p>
+      <a href="tel:5551234567" class="inline-block bg-navy hover:bg-gray-800 text-white px-8 py-4 rounded-lg font-bold text-lg transition flex items-center">
+        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+        </svg>
+        Call (555) 123-4567
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-navy text-white py-12">
+    <div class="container mx-auto px-4">
+      <div class="grid md:grid-cols-3 gap-8">
+        <div>
+          <div class="flex items-center space-x-3 mb-4">
+            <img src="/assets/logo.jpg" alt="Minnah Electricals Logo" class="h-10 w-10 rounded-full object-cover border-2 border-amber">
+            <h3 class="text-xl font-bold">Minnah Electricals</h3>
+          </div>
+          <p class="text-gray-300">Professional electrical services for residential and commercial properties.</p>
+        </div>
+        <div>
+          <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
+          <ul class="space-y-2">
+            <li><a href="/" class="text-gray-300 hover:text-amber transition">Home</a></li>
+            <li><a href="/services.html" class="text-gray-300 hover:text-amber transition">Services</a></li>
+            <li><a href="/contact.html" class="text-amber transition">Contact</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="text-lg font-semibold mb-4">Contact Info</h4>
+          <ul class="space-y-2 text-gray-300">
+            <li class="flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+              </svg>
+              (555) 123-4567
+            </li>
+            <li class="flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+              </svg>
+              info@minnahelectricals.com
+            </li>
+            <li class="flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+              Serving the Local Area
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+        <p>&copy; <span id="currentYear"></span> Minnah Electricals. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/main.js"></script>
+  <script>
+    // Set current year dynamically
+    document.getElementById('currentYear').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

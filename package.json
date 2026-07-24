@@ -1,0 +1,30 @@
+{
+  "name": "electrical-company-website",
+  "version": "1.0.0",
+  "description": "Local electrical company website with lead management and admin dashboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "electrical",
+    "website",
+    "lead-management"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.6",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.2.0",
+    "nodemailer": "^6.9.7",
+    "sql.js": "^1.14.1"
+  },
+  "optionalDependencies": {
+    "@aws-sdk/client-s3": "^3.450.0"
+  }
+}

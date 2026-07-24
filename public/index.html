@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Minnah Electricals - Licensed & Insured Local Electricians. 24/7 Emergency Service Available. Panel Upgrades, EV Chargers, Rewiring & More.">
+  <title>Minnah Electricals | Licensed & Insured Electricians</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any">
+  <link rel="icon" type="image/jpeg" href="/assets/logo.jpg" sizes="32x32">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: '#0F172A',
+            amber: '#F59E0B',
+            'amber-dark': '#D97706',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .fade-in { animation: fadeIn 0.5s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="bg-gray-50">
+
+  <!-- Header -->
+  <header class="bg-navy text-white sticky top-0 z-50 shadow-lg">
+    <div class="container mx-auto px-4">
+      <div class="flex items-center justify-between py-4">
+        <!-- Logo -->
+        <div class="flex items-center space-x-3">
+          <img src="/assets/logo.jpg" alt="Minnah Electricals Logo" class="h-12 w-12 rounded-full object-cover border-2 border-amber">
+          <div>
+            <h1 class="text-xl font-bold">Minnah Electricals</h1>
+            <p class="text-xs text-gray-300">Professional Services</p>
+          </div>
+        </div>
+
+        <!-- Desktop Navigation -->
+        <nav class="hidden md:flex items-center space-x-8">
+          <a href="/" class="hover:text-amber transition">Home</a>
+          <a href="/services.html" class="hover:text-amber transition">Services</a>
+          <a href="/portfolio.html" class="hover:text-amber transition">Portfolio</a>
+          <a href="/gallery.html" class="hover:text-amber transition">Gallery</a>
+          <a href="/shop.html" class="hover:text-amber transition">Shop</a>
+          <a href="/contact.html" class="hover:text-amber transition">Contact</a>
+          <a href="tel:5551234567" class="bg-amber hover:bg-amber-dark text-navy px-6 py-2 rounded-lg font-semibold transition flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+            </svg>
+            Call Now
+          </a>
+        </nav>
+
+        <!-- Mobile Menu Button -->
+        <button id="mobileMenuBtn" class="md:hidden text-white">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div id="mobileMenu" class="hidden md:hidden pb-4">
+        <nav class="flex flex-col space-y-3">
+          <a href="/" class="hover:text-amber transition py-2">Home</a>
+          <a href="/services.html" class="hover:text-amber transition py-2">Services</a>
+          <a href="/portfolio.html" class="hover:text-amber transition py-2">Portfolio</a>
+          <a href="/gallery.html" class="hover:text-amber transition py-2">Gallery</a>
+          <a href="/shop.html" class="hover:text-amber transition py-2">Shop</a>
+          <a href="/contact.html" class="hover:text-amber transition py-2">Contact</a>
+          <a href="tel:5551234567" class="bg-amber hover:bg-amber-dark text-navy px-4 py-3 rounded-lg font-semibold text-center flex items-center justify-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+            </svg>
+            Call (555) 123-4567
+          </a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="bg-navy text-white py-20">
+    <div class="container mx-auto px-4">
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <div class="fade-in">
+          <div class="inline-block bg-amber text-navy px-4 py-2 rounded-full text-sm font-semibold mb-4 flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+            </svg>
+            Licensed, Bonded & Insured
+          </div>
+          <h2 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+            Licensed & Insured<br>Local Electricians
+          </h2>
+          <p class="text-xl text-gray-300 mb-8">
+            Professional electrical services you can trust. Available 24/7 for emergencies.
+          </p>
+          
+          <!-- Trust Badges -->
+          <div class="grid grid-cols-2 gap-4 mb-8">
+            <div class="flex items-center space-x-2">
+              <svg class="w-6 h-6 text-amber" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              </svg>
+              <span class="text-sm">Licensed & Insured</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <svg class="w-6 h-6 text-amber" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              </svg>
+              <span class="text-sm">24/7 Emergency</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <svg class="w-6 h-6 text-amber" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              </svg>
+              <span class="text-sm">Free Estimates</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <svg class="w-6 h-6 text-amber" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              </svg>
+              <span class="text-sm">Satisfaction Guaranteed</span>
+            </div>
+          </div>
+
+          <a href="tel:5551234567" class="inline-block bg-amber hover:bg-amber-dark text-navy px-8 py-4 rounded-lg font-bold text-lg transition flex items-center">
+            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+            </svg>
+            Get Free Quote Now
+          </a>
+        </div>
+
+        <!-- Quick Quote Form -->
+        <div class="bg-white rounded-lg shadow-2xl p-8">
+          <h3 class="text-2xl font-bold text-navy mb-6">Get a Free Quote</h3>
+          <form id="quoteForm" class="space-y-4">
+            <div>
+              <label class="block text-gray-700 text-sm font-semibold mb-2">Full Name *</label>
+              <input type="text" name="full_name" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="John Doe">
+            </div>
+            <div>
+              <label class="block text-gray-700 text-sm font-semibold mb-2">Phone *</label>
+              <input type="tel" name="phone" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="(555) 123-4567">
+            </div>
+            <div>
+              <label class="block text-gray-700 text-sm font-semibold mb-2">Email</label>
+              <input type="email" name="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="john@example.com">
+            </div>
+            <div>
+              <label class="block text-gray-700 text-sm font-semibold mb-2">Service Needed *</label>
+              <select name="service_needed" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
+                <option value="">Select a service...</option>
+                <option value="Panel Upgrade">Panel Upgrade</option>
+                <option value="EV Charger Installation">EV Charger Installation</option>
+                <option value="Emergency Repair">Emergency Repair</option>
+                <option value="Rewiring">Rewiring</option>
+                <option value="Lighting Installation">Lighting Installation</option>
+                <option value="Inspection">Electrical Inspection</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-gray-700 text-sm font-semibold mb-2">Urgency</label>
+              <select name="urgency" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
+                <option value="Standard">Standard</option>
+                <option value="Emergency">Emergency</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-gray-700 text-sm font-semibold mb-2">Message</label>
+              <textarea name="message" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="Tell us about your project..."></textarea>
+            </div>
+            <button type="submit" class="w-full bg-amber hover:bg-amber-dark text-navy font-bold py-4 rounded-lg transition">
+              Submit Request
+            </button>
+          </form>
+          <div id="formMessage" class="mt-4 hidden"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services Grid -->
+  <section class="py-20 bg-white">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-12">
+        <h2 class="text-4xl font-bold text-navy mb-4">Our Services</h2>
+        <p class="text-xl text-gray-600">Comprehensive electrical solutions for residential & commercial properties</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <!-- Service Card 1 -->
+        <div class="bg-gray-50 rounded-lg p-6 hover:shadow-xl transition">
+          <div class="text-amber mb-4">
+            <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-navy mb-3">Panel Upgrades</h3>
+          <p class="text-gray-600 mb-4">Modernize your electrical panel to handle today's power demands safely and efficiently.</p>
+          <a href="/contact.html" class="text-amber font-semibold hover:text-amber-dark">Learn More →</a>
+        </div>
+
+        <!-- Service Card 2 -->
+        <div class="bg-gray-50 rounded-lg p-6 hover:shadow-xl transition">
+          <div class="text-amber mb-4">
+            <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M7 17h2v-2H7v2zm4-4h2v-2h-2v2zm4-4h2V7h-2v2zM7 13h2v-2H7v2zm4-4h2V7h-2v2zm4-4h2V3h-2v2zM5 21h14v-2H5v2z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-navy mb-3">EV Chargers</h3>
+          <p class="text-gray-600 mb-4">Professional installation of electric vehicle charging stations for your home or business.</p>
+          <a href="/contact.html" class="text-amber font-semibold hover:text-amber-dark">Learn More →</a>
+        </div>
+
+        <!-- Service Card 3 -->
+        <div class="bg-gray-50 rounded-lg p-6 hover:shadow-xl transition">
+          <div class="text-red-600 mb-4">
+            <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-navy mb-3">Emergency Repairs</h3>
+          <p class="text-gray-600 mb-4">24/7 emergency electrical services. Fast response when you need it most.</p>
+          <a href="tel:5551234567" class="text-amber font-semibold hover:text-amber-dark">Call Now →</a>
+        </div>
+
+        <!-- Service Card 4 -->
+        <div class="bg-gray-50 rounded-lg p-6 hover:shadow-xl transition">
+          <div class="text-amber mb-4">
+            <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-navy mb-3">Rewiring</h3>
+          <p class="text-gray-600 mb-4">Complete home and commercial rewiring services with modern safety standards.</p>
+          <a href="/contact.html" class="text-amber font-semibold hover:text-amber-dark">Learn More →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Choose Us -->
+  <section class="py-20 bg-gray-100">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-12">
+        <h2 class="text-4xl font-bold text-navy mb-4">Why Choose Minnah Electricals?</h2>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="text-center">
+          <div class="bg-amber w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">1</div>
+          <h3 class="text-xl font-bold text-navy mb-2">Expert Team</h3>
+          <p class="text-gray-600">Certified electricians with years of experience in all types of electrical work.</p>
+        </div>
+        <div class="text-center">
+          <div class="bg-amber w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">2</div>
+          <h3 class="text-xl font-bold text-navy mb-2">Quality Guaranteed</h3>
+          <p class="text-gray-600">We stand behind our work with comprehensive warranties and guarantees.</p>
+        </div>
+        <div class="text-center">
+          <div class="bg-amber w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">3</div>
+          <h3 class="text-xl font-bold text-navy mb-2">Transparent Pricing</h3>
+          <p class="text-gray-600">No hidden fees. Get detailed quotes before any work begins.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="py-16 bg-amber">
+    <div class="container mx-auto px-4 text-center">
+      <h2 class="text-3xl md:text-4xl font-bold text-navy mb-4">Ready to Get Started?</h2>
+      <p class="text-xl text-navy mb-8">Contact us today for a free, no-obligation quote</p>
+      <div class="flex flex-col md:flex-row gap-4 justify-center">
+        <a href="tel:5551234567" class="bg-navy hover:bg-gray-800 text-white px-8 py-4 rounded-lg font-bold text-lg transition flex items-center justify-center">
+          <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+          </svg>
+          Call (555) 123-4567
+        </a>
+        <a href="/contact.html" class="bg-white hover:bg-gray-100 text-navy px-8 py-4 rounded-lg font-bold text-lg transition">
+          Send Message
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-navy text-white py-12">
+    <div class="container mx-auto px-4">
+      <div class="grid md:grid-cols-3 gap-8">
+        <div>
+          <div class="flex items-center space-x-3 mb-4">
+            <img src="/assets/logo.jpg" alt="Minnah Electricals Logo" class="h-10 w-10 rounded-full object-cover border-2 border-amber">
+            <h3 class="text-xl font-bold">Minnah Electricals</h3>
+          </div>
+          <p class="text-gray-300">Professional electrical services for residential and commercial properties.</p>
+        </div>
+        <div>
+          <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
+          <ul class="space-y-2">
+            <li><a href="/" class="text-gray-300 hover:text-amber transition">Home</a></li>
+            <li><a href="/services.html" class="text-gray-300 hover:text-amber transition">Services</a></li>
+            <li><a href="/portfolio.html" class="text-gray-300 hover:text-amber transition">Portfolio</a></li>
+            <li><a href="/gallery.html" class="text-gray-300 hover:text-amber transition">Gallery</a></li>
+            <li><a href="/contact.html" class="text-gray-300 hover:text-amber transition">Contact</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="text-lg font-semibold mb-4">Contact Info</h4>
+          <ul class="space-y-2 text-gray-300">
+            <li class="flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+              </svg>
+              (555) 123-4567
+            </li>
+            <li class="flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+              </svg>
+              info@minnahelectricals.com
+            </li>
+            <li class="flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+              Serving the Local Area
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+        <p>&copy; <span id="currentYear"></span> Minnah Electricals. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/main.js"></script>
+  <script>
+    // Set current year dynamically
+    document.getElementById('currentYear').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
