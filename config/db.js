@@ -196,51 +196,6 @@ async function initializeDatabase() {
     )
   `);
 
-  // Create appointments table for appointment scheduling
-  db.run(`
-    CREATE TABLE IF NOT EXISTS appointments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      customer_name TEXT NOT NULL,
-      customer_phone TEXT NOT NULL,
-      customer_email TEXT,
-      service_type TEXT NOT NULL,
-      appointment_date DATE NOT NULL,
-      appointment_time TIME NOT NULL,
-      status TEXT DEFAULT 'Pending' CHECK (status IN ('Pending', 'Confirmed', 'Completed', 'Cancelled')),
-      notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  // Create newsletter_subscribers table for email newsletters
-  db.run(`
-    CREATE TABLE IF NOT EXISTS newsletter_subscribers (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE NOT NULL,
-      name TEXT,
-      status TEXT DEFAULT 'active' CHECK (status IN ('active', 'unsubscribed')),
-      subscribed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      unsubscribed_at DATETIME
-    )
-  `);
-
-  // Create newsletter_campaigns table for email newsletter campaigns
-  db.run(`
-    CREATE TABLE IF NOT EXISTS newsletter_campaigns (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      subject TEXT NOT NULL,
-      content TEXT NOT NULL,
-      recipient_filter TEXT DEFAULT 'all',
-      sent_count INTEGER DEFAULT 0,
-      opened_count INTEGER DEFAULT 0,
-      clicked_count INTEGER DEFAULT 0,
-      status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'sending', 'sent', 'failed')),
-      sent_at DATETIME,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
   // Create loyalty_program table for customer loyalty program
   db.run(`
     CREATE TABLE IF NOT EXISTS loyalty_program (
@@ -268,27 +223,6 @@ async function initializeDatabase() {
       order_id INTEGER,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (order_id) REFERENCES orders(id)
-    )
-  `);
-
-  // Create service_requests table for service request tracking
-  db.run(`
-    CREATE TABLE IF NOT EXISTS service_requests (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      customer_name TEXT NOT NULL,
-      customer_phone TEXT NOT NULL,
-      customer_email TEXT,
-      service_type TEXT NOT NULL,
-      description TEXT NOT NULL,
-      priority TEXT DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
-      status TEXT DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'on_hold', 'completed', 'cancelled')),
-      assigned_to TEXT,
-      scheduled_date DATE,
-      scheduled_time TIME,
-      completed_at DATETIME,
-      notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
