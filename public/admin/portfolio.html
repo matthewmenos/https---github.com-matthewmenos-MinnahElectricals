@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Portfolio management">
+  <title>Portfolio | Minnah Electricals</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any">
+  <link rel="icon" type="image/jpeg" href="/assets/logo.jpg" sizes="32x32">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { navy: '#0F172A', amber: '#F59E0B', 'amber-dark': '#D97706' }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <header class="bg-navy text-white shadow-lg">
+    <div class="container mx-auto px-4">
+      <div class="flex items-center justify-between py-4">
+        <a href="/admin/index.html" class="flex items-center space-x-3">
+          <img src="/assets/logo.jpg" alt="Logo" class="h-12 w-12 rounded-full object-cover border-2 border-amber">
+          <div>
+            <h1 class="text-xl font-bold">Minnah Electricals</h1>
+            <p class="text-xs text-gray-300">Admin - Portfolio</p>
+          </div>
+        </a>
+        <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-semibold transition">Log Out</button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="bg-white shadow-sm border-b border-gray-200">
+    <div class="container mx-auto px-4">
+      <div class="flex space-x-6 overflow-x-auto">
+        <a href="/admin/index.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Dashboard</a>
+        <a href="/admin/leads.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Leads</a>
+        <a href="/admin/products.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Products</a>
+        <a href="/admin/orders.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Orders</a>
+        <a href="/admin/portfolio.html" class="py-4 px-1 border-b-2 border-amber text-amber font-semibold text-sm">Portfolio</a>
+        <a href="/admin/gallery.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Gallery</a>
+        <a href="/admin/analytics.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Analytics</a>
+        <a href="/admin/customers.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Customers</a>
+        <a href="/admin/inventory.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Inventory</a>
+        <a href="/admin/settings.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Settings</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+      <button id="addPortfolioBtn" class="bg-amber hover:bg-amber-dark text-navy px-6 py-3 rounded-lg font-bold transition flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        Add Portfolio Item
+      </button>
+    </div>
+
+    <!-- Portfolio Modal -->
+    <div id="portfolioModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-screen overflow-y-auto">
+        <div class="p-8">
+          <div class="flex justify-between items-center mb-6">
+            <h2 id="portfolioModalTitle" class="text-2xl font-bold text-navy">Add Portfolio Item</h2>
+            <button id="closePortfolioModal" class="text-gray-500 hover:text-gray-700">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+          
+          <form id="portfolioForm" class="space-y-4">
+            <input type="hidden" id="portfolioId">
+            
+            <div>
+              <label class="block text-gray-700 text-sm font-semibold mb-2">Project Title *</label>
+              <input type="text" id="portfolioTitle" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="e.g., Office Complex Wiring">
+            </div>
+
+            <div>
+              <label class="block text-gray-700 text-sm font-semibold mb-2">Description</label>
+              <textarea id="portfolioDescription" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="Project description..."></textarea>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-gray-700 text-sm font-semibold mb-2">Client Name</label>
+                <input type="text" id="portfolioClient" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="Client name">
+              </div>
+              <div>
+                <label class="block text-gray-700 text-sm font-semibold mb-2">Project Date</label>
+                <input type="text" id="portfolioDate" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="e.g., January 2024">
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-gray-700 text-sm font-semibold mb-2">Category</label>
+                <select id="portfolioCategory" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
+                  <option value="">Select a category</option>
+                  <option value="Residential">Residential</option>
+                  <option value="Commercial">Commercial</option>
+                  <option value="Industrial">Industrial</option>
+                  <option value="Maintenance">Maintenance</option>
+                  <option value="Installation">Installation</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-gray-700 text-sm font-semibold mb-2">Display Order</label>
+                <input type="number" id="portfolioOrder" value="0" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-gray-700 text-sm font-semibold mb-2">Project Image *</label>
+              <input type="file" id="portfolioImage" accept="image/*" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
+              <p class="text-xs text-gray-500 mt-1">Upload an image from your device (JPG, PNG, GIF)</p>
+              <div id="portfolioImagePreview" class="mt-2 hidden">
+                <img id="portfolioPreviewImg" src="" alt="Preview" class="h-32 w-32 object-cover rounded-lg border-2 border-amber">
+              </div>
+            </div>
+
+            <div class="flex items-center">
+              <input type="checkbox" id="portfolioFeatured" class="w-4 h-4 text-amber border-gray-300 rounded focus:ring-amber">
+              <label for="portfolioFeatured" class="ml-2 text-gray-700">Featured Project</label>
+            </div>
+
+            <div class="flex gap-3 pt-4">
+              <button type="submit" class="flex-1 bg-amber hover:bg-amber-dark text-navy font-bold py-3 rounded-lg transition">Save Portfolio Item</button>
+              <button type="button" id="cancelPortfolioBtn" class="flex-1 bg-gray-300 hover:bg-gray-400 text-navy font-bold py-3 rounded-lg transition">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Portfolio Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-navy text-white">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Image</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Title</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Client</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Category</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Featured</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="portfolioTableBody" class="bg-white divide-y divide-gray-200"></tbody>
+        </table>
+      </div>
+      <div id="portfolioEmptyState" class="hidden text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No portfolio items yet</h3>
+        <p class="mt-1 text-sm text-gray-500">Get started by adding your first portfolio project.</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const token = localStorage.getItem('adminToken');
+    if (!token) { window.location.href = '/admin/login.html'; }
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('adminToken');
+      window.location.href = '/admin/login.html';
+    });
+
+    let portfolio = [];
+    let editingId = null;
+    let editingImageUrl = null;
+
+    const addBtn = document.getElementById('addPortfolioBtn');
+    const modal = document.getElementById('portfolioModal');
+    const closeBtn = document.getElementById('closePortfolioModal');
+    const cancelBtn = document.getElementById('cancelPortfolioBtn');
+    const form = document.getElementById('portfolioForm');
+    const imgInput = document.getElementById('portfolioImage');
+    const imgPreview = document.getElementById('portfolioImagePreview');
+    const previewImg = document.getElementById('portfolioPreviewImg');
+
+    addBtn.addEventListener('click', () => openModal());
+    closeBtn.addEventListener('click', closeModalFn);
+    cancelBtn.addEventListener('click', closeModalFn);
+    form.addEventListener('submit', handleSubmit);
+    imgInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => { previewImg.src = event.target.result; imgPreview.classList.remove('hidden'); };
+        reader.readAsDataURL(file);
+      } else { imgPreview.classList.add('hidden'); }
+    });
+
+    async function loadPortfolio() {
+      try {
+        const res = await fetch('/api/admin/portfolio', { headers: { 'Authorization': `Bearer ${token}` } });
+        const data = await res.json();
+        if (data.success) { portfolio = data.portfolio; render(); }
+      } catch (error) { console.error('Error loading portfolio:', error); showMessage('Failed to load portfolio', 'error'); }
+    }
+
+    function render() {
+      const tbody = document.getElementById('portfolioTableBody');
+      const empty = document.getElementById('portfolioEmptyState');
+      if (portfolio.length === 0) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
+      empty.classList.add('hidden');
+      tbody.innerHTML = portfolio.map(item => `
+        <tr class="hover:bg-gray-50">
+          <td class="px-6 py-4 whitespace-nowrap">
+            ${item.image_url ? `<img src="${item.image_url}" alt="${item.title}" class="h-12 w-12 rounded-full object-cover border-2 border-amber">` :
+            `<div class="h-12 w-12 rounded-full bg-gray-200 border-2 border-amber flex items-center justify-center">
+              <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            </div>`}
+          </td>
+          <td class="px-6 py-4">
+            <div class="text-sm font-medium text-navy">${item.title}</div>
+            <div class="text-sm text-gray-500">${item.description ? item.description.substring(0, 50) + '...' : ''}</div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${item.client_name || 'N/A'}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${item.category || 'N/A'}</td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${item.featured ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${item.featured ? 'Featured' : 'No'}</span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+            <button onclick="editItem(${item.id})" class="text-amber hover:text-amber-dark mr-3">Edit</button>
+            <button onclick="deleteItem(${item.id})" class="text-red-600 hover:text-red-800">Delete</button>
+          </td>
+        </tr>`).join('');
+    }
+
+    function openModal(item = null) {
+      editingId = item ? item.id : null;
+      document.getElementById('portfolioModalTitle').textContent = item ? 'Edit Portfolio Item' : 'Add Portfolio Item';
+      if (item) {
+        document.getElementById('portfolioId').value = item.id;
+        document.getElementById('portfolioTitle').value = item.title;
+        document.getElementById('portfolioDescription').value = item.description || '';
+        document.getElementById('portfolioClient').value = item.client_name || '';
+        document.getElementById('portfolioDate').value = item.project_date || '';
+        document.getElementById('portfolioCategory').value = item.category || '';
+        document.getElementById('portfolioOrder').value = item.display_order || 0;
+        document.getElementById('portfolioFeatured').checked = item.featured == 1;
+        editingImageUrl = item.image_url || '';
+        if (item.image_url) { previewImg.src = item.image_url; imgPreview.classList.remove('hidden'); }
+        else { imgPreview.classList.add('hidden'); }
+      } else {
+        form.reset(); document.getElementById('portfolioId').value = ''; document.getElementById('portfolioOrder').value = 0;
+        editingImageUrl = null; imgPreview.classList.add('hidden');
+      }
+      modal.classList.remove('hidden');
+    }
+
+    function closeModalFn() { modal.classList.add('hidden'); editingId = null; editingImageUrl = null; }
+
+    async function handleSubmit(e) {
+      e.preventDefault();
+      const data = {
+        title: document.getElementById('portfolioTitle').value,
+        description: document.getElementById('portfolioDescription').value,
+        client_name: document.getElementById('portfolioClient').value,
+        project_date: document.getElementById('portfolioDate').value,
+        category: document.getElementById('portfolioCategory').value,
+        display_order: parseInt(document.getElementById('portfolioOrder').value) || 0,
+        featured: document.getElementById('portfolioFeatured').checked
+      };
+
+      const file = document.getElementById('portfolioImage').files[0];
+      if (file) {
+        try {
+          const fd = new FormData(); fd.append('image', file);
+          const upRes = await fetch('/api/admin/upload', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd });
+          const upData = await upRes.json();
+          if (upData.success) data.image_url = upData.url;
+          else { showMessage(upData.message || 'Failed to upload image', 'error'); return; }
+        } catch (error) { showMessage('Failed to upload image', 'error'); return; }
+      } else if (editingImageUrl) data.image_url = editingImageUrl;
+      else { showMessage('Please upload an image', 'error'); return; }
+
+      try {
+        const url = editingId ? `/api/admin/portfolio/${editingId}` : '/api/admin/portfolio';
+        const method = editingId ? 'PUT' : 'POST';
+        const res = await fetch(url, { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        const result = await res.json();
+        if (result.success) { showMessage(editingId ? 'Portfolio item updated!' : 'Portfolio item created!', 'success'); closeModalFn(); loadPortfolio(); }
+        else showMessage(result.message || 'Failed to save', 'error');
+      } catch (error) { showMessage('Failed to save', 'error'); }
+    }
+
+    async function editItem(id) { const item = portfolio.find(p => p.id === id); if (item) openModal(item); }
+
+    async function deleteItem(id) {
+      if (!confirm('Are you sure?')) return;
+      try {
+        const res = await fetch(`/api/admin/portfolio/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+        const data = await res.json();
+        if (data.success) { showMessage('Portfolio item deleted!', 'success'); loadPortfolio(); }
+        else showMessage(data.message || 'Failed to delete', 'error');
+      } catch (error) { showMessage('Failed to delete', 'error'); }
+    }
+
+    function showMessage(message, type) {
+      const div = document.createElement('div');
+      div.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
+      div.textContent = message; document.body.appendChild(div);
+      setTimeout(() => div.remove(), 3000);
+    }
+
+    document.addEventListener('DOMContentLoaded', loadPortfolio);
+  </script>
+</body>
+</html>

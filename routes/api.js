@@ -5,6 +5,8 @@ const r2Sync = require('../config/r2-sync');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const { sendLeadSms } = require('../config/sms');
+const { sendAutoResponder } = require('../config/auto-responder');
 require('dotenv').config();
 
 // Initialize Nodemailer transporter
@@ -177,6 +179,16 @@ router.post('/leads', async (req, res) => {
       console.error('Email notification error:', err.message);
     });
 
+    // Send SMS notification (non-blocking)
+    sendLeadSms(newLead).catch(err => {
+      console.error('SMS notification error:', err.message);
+    });
+
+    // Send auto-responder (non-blocking)
+    sendAutoResponder(newLead).catch(err => {
+      console.error('Auto-responder error:', err.message);
+    });
+
     console.log(`✓ New lead created: #${newLead.id} - ${newLead.full_name}`);
 
     return res.status(201).json({
@@ -336,6 +348,41 @@ router.post('/orders', async (req, res) => {
     });
 
     console.log(`✓ New order created: #${newOrder.id} - ${customer_name}`);
+
+    // Send email notifications (non-blocking)
+    if (customer_email) {
+      sendOrderConfirmationEmail(customer_email, customer_name, {
+        orderId: newOrder.id,
+        date: newOrder.created_at,
+        status: newOrder.status,
+        products: [{
+          name: product.name,
+          price: product.price,
+          quantity: newOrder.quantity
+        }],
+        total: product.price * newOrder.quantity,
+        customerName: customer_name,
+        customerPhone: customer_phone,
+        customerEmail: customer_email,
+        notes: notes
+      }).catch(err => console.error('Order confirmation email error:', err.message));
+    }
+
+    sendAdminNotificationEmail({
+      orderId: newOrder.id,
+      date: newOrder.created_at,
+      source: 'Website',
+      customerName: customer_name,
+      customerPhone: customer_phone,
+      customerEmail: customer_email,
+      products: [{
+        name: product.name,
+        price: product.price,
+        quantity: newOrder.quantity
+      }],
+      total: product.price * newOrder.quantity,
+      notes: notes
+    }).catch(err => console.error('Admin notification email error:', err.message));
 
     return res.status(201).json({
       success: true,
@@ -589,6 +636,7 @@ router.get('/settings', (req, res) => {
     if (!settings.phone) settings.phone = process.env.COMPANY_PHONE || '(555) 123-4567';
     if (!settings.email) settings.email = process.env.COMPANY_EMAIL || 'info@minnahelectricals.com';
     if (!settings.location) settings.location = process.env.COMPANY_LOCATION || 'Serving the Local Area';
+    if (!settings.whatsapp) settings.whatsapp = '';
 
     return res.status(200).json({
       success: true,
@@ -605,6 +653,399 @@ router.get('/settings', (req, res) => {
 });
 
 /**
+ * GET /api/orders/track
+ * Track orders by phone number (public route)
+ */
+router.get('/orders/track', (req, res) => {
+  try {
+    const { phone, orderId } = req.query;
+    
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone number is required',
+      });
+    }
+
+    const dbInstance = getDb();
+    let query = 'SELECT * FROM orders WHERE customer_phone = ?';
+    const params = [phone];
+
+    // If orderId is provided, filter by it too
+    if (orderId) {
+      query += ' AND id = ?';
+      params.push(parseInt(orderId));
+    }
+
+    query += ' ORDER BY created_at DESC';
+
+    const result = dbInstance.exec(query, params);
+    
+    const orders = result[0] ? result[0].values.map(row => ({
+      id: row[0],
+      customer_name: row[1],
+      customer_phone: row[2],
+      customer_email: row[3],
+      product_id: row[4],
+      product_name: row[5],
+      product_price: row[6],
+      quantity: row[7],
+      notes: row[8],
+      order_source: row[9],
+      status: row[10],
+      created_at: row[11]
+    })) : [];
+
+    return res.status(200).json({
+      success: true,
+      count: orders.length,
+      orders: orders,
+    });
+
+  } catch (error) {
+    console.error('✗ Error tracking orders:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while tracking orders.',
+    });
+  }
+});
+
+/**
+ * GET /api/products/:id/reviews
+ * Get approved reviews for a product (public route)
+ */
+router.get('/products/:id/reviews', (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+    const dbInstance = getDb();
+    const result = dbInstance.exec(
+      'SELECT * FROM reviews WHERE product_id = ? AND status = ? ORDER BY created_at DESC',
+      [productId, 'approved']
+    );
+    
+    const reviews = result[0] ? result[0].values.map(row => ({
+      id: row[0],
+      product_id: row[1],
+      customer_name: row[2],
+      customer_email: row[3],
+      rating: row[4],
+      review_text: row[5],
+      status: row[6],
+      created_at: row[7]
+    })) : [];
+
+    // Calculate average rating
+    const avgRating = reviews.length > 0 
+      ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+      : 0;
+
+    return res.status(200).json({
+      success: true,
+      count: reviews.length,
+      average_rating: avgRating,
+      reviews: reviews,
+    });
+
+  } catch (error) {
+    console.error('✗ Error fetching reviews:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching reviews.',
+    });
+  }
+});
+
+/**
+ * POST /api/products/:id/reviews
+ * Submit a review for a product (public route)
+ */
+router.post('/products/:id/reviews', async (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+    const { customer_name, customer_email, rating, review_text } = req.body;
+
+    // Validate required fields
+    if (!customer_name || !rating) {
+      return res.status(400).json({
+        success: false,
+        message: 'Customer name and rating are required',
+      });
+    }
+
+    // Validate rating
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rating must be between 1 and 5',
+      });
+    }
+
+    // Verify product exists
+    const dbInstance = getDb();
+    const productResult = dbInstance.exec('SELECT id FROM products WHERE id = ?', [productId]);
+    if (!productResult[0] || !productResult[0].values[0]) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found',
+      });
+    }
+
+    // Insert review
+    dbInstance.run(
+      `INSERT INTO reviews (product_id, customer_name, customer_email, rating, review_text) VALUES (?, ?, ?, ?, ?)`,
+      [productId, customer_name.trim(), customer_email?.trim() || null, rating, review_text?.trim() || null]
+    );
+
+    const result = dbInstance.exec('SELECT last_insert_rowid() as id');
+    const reviewId = result[0].values[0][0];
+    saveDatabase();
+
+    console.log(`✓ Review created: #${reviewId} for product #${productId}`);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Review submitted successfully! It will be published after moderation.',
+      review_id: reviewId,
+    });
+
+  } catch (error) {
+    console.error('✗ Error creating review:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while submitting your review.',
+    });
+  }
+});
+
+/**
+ * GET /api/wishlist/:session_id
+ * Get wishlist items for a session (public route)
+ */
+router.get('/wishlist/:session_id', (req, res) => {
+  try {
+    const sessionId = req.params.session_id;
+    const dbInstance = getDb();
+    
+    const result = dbInstance.exec(`
+      SELECT w.*, p.name, p.price, p.image_url, p.category 
+      FROM wishlist w 
+      LEFT JOIN products p ON w.product_id = p.id 
+      WHERE w.session_id = ? 
+      ORDER BY w.created_at DESC
+    `, [sessionId]);
+
+    const wishlistItems = result[0] ? result[0].values.map(row => ({
+      id: row[0],
+      product_id: row[1],
+      session_id: row[2],
+      created_at: row[3],
+      name: row[4],
+      price: row[5],
+      image_url: row[6],
+      category: row[7]
+    })) : [];
+
+    return res.status(200).json({
+      success: true,
+      count: wishlistItems.length,
+      wishlist: wishlistItems,
+    });
+
+  } catch (error) {
+    console.error('✗ Error fetching wishlist:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching wishlist.',
+    });
+  }
+});
+
+/**
+ * POST /api/wishlist/:session_id/add
+ * Add item to wishlist (public route)
+ */
+router.post('/wishlist/:session_id/add', (req, res) => {
+  try {
+    const sessionId = req.params.session_id;
+    const { product_id } = req.body;
+
+    if (!product_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Product ID is required',
+      });
+    }
+
+    const dbInstance = getDb();
+    
+    // Verify product exists
+    const productResult = dbInstance.exec('SELECT id FROM products WHERE id = ?', [product_id]);
+    if (!productResult[0] || !productResult[0].values[0]) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found',
+      });
+    }
+
+    // Add to wishlist (ignore if already exists due to UNIQUE constraint)
+    try {
+      dbInstance.run(
+        'INSERT INTO wishlist (product_id, session_id) VALUES (?, ?)',
+        [product_id, sessionId]
+      );
+      saveDatabase();
+    } catch (err) {
+      // Item already in wishlist
+      return res.status(200).json({
+        success: true,
+        message: 'Item already in wishlist',
+        already_exists: true,
+      });
+    }
+
+    console.log(`✓ Item added to wishlist: product #${product_id}`);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Item added to wishlist',
+    });
+
+  } catch (error) {
+    console.error('✗ Error adding to wishlist:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while adding to wishlist.',
+    });
+  }
+});
+
+/**
+ * DELETE /api/wishlist/:session_id/remove/:product_id
+ * Remove item from wishlist (public route)
+ */
+router.delete('/wishlist/:session_id/remove/:product_id', (req, res) => {
+  try {
+    const sessionId = req.params.session_id;
+    const productId = parseInt(req.params.product_id);
+
+    const dbInstance = getDb();
+    dbInstance.run(
+      'DELETE FROM wishlist WHERE session_id = ? AND product_id = ?',
+      [sessionId, productId]
+    );
+    saveDatabase();
+
+    console.log(`✓ Item removed from wishlist: product #${productId}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Item removed from wishlist',
+    });
+
+  } catch (error) {
+    console.error('✗ Error removing from wishlist:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while removing from wishlist.',
+    });
+  }
+});
+
+/**
+ * GET /api/customer-info/:session_id
+ * Get saved customer info for quick checkout (public route)
+ */
+router.get('/customer-info/:session_id', (req, res) => {
+  try {
+    const sessionId = req.params.session_id;
+    const dbInstance = getDb();
+    
+    const result = dbInstance.exec(
+      'SELECT * FROM customer_info WHERE session_id = ?',
+      [sessionId]
+    );
+
+    let customerInfo = null;
+    if (result[0] && result[0].values[0]) {
+      customerInfo = {
+        id: result[0].values[0][0],
+        session_id: result[0].values[0][1],
+        customer_name: result[0].values[0][2],
+        customer_phone: result[0].values[0][3],
+        customer_email: result[0].values[0][4],
+        created_at: result[0].values[0][5],
+        updated_at: result[0].values[0][6]
+      };
+    }
+
+    return res.status(200).json({
+      success: true,
+      customer_info: customerInfo,
+    });
+
+  } catch (error) {
+    console.error('✗ Error fetching customer info:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching customer info.',
+    });
+  }
+});
+
+/**
+ * POST /api/customer-info/:session_id
+ * Save customer info for quick checkout (public route)
+ */
+router.post('/customer-info/:session_id', (req, res) => {
+  try {
+    const sessionId = req.params.session_id;
+    const { customer_name, customer_phone, customer_email } = req.body;
+
+    const dbInstance = getDb();
+    
+    // Check if record exists
+    const existingResult = dbInstance.exec(
+      'SELECT id FROM customer_info WHERE session_id = ?',
+      [sessionId]
+    );
+
+    if (existingResult[0] && existingResult[0].values[0]) {
+      // Update existing record
+      dbInstance.run(
+        `UPDATE customer_info 
+         SET customer_name = ?, customer_phone = ?, customer_email = ?, updated_at = CURRENT_TIMESTAMP 
+         WHERE session_id = ?`,
+        [customer_name?.trim() || null, customer_phone?.trim() || null, customer_email?.trim() || null, sessionId]
+      );
+    } else {
+      // Insert new record
+      dbInstance.run(
+        `INSERT INTO customer_info (session_id, customer_name, customer_phone, customer_email) 
+         VALUES (?, ?, ?, ?)`,
+        [sessionId, customer_name?.trim() || null, customer_phone?.trim() || null, customer_email?.trim() || null]
+      );
+    }
+
+    saveDatabase();
+
+    console.log(`✓ Customer info saved for session: ${sessionId}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Customer information saved',
+    });
+
+  } catch (error) {
+    console.error('✗ Error saving customer info:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while saving customer info.',
+    });
+  }
+});
+
+/**
  * GET /api/health
  * Health check endpoint
  */
@@ -616,6 +1057,194 @@ router.get('/health', (req, res) => {
     r2_configured: r2Sync.isConfigured(),
     email_configured: !!transporter,
   });
+});
+
+/**
+ * GET /api/orders/:id/invoice
+ * Generate PDF invoice for an order (public route)
+ */
+router.get('/orders/:id/invoice', async (req, res) => {
+  try {
+    const PDFDocument = require('pdfkit');
+    const orderId = parseInt(req.params.id);
+
+    const dbInstance = getDb();
+    const result = dbInstance.exec('SELECT * FROM orders WHERE id = ?', [orderId]);
+
+    if (!result[0] || !result[0].values[0]) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found',
+      });
+    }
+
+    const order = {
+      id: result[0].values[0][0],
+      customer_name: result[0].values[0][1],
+      customer_phone: result[0].values[0][2],
+      customer_email: result[0].values[0][3],
+      product_id: result[0].values[0][4],
+      product_name: result[0].values[0][5],
+      product_price: result[0].values[0][6],
+      quantity: result[0].values[0][7],
+      notes: result[0].values[0][8],
+      order_source: result[0].values[0][9],
+      status: result[0].values[0][10],
+      created_at: result[0].values[0][11]
+    };
+
+    // Get settings
+    const settingsResult = dbInstance.exec('SELECT key, value FROM settings');
+    const settings = {};
+    if (settingsResult[0]) {
+      settingsResult[0].values.forEach(row => {
+        settings[row[0]] = row[1];
+      });
+    }
+
+    const total = order.product_price * order.quantity;
+
+    // Create PDF
+    const doc = new PDFDocument({ margin: 50 });
+    const chunks = [];
+
+    doc.on('data', chunk => chunks.push(chunk));
+    doc.on('end', () => {
+      const pdfBuffer = Buffer.concat(chunks);
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="invoice-${order.id}.pdf"`,
+        'Content-Length': pdfBuffer.length
+      });
+      res.send(pdfBuffer);
+    });
+
+    // Header
+    doc.fillColor('#0F172A').rect(0, 0, 600, 120).fill();
+    doc.fillColor('#F59E0B').rect(0, 110, 600, 10).fill();
+
+    // Company info
+    doc.fillColor('#FFFFFF').fontSize(24).font('Helvetica-Bold').text('Minnah Electricals', 50, 30);
+    doc.fontSize(10).text(settings.location || 'Serving the Local Area', 50, 55);
+    doc.text(`Phone: ${settings.phone || '(555) 123-4567'}`, 50, 70);
+    doc.text(`Email: ${settings.email || 'info@minnahelectricals.com'}`, 50, 85);
+
+    // Invoice title
+    doc.fillColor('#0F172A').fontSize(20).font('Helvetica-Bold').text('INVOICE', 400, 30);
+    doc.fontSize(10).text(`Invoice #: ${order.id}`, 400, 55);
+    doc.text(`Date: ${new Date(order.created_at).toLocaleDateString()}`, 400, 70);
+    doc.text(`Status: ${order.status}`, 400, 85);
+
+    // Customer info
+    doc.fillColor('#0F172A').fontSize(12).font('Helvetica-Bold').text('Bill To:', 50, 150);
+    doc.fontSize(10).font('Helvetica').text(order.customer_name, 50, 170);
+    doc.text(`Phone: ${order.customer_phone}`, 50, 185);
+    if (order.customer_email) doc.text(`Email: ${order.customer_email}`, 50, 200);
+
+    // Table header
+    doc.fillColor('#F59E0B').rect(50, 230, 500, 25).fill();
+    doc.fillColor('#0F172A').fontSize(10).font('Helvetica-Bold')
+      .text('Product', 60, 245)
+      .text('Qty', 350, 245)
+      .text('Price', 420, 245)
+      .text('Total', 480, 245);
+
+    // Table row
+    doc.fillColor('#FFFFFF').font('Helvetica')
+      .text(order.product_name || 'Unknown Product', 60, 270)
+      .text(order.quantity.toString(), 350, 270)
+      .text(`₵${order.product_price.toFixed(2)}`, 420, 270)
+      .text(`₵${total.toFixed(2)}`, 480, 270);
+
+    // Total
+    doc.fillColor('#F59E0B').rect(350, 295, 150, 30).fill();
+    doc.fillColor('#0F172A').fontSize(12).font('Helvetica-Bold')
+      .text('TOTAL', 360, 310)
+      .text(`₵${total.toFixed(2)}`, 480, 310);
+
+    // Notes
+    if (order.notes) {
+      doc.fillColor('#0F172A').fontSize(12).font('Helvetica-Bold').text('Notes:', 50, 350);
+      doc.fontSize(10).font('Helvetica').text(order.notes, 50, 370);
+    }
+
+    // Footer
+    doc.fillColor('#94A3B8').fontSize(8).font('Helvetica')
+      .text('Thank you for choosing Minnah Electricals!', 50, 550)
+      .text('Professional Electrical Services', 50, 565);
+
+    doc.end();
+
+  } catch (error) {
+    console.error('✗ Error generating invoice:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while generating the invoice.',
+    });
+  }
+});
+
+/**
+ * GET /api/push/vapid-key
+ * Get VAPID public key for push notifications
+ */
+router.get('/push/vapid-key', (req, res) => {
+  try {
+    const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || process.env.WEB_PUSH_PUBLIC_KEY;
+    if (!vapidPublicKey) {
+      return res.status(200).json({
+        success: false,
+        message: 'Push notifications not configured'
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      publicKey: vapidPublicKey
+    });
+  } catch (error) {
+    console.error('✗ Error getting VAPID key:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred'
+    });
+  }
+});
+
+/**
+ * POST /api/push/subscribe
+ * Save push subscription to database
+ */
+router.post('/push/subscribe', (req, res) => {
+  try {
+    const { session_id, endpoint, keys } = req.body;
+
+    if (!session_id || !endpoint) {
+      return res.status(400).json({
+        success: false,
+        message: 'Session ID and endpoint are required'
+      });
+    }
+
+    const dbInstance = getDb();
+    dbInstance.run(
+      'INSERT OR IGNORE INTO push_subscriptions (session_id, endpoint, keys) VALUES (?, ?, ?)',
+      [session_id, endpoint, keys || '{}']
+    );
+    saveDatabase();
+
+    console.log(`✓ Push subscription saved for session: ${session_id}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Push subscription saved successfully'
+    });
+  } catch (error) {
+    console.error('✗ Error saving push subscription:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while saving subscription'
+    });
+  }
 });
 
 module.exports = router;

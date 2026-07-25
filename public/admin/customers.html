@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Customer database">
+  <title>Customers | Minnah Electricals</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any">
+  <link rel="icon" type="image/jpeg" href="/assets/logo.jpg" sizes="32x32">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { navy: '#0F172A', amber: '#F59E0B', 'amber-dark': '#D97706' }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <header class="bg-navy text-white shadow-lg">
+    <div class="container mx-auto px-4">
+      <div class="flex items-center justify-between py-4">
+        <a href="/admin/index.html" class="flex items-center space-x-3">
+          <img src="/assets/logo.jpg" alt="Logo" class="h-12 w-12 rounded-full object-cover border-2 border-amber">
+          <div>
+            <h1 class="text-xl font-bold">Minnah Electricals</h1>
+            <p class="text-xs text-gray-300">Admin - Customers</p>
+          </div>
+        </a>
+        <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-semibold transition">Log Out</button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="bg-white shadow-sm border-b border-gray-200">
+    <div class="container mx-auto px-4">
+      <div class="flex space-x-6 overflow-x-auto">
+        <a href="/admin/index.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Dashboard</a>
+        <a href="/admin/leads.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Leads</a>
+        <a href="/admin/products.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Products</a>
+        <a href="/admin/orders.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Orders</a>
+        <a href="/admin/portfolio.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Portfolio</a>
+        <a href="/admin/gallery.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Gallery</a>
+        <a href="/admin/analytics.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Analytics</a>
+        <a href="/admin/customers.html" class="py-4 px-1 border-b-2 border-amber text-amber font-semibold text-sm">Customers</a>
+        <a href="/admin/inventory.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Inventory</a>
+        <a href="/admin/settings.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Settings</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+      <h2 class="text-2xl font-bold text-navy mb-2">Customer Database</h2>
+      <p class="text-gray-500">View and manage your customers</p>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4 mb-6">
+      <input type="text" id="customerSearch" onkeyup="searchCustomers()" placeholder="Search customers by name, phone, or email..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
+    </div>
+
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-navy text-white">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Name</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Phone</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Email</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Orders</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Total Spent</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Last Order</th>
+            </tr>
+          </thead>
+          <tbody id="customersTableBody" class="bg-white divide-y divide-gray-200">
+            <tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">Loading customers...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const token = localStorage.getItem('adminToken');
+    if (!token) { window.location.href = '/admin/login.html'; }
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('adminToken');
+      window.location.href = '/admin/login.html';
+    });
+
+    async function loadCustomers() {
+      try {
+        const response = await fetch('/api/admin/customers', { headers: { 'Authorization': `Bearer ${token}` } });
+        const data = await response.json();
+        if (data.success) renderCustomers(data.customers);
+      } catch (error) { console.error('Error loading customers:', error); showMessage('Failed to load customers', 'error'); }
+    }
+
+    function renderCustomers(customers) {
+      const tbody = document.getElementById('customersTableBody');
+      if (customers.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No customers found</td></tr>'; return; }
+      tbody.innerHTML = customers.map(c => `
+        <tr class="hover:bg-gray-50">
+          <td class="px-6 py-4 text-sm font-medium text-navy">${c.customer_name}</td>
+          <td class="px-6 py-4 text-sm text-gray-900">${c.customer_phone}</td>
+          <td class="px-6 py-4 text-sm text-gray-900">${c.customer_email || 'N/A'}</td>
+          <td class="px-6 py-4 text-sm text-gray-900">${c.order_count}</td>
+          <td class="px-6 py-4 text-sm font-bold text-amber">₵${parseFloat(c.total_spent).toFixed(2)}</td>
+          <td class="px-6 py-4 text-sm text-gray-900">${new Date(c.last_order_date).toLocaleDateString()}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function searchCustomers() {
+      const searchTerm = document.getElementById('customerSearch').value;
+      try {
+        const response = await fetch(`/api/admin/customers?search=${encodeURIComponent(searchTerm)}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const data = await response.json();
+        if (data.success) renderCustomers(data.customers);
+      } catch (error) { console.error('Error searching customers:', error); }
+    }
+
+    function showMessage(message, type) {
+      const div = document.createElement('div');
+      div.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
+      div.textContent = message;
+      document.body.appendChild(div);
+      setTimeout(() => div.remove(), 3000);
+    }
+
+    document.addEventListener('DOMContentLoaded', loadCustomers);
+  </script>
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Gallery management">
+  <title>Gallery | Minnah Electricals</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any">
+  <link rel="icon" type="image/jpeg" href="/assets/logo.jpg" sizes="32x32">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { navy: '#0F172A', amber: '#F59E0B', 'amber-dark': '#D97706' }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <header class="bg-navy text-white shadow-lg">
+    <div class="container mx-auto px-4">
+      <div class="flex items-center justify-between py-4">
+        <a href="/admin/index.html" class="flex items-center space-x-3">
+          <img src="/assets/logo.jpg" alt="Logo" class="h-12 w-12 rounded-full object-cover border-2 border-amber">
+          <div>
+            <h1 class="text-xl font-bold">Minnah Electricals</h1>
+            <p class="text-xs text-gray-300">Admin - Gallery</p>
+          </div>
+        </a>
+        <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-semibold transition">Log Out</button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="bg-white shadow-sm border-b border-gray-200">
+    <div class="container mx-auto px-4">
+      <div class="flex space-x-6 overflow-x-auto">
+        <a href="/admin/index.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Dashboard</a>
+        <a href="/admin/leads.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Leads</a>
+        <a href="/admin/products.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Products</a>
+        <a href="/admin/orders.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Orders</a>
+        <a href="/admin/portfolio.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Portfolio</a>
+        <a href="/admin/gallery.html" class="py-4 px-1 border-b-2 border-amber text-amber font-semibold text-sm">Gallery</a>
+        <a href="/admin/analytics.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Analytics</a>
+        <a href="/admin/customers.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Customers</a>
+        <a href="/admin/inventory.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Inventory</a>
+        <a href="/admin/settings.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Settings</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+      <button id="addGalleryBtn" class="bg-amber hover:bg-amber-dark text-navy px-6 py-3 rounded-lg font-bold transition flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        Add Gallery Image
+      </button>
+    </div>
+
+    <!-- Gallery Modal -->
+    <div id="galleryModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-screen overflow-y-auto">
+        <div class="p-8">
+          <div class="flex justify-between items-center mb-6">
+            <h2 id="galleryModalTitle" class="text-2xl font-bold text-navy">Add Gallery Image</h2>
+            <button id="closeGalleryModal" class="text-gray-500 hover:text-gray-700">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+          
+          <form id="galleryForm" class="space-y-4">
+            <input type="hidden" id="galleryId">
+            
+            <div>
+              <label class="block text-gray-700 text-sm font-semibold mb-2">Image Title</label>
+              <input type="text" id="galleryTitle" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="e.g., Project Site">
+            </div>
+
+            <div>
+              <label class="block text-gray-700 text-sm font-semibold mb-2">Category</label>
+              <select id="galleryCategory" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
+                <option value="">Select a category</option>
+                <option value="Projects">Projects</option>
+                <option value="Team">Team</option>
+                <option value="Equipment">Equipment</option>
+                <option value="Events">Events</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-gray-700 text-sm font-semibold mb-2">Description</label>
+              <textarea id="galleryDescription" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="Image description..."></textarea>
+            </div>
+
+            <div>
+              <label class="block text-gray-700 text-sm font-semibold mb-2">Image *</label>
+              <input type="file" id="galleryImage" accept="image/*" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
+              <p class="text-xs text-gray-500 mt-1">Upload an image from your device (JPG, PNG, GIF)</p>
+              <div id="galleryImagePreview" class="mt-2 hidden">
+                <img id="galleryPreviewImg" src="" alt="Preview" class="h-32 w-32 object-cover rounded-lg border-2 border-amber">
+              </div>
+            </div>
+
+            <div class="flex gap-3 pt-4">
+              <button type="submit" class="flex-1 bg-amber hover:bg-amber-dark text-navy font-bold py-3 rounded-lg transition">Save Gallery Image</button>
+              <button type="button" id="cancelGalleryBtn" class="flex-1 bg-gray-300 hover:bg-gray-400 text-navy font-bold py-3 rounded-lg transition">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gallery Grid -->
+    <div class="bg-white rounded-lg shadow p-6">
+      <div id="galleryGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+      <div id="galleryEmptyState" class="hidden text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No gallery images yet</h3>
+        <p class="mt-1 text-sm text-gray-500">Get started by adding your first gallery image.</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const token = localStorage.getItem('adminToken');
+    if (!token) { window.location.href = '/admin/login.html'; }
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('adminToken');
+      window.location.href = '/admin/login.html';
+    });
+
+    let gallery = [];
+    let editingId = null;
+
+    const addBtn = document.getElementById('addGalleryBtn');
+    const modal = document.getElementById('galleryModal');
+    const closeBtn = document.getElementById('closeGalleryModal');
+    const cancelBtn = document.getElementById('cancelGalleryBtn');
+    const form = document.getElementById('galleryForm');
+    const imgInput = document.getElementById('galleryImage');
+    const imgPreview = document.getElementById('galleryImagePreview');
+    const previewImg = document.getElementById('galleryPreviewImg');
+
+    addBtn.addEventListener('click', () => openModal());
+    closeBtn.addEventListener('click', closeModalFn);
+    cancelBtn.addEventListener('click', closeModalFn);
+    form.addEventListener('submit', handleSubmit);
+
+    imgInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => { previewImg.src = event.target.result; imgPreview.classList.remove('hidden'); };
+        reader.readAsDataURL(file);
+      } else { imgPreview.classList.add('hidden'); }
+    });
+
+    async function loadGallery() {
+      try {
+        const res = await fetch('/api/admin/gallery', { headers: { 'Authorization': `Bearer ${token}` } });
+        const data = await res.json();
+        if (data.success) { gallery = data.gallery; render(); }
+      } catch (error) { console.error('Error loading gallery:', error); showMessage('Failed to load gallery', 'error'); }
+    }
+
+    function render() {
+      const grid = document.getElementById('galleryGrid');
+      const empty = document.getElementById('galleryEmptyState');
+      if (gallery.length === 0) { grid.innerHTML = ''; empty.classList.remove('hidden'); return; }
+      empty.classList.add('hidden');
+      grid.innerHTML = gallery.map(item => `
+        <div class="relative group">
+          <img src="${item.image_url}" alt="${item.title || 'Gallery image'}" class="w-full h-48 object-cover rounded-lg border-2 border-amber">
+          <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition rounded-lg flex items-center justify-center">
+            <div class="hidden group-hover:flex gap-2">
+              <button onclick="editItem(${item.id})" class="bg-amber text-navy px-3 py-1 rounded font-semibold text-sm">Edit</button>
+              <button onclick="deleteItem(${item.id})" class="bg-red-600 text-white px-3 py-1 rounded font-semibold text-sm">Delete</button>
+            </div>
+          </div>
+          ${item.title ? `<div class="mt-2 text-sm font-medium text-navy">${item.title}</div>` : ''}
+        </div>`).join('');
+    }
+
+    function openModal(item = null) {
+      editingId = item ? item.id : null;
+      document.getElementById('galleryModalTitle').textContent = item ? 'Edit Gallery Image' : 'Add Gallery Image';
+      if (item) {
+        document.getElementById('galleryId').value = item.id;
+        document.getElementById('galleryTitle').value = item.title || '';
+        document.getElementById('galleryCategory').value = item.category || '';
+        document.getElementById('galleryDescription').value = item.description || '';
+        if (item.image_url) { previewImg.src = item.image_url; imgPreview.classList.remove('hidden'); }
+      } else { form.reset(); document.getElementById('galleryId').value = ''; imgPreview.classList.add('hidden'); }
+      modal.classList.remove('hidden');
+    }
+
+    function closeModalFn() { modal.classList.add('hidden'); editingId = null; }
+
+    async function handleSubmit(e) {
+      e.preventDefault();
+      const data = {
+        title: document.getElementById('galleryTitle').value,
+        category: document.getElementById('galleryCategory').value,
+        description: document.getElementById('galleryDescription').value
+      };
+
+      const file = document.getElementById('galleryImage').files[0];
+      if (file) {
+        try {
+          const fd = new FormData(); fd.append('image', file);
+          const upRes = await fetch('/api/admin/upload', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd });
+          const upData = await upRes.json();
+          if (upData.success) data.image_url = upData.url;
+          else { showMessage(upData.message || 'Failed to upload image', 'error'); return; }
+        } catch (error) { showMessage('Failed to upload image', 'error'); return; }
+      } else if (!editingId) { showMessage('Please upload an image', 'error'); return; }
+
+      try {
+        const url = editingId ? `/api/admin/gallery/${editingId}` : '/api/admin/gallery';
+        const method = editingId ? 'PUT' : 'POST';
+        const res = await fetch(url, { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        const result = await res.json();
+        if (result.success) { showMessage(editingId ? 'Gallery image updated!' : 'Gallery image added!', 'success'); closeModalFn(); loadGallery(); }
+        else showMessage(result.message || 'Failed to save', 'error');
+      } catch (error) { showMessage('Failed to save', 'error'); }
+    }
+
+    async function editItem(id) { const item = gallery.find(g => g.id === id); if (item) openModal(item); }
+
+    async function deleteItem(id) {
+      if (!confirm('Are you sure?')) return;
+      try {
+        const res = await fetch(`/api/admin/gallery/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+        const data = await res.json();
+        if (data.success) { showMessage('Gallery image deleted!', 'success'); loadGallery(); }
+        else showMessage(data.message || 'Failed to delete', 'error');
+      } catch (error) { showMessage('Failed to delete', 'error'); }
+    }
+
+    function showMessage(message, type) {
+      const div = document.createElement('div');
+      div.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
+      div.textContent = message; document.body.appendChild(div);
+      setTimeout(() => div.remove(), 3000);
+    }
+
+    document.addEventListener('DOMContentLoaded', loadGallery);
+  </script>
+</body>
+</html>

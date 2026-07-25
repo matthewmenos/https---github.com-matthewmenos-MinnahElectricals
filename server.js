@@ -38,6 +38,20 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Inject push-notifications.js script into HTML responses (public pages only)
+app.use((req, res, next) => {
+  if (req.path.endsWith('.html') && !req.path.includes('/admin/')) {
+    const originalSend = res.send;
+    res.send = function(content) {
+      if (typeof content === 'string' && content.includes('</body>')) {
+        content = content.replace('</body>', '<script src="/js/push-notifications.js"></script></body>');
+      }
+      return originalSend.call(this, content);
+    };
+  }
+  next();
+});
+
 // API Routes
 app.use('/api', apiRoutes);
 

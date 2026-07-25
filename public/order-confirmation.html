@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Order confirmation - Minnah Electricals">
+  <title>Order Confirmation | Minnah Electricals</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any">
+  <link rel="icon" type="image/jpeg" href="/assets/logo.jpg" sizes="32x32">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: '#0F172A',
+            amber: '#F59E0B',
+            'amber-dark': '#D97706',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .fade-in { animation: fadeIn 0.5s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="bg-gray-50">
+
+  <!-- Header -->
+  <header class="bg-navy text-white shadow-lg">
+    <div class="container mx-auto px-4">
+      <div class="flex items-center justify-between py-4">
+        <div class="flex items-center space-x-3">
+          <img src="/assets/logo.jpg" alt="Minnah Electricals Logo" class="h-12 w-12 rounded-full object-cover border-2 border-amber">
+          <div>
+            <h1 class="text-xl font-bold">Minnah Electricals</h1>
+            <p class="text-xs text-gray-300">Professional Services</p>
+          </div>
+        </div>
+        <a href="/" class="bg-amber hover:bg-amber-dark text-navy px-6 py-2 rounded-lg font-semibold transition">Back to Shop</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Confirmation Content -->
+  <section class="py-20">
+    <div class="container mx-auto px-4">
+      <div class="max-w-3xl mx-auto">
+        
+        <!-- Success Message -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8 fade-in">
+          <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
+              <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+            <h1 class="text-3xl font-bold text-navy mb-2">Order Confirmed!</h1>
+            <p class="text-gray-600">Thank you for your order. We will contact you shortly to confirm the details.</p>
+          </div>
+
+          <!-- Order Details -->
+          <div id="orderDetails" class="space-y-6">
+            <!-- Order ID and Status -->
+            <div class="bg-gray-50 rounded-lg p-6">
+              <div class="flex justify-between items-center">
+                <div>
+                  <p class="text-sm text-gray-500 mb-1">Order ID</p>
+                  <p id="orderId" class="text-2xl font-bold text-navy">#--</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-sm text-gray-500 mb-1">Status</p>
+                  <span id="orderStatus" class="inline-block px-4 py-2 bg-yellow-100 text-yellow-800 rounded-full font-semibold">Pending</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Customer Information -->
+            <div class="bg-gray-50 rounded-lg p-6">
+              <h3 class="text-lg font-bold text-navy mb-4">Customer Information</h3>
+              <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                  <p class="text-sm text-gray-500">Name</p>
+                  <p id="customerName" class="font-semibold text-navy">--</p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500">Phone</p>
+                  <p id="customerPhone" class="font-semibold text-navy">--</p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500">Email</p>
+                  <p id="customerEmail" class="font-semibold text-navy">--</p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500">Order Date</p>
+                  <p id="orderDate" class="font-semibold text-navy">--</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Products Ordered -->
+            <div class="bg-gray-50 rounded-lg p-6">
+              <h3 class="text-lg font-bold text-navy mb-4">Products Ordered</h3>
+              <div id="productsList" class="space-y-3">
+                <!-- Products will be populated here -->
+              </div>
+              
+              <!-- Total -->
+              <div class="mt-6 pt-4 border-t-2 border-navy">
+                <div class="flex justify-between items-center">
+                  <span class="text-xl font-bold text-navy">Total</span>
+                  <span id="orderTotal" class="text-2xl font-bold text-amber">₵0.00</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Notes -->
+            <div id="notesSection" class="bg-gray-50 rounded-lg p-6 hidden">
+              <h3 class="text-lg font-bold text-navy mb-2">Notes</h3>
+              <p id="orderNotes" class="text-gray-700">--</p>
+            </div>
+
+            <!-- Next Steps -->
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-lg">
+              <h3 class="text-lg font-bold text-navy mb-2">What happens next?</h3>
+              <ul class="space-y-2 text-gray-700">
+                <li class="flex items-start">
+                  <svg class="w-5 h-5 text-blue-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span>We'll review your order and contact you within 24 hours</span>
+                </li>
+                <li class="flex items-start">
+                  <svg class="w-5 h-5 text-blue-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span>Keep your phone ready for our call</span>
+                </li>
+                <li class="flex items-start">
+                  <svg class="w-5 h-5 text-blue-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span>Save your order ID for future reference</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex flex-col md:flex-row gap-4">
+              <a href="/shop.html" class="flex-1 bg-amber hover:bg-amber-dark text-navy text-center font-bold py-3 rounded-lg transition">
+                Continue Shopping
+              </a>
+              <button onclick="window.print()" class="flex-1 bg-navy hover:bg-gray-800 text-white text-center font-bold py-3 rounded-lg transition">
+                Print Confirmation
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Order Tracking -->
+        <div class="bg-white rounded-lg shadow-lg p-8 fade-in">
+          <h2 class="text-2xl font-bold text-navy mb-4">Track Your Order</h2>
+          <p class="text-gray-600 mb-6">Enter your phone number to check your order status</p>
+          
+          <form id="trackingForm" class="space-y-4">
+            <div>
+              <label class="block text-gray-700 text-sm font-semibold mb-2">Phone Number</label>
+              <input type="tel" id="trackingPhone" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="Enter your phone number">
+            </div>
+            <button type="submit" class="w-full bg-amber hover:bg-amber-dark text-navy font-bold py-3 rounded-lg transition">
+              Track Order
+            </button>
+          </form>
+
+          <div id="trackingResults" class="mt-6 hidden">
+            <!-- Tracking results will appear here -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-navy text-white py-12">
+    <div class="container mx-auto px-4">
+      <div class="grid md:grid-cols-3 gap-8">
+        <div>
+          <div class="flex items-center space-x-3 mb-4">
+            <img src="/assets/logo.jpg" alt="Minnah Electricals Logo" class="h-10 w-10 rounded-full object-cover border-2 border-amber">
+            <h3 class="text-xl font-bold">Minnah Electricals</h3>
+          </div>
+          <p class="text-gray-300">Professional electrical services for residential and commercial properties.</p>
+        </div>
+        <div>
+          <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
+          <ul class="space-y-2">
+            <li><a href="/" class="text-gray-300 hover:text-amber transition">Home</a></li>
+            <li><a href="/services.html" class="text-gray-300 hover:text-amber transition">Services</a></li>
+            <li><a href="/shop.html" class="text-amber transition">Shop</a></li>
+            <li><a href="/contact.html" class="text-gray-300 hover:text-amber transition">Contact</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="text-lg font-semibold mb-4">Contact Info</h4>
+          <ul class="space-y-2 text-gray-300">
+            <li class="flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+              </svg>
+              <span data-setting="phone"></span>
+            </li>
+            <li class="flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+              </svg>
+              <span data-setting="email">info@minnahelectricals.com</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+        <p>&copy; <span id="currentYear"></span> Minnah Electricals. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/main.js"></script>
+  <script>
+    // Set current year
+    document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+    // Load order details from URL parameters
+    function loadOrderFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      const orderId = params.get('orderId');
+      const phone = params.get('phone');
+      
+      if (orderId && phone) {
+        // Fetch order details
+        fetch(`/api/orders/track?phone=${encodeURIComponent(phone)}&orderId=${orderId}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && data.orders.length > 0) {
+              displayOrderDetails(data.orders[0]);
+            } else {
+              showMessage('Order not found', 'error');
+            }
+          })
+          .catch(err => {
+            console.error('Error fetching order:', err);
+            showMessage('Failed to load order details', 'error');
+          });
+      }
+    }
+
+    // Display order details
+    function displayOrderDetails(order) {
+      document.getElementById('orderId').textContent = `#${order.id}`;
+      document.getElementById('orderStatus').textContent = order.status;
+      document.getElementById('customerName').textContent = order.customer_name;
+      document.getElementById('customerPhone').textContent = order.customer_phone;
+      document.getElementById('customerEmail').textContent = order.customer_email || 'N/A';
+      document.getElementById('orderDate').textContent = new Date(order.created_at).toLocaleString();
+      document.getElementById('orderTotal').textContent = `₵${(order.product_price * order.quantity).toFixed(2)}`;
+
+      // Display products
+      const productsList = document.getElementById('productsList');
+      productsList.innerHTML = `
+        <div class="bg-white p-4 rounded-lg border border-gray-200">
+          <div class="flex justify-between items-start">
+            <div class="flex-1">
+              <p class="font-semibold text-navy">${order.product_name || 'Product #' + order.product_id}</p>
+              <p class="text-sm text-gray-600">Quantity: ${order.quantity}</p>
+              <p class="text-sm text-gray-600">Price: ₵${parseFloat(order.product_price).toFixed(2)}</p>
+            </div>
+            <div class="text-right">
+              <p class="font-bold text-navy">₵${(order.product_price * order.quantity).toFixed(2)}</p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Display notes if exists
+      if (order.notes) {
+        document.getElementById('notesSection').classList.remove('hidden');
+        document.getElementById('orderNotes').textContent = order.notes;
+      }
+    }
+
+    // Order tracking form
+    document.getElementById('trackingForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const phone = document.getElementById('trackingPhone').value;
+      
+      try {
+        const response = await fetch(`/api/orders/track?phone=${encodeURIComponent(phone)}`);
+        const data = await response.json();
+        
+        const resultsDiv = document.getElementById('trackingResults');
+        
+        if (data.success && data.orders.length > 0) {
+          resultsDiv.classList.remove('hidden');
+          resultsDiv.innerHTML = `
+            <h4 class="font-bold text-navy mb-3">Your Orders (${data.orders.length})</h4>
+            <div class="space-y-3">
+              ${data.orders.map(order => `
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <div class="flex justify-between items-start mb-2">
+                    <div>
+                      <p class="font-bold text-navy">Order #${order.id}</p>
+                      <p class="text-sm text-gray-600">${new Date(order.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <span class="px-3 py-1 bg-${getStatusColor(order.status)} text-${getStatusColor(order.status)} rounded-full text-sm font-semibold">
+                      ${order.status}
+                    </span>
+                  </div>
+                  <p class="text-sm text-gray-700">${order.product_name || 'Product #' + order.product_id}</p>
+                  <p class="text-sm text-gray-600">Qty: ${order.quantity} | Total: ₵${(order.product_price * order.quantity).toFixed(2)}</p>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        } else {
+          resultsDiv.classList.remove('hidden');
+          resultsDiv.innerHTML = `
+            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-lg">
+              <p class="text-yellow-800">No orders found for this phone number.</p>
+            </div>
+          `;
+        }
+      } catch (err) {
+        console.error('Error tracking order:', err);
+        showMessage('Failed to track order', 'error');
+      }
+    });
+
+    function getStatusColor(status) {
+      switch(status) {
+        case 'Pending': return 'yellow-100 text-yellow-800';
+        case 'Confirmed': return 'blue-100 text-blue-800';
+        case 'Completed': return 'green-100 text-green-800';
+        case 'Cancelled': return 'red-100 text-red-800';
+        default: return 'gray-100 text-gray-800';
+      }
+    }
+
+    function showMessage(message, type) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
+      messageDiv.textContent = message;
+      document.body.appendChild(messageDiv);
+      
+      setTimeout(() => {
+        messageDiv.remove();
+      }, 3000);
+    }
+
+    // Load order on page load
+    loadOrderFromURL();
+  </script>
+</body>
+</html>

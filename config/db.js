@@ -70,8 +70,11 @@ async function initializeDatabase() {
       customer_phone TEXT NOT NULL,
       customer_email TEXT,
       product_id INTEGER NOT NULL,
+      product_name TEXT,
+      product_price REAL,
       quantity INTEGER DEFAULT 1,
       notes TEXT,
+      order_source TEXT DEFAULT 'website',
       status TEXT DEFAULT 'Pending',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (product_id) REFERENCES products(id)
@@ -116,6 +119,83 @@ async function initializeDatabase() {
     )
   `);
 
+  // Create reviews table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS reviews (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      customer_name TEXT NOT NULL,
+      customer_email TEXT,
+      rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+      review_text TEXT,
+      status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Create wishlist table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS wishlist (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      session_id TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+      UNIQUE(product_id, session_id)
+    )
+  `);
+
+  // Create customer_info table for quick checkout
+  db.run(`
+    CREATE TABLE IF NOT EXISTS customer_info (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT NOT NULL UNIQUE,
+      customer_name TEXT,
+      customer_phone TEXT,
+      customer_email TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Create templates table for communication templates
+  db.run(`
+    CREATE TABLE IF NOT EXISTS templates (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL CHECK (type IN ('email', 'sms', 'whatsapp')),
+      subject TEXT,
+      content TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Create push_subscriptions table for web push notifications
+  db.run(`
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT NOT NULL,
+      endpoint TEXT NOT NULL,
+      keys TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(session_id, endpoint)
+    )
+  `);
+
+  // Create sms_logs table for SMS delivery tracking
+  db.run(`
+    CREATE TABLE IF NOT EXISTS sms_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      phone TEXT NOT NULL,
+      message TEXT NOT NULL,
+      status TEXT NOT NULL CHECK (status IN ('sent', 'failed', 'pending')),
+      error_message TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // Create indexes
   db.run(`CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_leads_created_at ON leads(created_at DESC)`);
@@ -125,6 +205,8 @@ async function initializeDatabase() {
   db.run(`CREATE INDEX IF NOT EXISTS idx_portfolio_category ON portfolio(category)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_portfolio_featured ON portfolio(featured)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_gallery_category ON gallery(category)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_templates_type ON templates(type)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_sms_logs_status ON sms_logs(status)`);
 
   // Seed default admin user if none exists
   const userCount = db.exec('SELECT COUNT(*) as count FROM users')[0];
@@ -153,6 +235,62 @@ async function initializeDatabase() {
       db.run('INSERT INTO settings (key, value) VALUES (?, ?)', [key, value]);
     });
     console.log('✓ Default settings created');
+  }
+
+  // Seed default communication templates if none exist
+  const templatesCount = db.exec('SELECT COUNT(*) as count FROM templates')[0];
+  if (templatesCount && templatesCount.values[0][0] === 0) {
+    const defaultTemplates = [
+      {
+        name: 'lead_notification',
+        type: 'email',
+        subject: 'New Lead Received - {{service_needed}}',
+        content: 'A new lead has been received.\n\nName: {{customer_name}}\nPhone: {{phone}}\nEmail: {{email}}\nService: {{service_needed}}\nUrgency: {{urgency}}\nMessage: {{message}}\nDate: {{date}}\n\nPlease log in to the admin dashboard to manage this lead.'
+      },
+      {
+        name: 'order_confirmation',
+        type: 'email',
+        subject: 'Order Confirmation - #{{order_id}}',
+        content: 'Dear {{customer_name}},\n\nThank you for your order! We have received your order request and will contact you shortly.\n\nOrder ID: #{{order_id}}\nDate: {{date}}\nStatus: {{status}}\n\nWe will contact you to confirm the details.\n\nThank you for choosing {{company_name}}!'
+      },
+      {
+        name: 'order_status_update',
+        type: 'email',
+        subject: 'Order #{{order_id}} Status Update',
+        content: 'Dear {{customer_name}},\n\nYour order #{{order_id}} has been updated to: {{status}}\n\nThank you for choosing {{company_name}}!'
+      },
+      {
+        name: 'lead_notification_sms',
+        type: 'sms',
+        subject: null,
+        content: 'New Lead: {{customer_name}} - {{service_needed}} ({{urgency}}) - {{phone}}'
+      },
+      {
+        name: 'order_status_sms',
+        type: 'sms',
+        subject: null,
+        content: 'Order #{{order_id}} status updated to: {{status}}. Thank you for your business!'
+      },
+      {
+        name: 'auto_responder',
+        type: 'sms',
+        subject: null,
+        content: 'Thank you for contacting {{company_name}}! We are currently closed. Our business hours are {{open_hour}}AM - {{close_hour}}PM. We will contact you during business hours. Phone: {{phone}}'
+      },
+      {
+        name: 'auto_responder_whatsapp',
+        type: 'whatsapp',
+        subject: null,
+        content: 'Hello {{customer_name}}! Thank you for contacting {{company_name}}. We are currently closed. We will get back to you during business hours ({{open_hour}}AM - {{close_hour}}PM).'
+      }
+    ];
+    defaultTemplates.forEach(t => {
+      db.run(
+        'INSERT INTO templates (name, type, subject, content) VALUES (?, ?, ?, ?)',
+        [t.name, t.type, t.subject, t.content]
+      );
+    });
+    console.log('✓ Default communication templates created');
   }
 
   // Save database

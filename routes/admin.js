@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const r2Sync = require('../config/r2-sync');
 const { authMiddleware } = require('../middleware/auth');
+const { sendOrderConfirmationEmail, sendAdminNotificationEmail } = require('../config/email');
 require('dotenv').config();
 
 /**
@@ -508,12 +509,13 @@ router.get('/orders', authMiddleware, (req, res) => {
       customer_phone: row[2],
       customer_email: row[3],
       product_id: row[4],
-      quantity: row[5],
-      notes: row[6],
-      status: row[7],
-      created_at: row[8],
-      product_name: row[9],
-      product_price: row[10]
+      product_name: row[5],
+      product_price: row[6],
+      quantity: row[7],
+      notes: row[8],
+      order_source: row[9],
+      status: row[10],
+      created_at: row[11]
     })) : [];
 
     return res.status(200).json({
@@ -527,6 +529,120 @@ router.get('/orders', authMiddleware, (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'An error occurred while fetching orders.',
+    });
+  }
+});
+
+/**
+ * POST /api/admin/orders/manual
+ * Create a manual order with multiple products (protected route)
+ */
+router.post('/orders/manual', authMiddleware, (req, res) => {
+  try {
+    const { customer_name, customer_phone, customer_email, notes, order_source, products } = req.body;
+
+    if (!customer_name || !customer_phone || !products || !Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Customer name, phone, and at least one product are required',
+      });
+    }
+
+    const dbInstance = getDb();
+    const orderIds = [];
+
+    // Create one order record per product
+    products.forEach((productItem, index) => {
+      const { product_id, product_name, product_price, quantity } = productItem;
+
+      // Verify product exists in database
+      const productResult = dbInstance.exec('SELECT * FROM products WHERE id = ?', [product_id]);
+      const dbProduct = productResult[0] && productResult[0].values[0] ? {
+        id: productResult[0].values[0][0],
+        name: productResult[0].values[0][1],
+        price: productResult[0].values[0][3]
+      } : null;
+
+      // Use provided product details or fallback to database
+      const finalProductName = product_name || (dbProduct ? dbProduct.name : 'Unknown Product');
+      const finalProductPrice = product_price || (dbProduct ? dbProduct.price : 0);
+
+      dbInstance.run(
+        `INSERT INTO orders (customer_name, customer_phone, customer_email, product_id, product_name, product_price, quantity, notes, order_source, status) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          customer_name,
+          customer_phone,
+          customer_email || null,
+          product_id,
+          finalProductName,
+          finalProductPrice,
+          quantity || 1,
+          notes || null,
+          order_source || 'manual',
+          'Pending'
+        ]
+      );
+
+      const result = dbInstance.exec('SELECT last_insert_rowid() as id');
+      const orderId = result[0].values[0][0];
+      orderIds.push(orderId);
+    });
+
+    saveDatabase();
+
+    console.log(`✓ Manual order created: #${orderIds[0]} (${orderIds.length} items) - ${customer_name}`);
+
+    // Send email notifications (non-blocking)
+    if (customer_email) {
+      sendOrderConfirmationEmail(customer_email, customer_name, {
+        orderId: orderIds[0],
+        date: new Date().toISOString(),
+        status: 'Pending',
+        products: products.map(p => ({
+          name: p.product_name,
+          price: p.product_price,
+          quantity: p.quantity
+        })),
+        total: products.reduce((sum, p) => sum + (p.product_price * p.quantity), 0),
+        customerName: customer_name,
+        customerPhone: customer_phone,
+        customerEmail: customer_email,
+        notes: notes
+      }).catch(err => console.error('Manual order confirmation email error:', err.message));
+    }
+
+    sendAdminNotificationEmail({
+      orderId: orderIds[0],
+      date: new Date().toISOString(),
+      source: order_source || 'Manual',
+      customerName: customer_name,
+      customerPhone: customer_phone,
+      customerEmail: customer_email,
+      products: products.map(p => ({
+        name: p.product_name,
+        price: p.product_price,
+        quantity: p.quantity
+      })),
+      total: products.reduce((sum, p) => sum + (p.product_price * p.quantity), 0),
+      notes: notes
+    }).catch(err => console.error('Manual order admin notification email error:', err.message));
+
+    return res.status(201).json({
+      success: true,
+      message: `Manual order created successfully with ${orderIds.length} item(s)`,
+      orderIds: orderIds,
+      customer_name,
+      customer_phone,
+      customer_email,
+      products_count: orderIds.length
+    });
+
+  } catch (error) {
+    console.error('✗ Error creating manual order:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while creating the manual order.',
     });
   }
 });
@@ -958,6 +1074,279 @@ router.delete('/gallery/:id', authMiddleware, (req, res) => {
 
 
 /**
+ * GET /api/admin/analytics
+ * Get sales analytics (protected route)
+ */
+router.get('/analytics', authMiddleware, (req, res) => {
+  try {
+    const dbInstance = getDb();
+    const { period = '30' } = req.query; // days, default 30
+    const days = parseInt(period);
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    // Total revenue
+    const revenueResult = dbInstance.exec(`
+      SELECT SUM(product_price * quantity) as total_revenue 
+      FROM orders 
+      WHERE status = 'Completed' AND created_at >= ?
+    `, [startDate.toISOString()]);
+    const totalRevenue = revenueResult[0] && revenueResult[0].values[0] ? revenueResult[0].values[0][0] || 0 : 0;
+
+    // Total orders
+    const ordersResult = dbInstance.exec(`
+      SELECT COUNT(*) as count, 
+             SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed,
+             SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending,
+             SUM(CASE WHEN status = 'Confirmed' THEN 1 ELSE 0 END) as confirmed
+      FROM orders 
+      WHERE created_at >= ?
+    `, [startDate.toISOString()]);
+    const ordersStats = ordersResult[0] && ordersResult[0].values[0] ? {
+      total: ordersResult[0].values[0][0] || 0,
+      completed: ordersResult[0].values[0][1] || 0,
+      pending: ordersResult[0].values[0][2] || 0,
+      confirmed: ordersResult[0].values[0][3] || 0
+    } : { total: 0, completed: 0, pending: 0, confirmed: 0 };
+
+    // Top selling products
+    const topProductsResult = dbInstance.exec(`
+      SELECT product_id, product_name, SUM(quantity) as total_qty, SUM(product_price * quantity) as total_sales
+      FROM orders
+      WHERE created_at >= ?
+      GROUP BY product_id
+      ORDER BY total_qty DESC
+      LIMIT 10
+    `, [startDate.toISOString()]);
+    const topProducts = topProductsResult[0] ? topProductsResult[0].values.map(row => ({
+      product_id: row[0],
+      product_name: row[1],
+      total_quantity: row[2],
+      total_sales: row[3]
+    })) : [];
+
+    // Daily sales for chart
+    const dailySalesResult = dbInstance.exec(`
+      SELECT DATE(created_at) as date, SUM(product_price * quantity) as daily_total
+      FROM orders
+      WHERE created_at >= ? AND status = 'Completed'
+      GROUP BY DATE(created_at)
+      ORDER BY date ASC
+    `, [startDate.toISOString()]);
+    const dailySales = dailySalesResult[0] ? dailySalesResult[0].values.map(row => ({
+      date: row[0],
+      total: row[1] || 0
+    })) : [];
+
+    // Customer statistics
+    const customerStatsResult = dbInstance.exec(`
+      SELECT 
+        COUNT(DISTINCT customer_phone) as unique_customers,
+        COUNT(DISTINCT CASE WHEN customer_email != '' THEN customer_email END) as with_email,
+        SUM(CASE WHEN customer_email != '' THEN 1 ELSE 0 END) as email_subscribers
+      FROM orders
+      WHERE created_at >= ?
+    `, [startDate.toISOString()]);
+    const customerStats = customerStatsResult[0] && customerStatsResult[0].values[0] ? {
+      unique_customers: customerStatsResult[0].values[0][0] || 0,
+      with_email: customerStatsResult[0].values[0][1] || 0,
+      email_subscribers: customerStatsResult[0].values[0][2] || 0
+    } : { unique_customers: 0, with_email: 0, email_subscribers: 0 };
+
+    return res.status(200).json({
+      success: true,
+      analytics: {
+        period_days: days,
+        total_revenue: totalRevenue,
+        orders: ordersStats,
+        customers: customerStats,
+        top_products: topProducts,
+        daily_sales: dailySales
+      }
+    });
+
+  } catch (error) {
+    console.error('✗ Error fetching analytics:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching analytics.',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/customers
+ * Get all customers with order history (protected route)
+ */
+router.get('/customers', authMiddleware, (req, res) => {
+  try {
+    const dbInstance = getDb();
+    const { search = '' } = req.query;
+
+    let query = `
+      SELECT 
+        customer_name,
+        customer_phone,
+        customer_email,
+        COUNT(*) as order_count,
+        SUM(product_price * quantity) as total_spent,
+        MAX(created_at) as last_order_date,
+        MIN(created_at) as first_order_date
+      FROM orders
+    `;
+    const params = [];
+
+    if (search) {
+      query += ` WHERE customer_name LIKE ? OR customer_phone LIKE ? OR customer_email LIKE ?`;
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+    }
+
+    query += ` GROUP BY customer_phone ORDER BY last_order_date DESC`;
+
+    const result = dbInstance.exec(query, params);
+    const customers = result[0] ? result[0].values.map(row => ({
+      customer_name: row[0],
+      customer_phone: row[1],
+      customer_email: row[2],
+      order_count: row[3],
+      total_spent: row[4] || 0,
+      last_order_date: row[5],
+      first_order_date: row[6]
+    })) : [];
+
+    return res.status(200).json({
+      success: true,
+      count: customers.length,
+      customers: customers,
+    });
+
+  } catch (error) {
+    console.error('✗ Error fetching customers:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching customers.',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/inventory
+ * Get inventory status (protected route)
+ */
+router.get('/inventory', authMiddleware, (req, res) => {
+  try {
+    const dbInstance = getDb();
+    const { low_stock = 'false' } = req.query;
+
+    let query = 'SELECT * FROM products';
+    if (low_stock === 'true') {
+      query += ' WHERE in_stock = 0';
+    }
+    query += ' ORDER BY created_at DESC';
+
+    const result = dbInstance.exec(query);
+    const products = result[0] ? result[0].values.map(row => ({
+      id: row[0],
+      name: row[1],
+      description: row[2],
+      price: row[3],
+      image_url: row[4],
+      category: row[5],
+      in_stock: row[6],
+      created_at: row[7],
+      updated_at: row[8]
+    })) : [];
+
+    // Get order counts for each product
+    const productsWithStats = products.map(product => {
+      const orderStats = dbInstance.exec(`
+        SELECT COUNT(*) as order_count, SUM(quantity) as total_ordered
+        FROM orders
+        WHERE product_id = ?
+      `, [product.id]);
+      
+      const stats = orderStats[0] && orderStats[0].values[0] ? {
+        order_count: orderStats[0].values[0][0] || 0,
+        total_ordered: orderStats[0].values[0][1] || 0
+      } : { order_count: 0, total_ordered: 0 };
+
+      return {
+        ...product,
+        ...stats
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      count: productsWithStats.length,
+      products: productsWithStats,
+    });
+
+  } catch (error) {
+    console.error('✗ Error fetching inventory:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching inventory.',
+    });
+  }
+});
+
+/**
+ * PATCH /api/admin/orders/bulk-status
+ * Update multiple orders status at once (protected route)
+ */
+router.patch('/orders/bulk-status', authMiddleware, (req, res) => {
+  try {
+    const { order_ids, status } = req.body;
+
+    if (!order_ids || !Array.isArray(order_ids) || order_ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Order IDs array is required',
+      });
+    }
+
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        message: 'Status is required',
+      });
+    }
+
+    const validStatuses = ['Pending', 'Confirmed', 'Completed', 'Cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status. Must be one of: ' + validStatuses.join(', '),
+      });
+    }
+
+    const dbInstance = getDb();
+    const placeholders = order_ids.map(() => '?').join(',');
+    dbInstance.run(
+      `UPDATE orders SET status = ? WHERE id IN (${placeholders})`,
+      [status, ...order_ids]
+    );
+    saveDatabase();
+
+    console.log(`✓ Bulk updated ${order_ids.length} orders to status: ${status}`);
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully updated ${order_ids.length} order(s) to ${status}`,
+      updated_count: order_ids.length,
+    });
+
+  } catch (error) {
+    console.error('✗ Error bulk updating orders:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while updating orders.',
+    });
+  }
+});
+
+/**
  * GET /api/admin/settings
  * Get all settings (protected route)
  */
@@ -984,7 +1373,7 @@ router.get('/settings', authMiddleware, (req, res) => {
  */
 router.put('/settings', authMiddleware, (req, res) => {
   try {
-    const { phone, email, location } = req.body;
+    const { phone, email, location, whatsapp } = req.body;
     const dbInstance = getDb();
     const existingCount = dbInstance.exec('SELECT COUNT(*) as count FROM settings')[0];
     if (existingCount && existingCount.values[0][0] === 0) {
@@ -992,6 +1381,7 @@ router.put('/settings', authMiddleware, (req, res) => {
         ['phone', phone || process.env.COMPANY_PHONE || '(555) 123-4567'],
         ['email', email || process.env.COMPANY_EMAIL || 'info@minnahelectricals.com'],
         ['location', location || process.env.COMPANY_LOCATION || 'Serving the Local Area'],
+        ['whatsapp', whatsapp || ''],
       ];
       defaults.forEach(([key, value]) => {
         dbInstance.run('INSERT INTO settings (key, value) VALUES (?, ?)', [key, value]);
@@ -1000,6 +1390,7 @@ router.put('/settings', authMiddleware, (req, res) => {
       if (phone !== undefined) dbInstance.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['phone', phone]);
       if (email !== undefined) dbInstance.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['email', email]);
       if (location !== undefined) dbInstance.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['location', location]);
+      if (whatsapp !== undefined) dbInstance.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['whatsapp', whatsapp]);
     }
     saveDatabase();
     r2Sync.sync().catch(err => console.error('R2 sync error:', err.message));
@@ -1010,4 +1401,237 @@ router.put('/settings', authMiddleware, (req, res) => {
     return res.status(500).json({ success: false, message: 'An error occurred while updating settings.' });
   }
 });
+
+/**
+ * GET /api/admin/templates
+ * Get all communication templates
+ */
+router.get('/templates', authMiddleware, (req, res) => {
+  try {
+    const { type } = req.query;
+    let query = 'SELECT * FROM templates';
+    const params = [];
+
+    if (type) {
+      query += ' WHERE type = ?';
+      params.push(type);
+    }
+
+    query += ' ORDER BY name, created_at DESC';
+
+    const dbInstance = getDb();
+    const result = dbInstance.exec(query, params);
+
+    const templates = result[0] ? result[0].values.map(row => ({
+      id: row[0],
+      name: row[1],
+      type: row[2],
+      subject: row[3],
+      content: row[4],
+      created_at: row[5],
+      updated_at: row[6]
+    })) : [];
+
+    return res.status(200).json({
+      success: true,
+      count: templates.length,
+      templates: templates,
+    });
+  } catch (error) {
+    console.error('✗ Error fetching templates:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching templates.',
+    });
+  }
+});
+
+/**
+ * POST /api/admin/templates
+ * Create a new communication template
+ */
+router.post('/templates', authMiddleware, (req, res) => {
+  try {
+    const { name, type, subject, content } = req.body;
+
+    if (!name || !type || !content) {
+      return res.status(400).json({
+        success: false,
+        message: 'Template name, type, and content are required',
+      });
+    }
+
+    const validTypes = ['email', 'sms', 'whatsapp'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid template type. Must be one of: ' + validTypes.join(', '),
+      });
+    }
+
+    const dbInstance = getDb();
+    dbInstance.run(
+      'INSERT INTO templates (name, type, subject, content) VALUES (?, ?, ?, ?)',
+      [name, type, subject || null, content]
+    );
+
+    const result = dbInstance.exec('SELECT last_insert_rowid() as id');
+    const templateId = result[0].values[0][0];
+    saveDatabase();
+
+    console.log(`✓ Template created: #${templateId} - ${name}`);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Template created successfully',
+      template: { id: templateId, name, type, subject, content },
+    });
+  } catch (error) {
+    console.error('✗ Error creating template:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while creating the template.',
+    });
+  }
+});
+
+/**
+ * PUT /api/admin/templates/:id
+ * Update a communication template
+ */
+router.put('/templates/:id', authMiddleware, (req, res) => {
+  try {
+    const templateId = parseInt(req.params.id);
+    const { name, type, subject, content } = req.body;
+
+    const dbInstance = getDb();
+    const checkResult = dbInstance.exec('SELECT id FROM templates WHERE id = ?', [templateId]);
+
+    if (!checkResult[0] || !checkResult[0].values[0]) {
+      return res.status(404).json({
+        success: false,
+        message: 'Template not found',
+      });
+    }
+
+    dbInstance.run(
+      'UPDATE templates SET name = ?, type = ?, subject = ?, content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [name, type, subject || null, content, templateId]
+    );
+    saveDatabase();
+
+    console.log(`✓ Template updated: #${templateId}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Template updated successfully',
+    });
+  } catch (error) {
+    console.error('✗ Error updating template:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while updating the template.',
+    });
+  }
+});
+
+/**
+ * DELETE /api/admin/templates/:id
+ * Delete a communication template
+ */
+router.delete('/templates/:id', authMiddleware, (req, res) => {
+  try {
+    const templateId = parseInt(req.params.id);
+
+    const dbInstance = getDb();
+    const checkResult = dbInstance.exec('SELECT id FROM templates WHERE id = ?', [templateId]);
+
+    if (!checkResult[0] || !checkResult[0].values[0]) {
+      return res.status(404).json({
+        success: false,
+        message: 'Template not found',
+      });
+    }
+
+    dbInstance.run('DELETE FROM templates WHERE id = ?', [templateId]);
+    saveDatabase();
+
+    console.log(`✓ Template deleted: #${templateId}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Template deleted successfully',
+    });
+  } catch (error) {
+    console.error('✗ Error deleting template:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while deleting the template.',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/sms-logs
+ * Get SMS delivery logs
+ */
+router.get('/sms-logs', authMiddleware, (req, res) => {
+  try {
+    const dbInstance = getDb();
+    const result = dbInstance.exec('SELECT * FROM sms_logs ORDER BY created_at DESC LIMIT 100');
+
+    const logs = result[0] ? result[0].values.map(row => ({
+      id: row[0],
+      phone: row[1],
+      message: row[2],
+      status: row[3],
+      error_message: row[4],
+      created_at: row[5]
+    })) : [];
+
+    return res.status(200).json({
+      success: true,
+      count: logs.length,
+      logs: logs,
+    });
+  } catch (error) {
+    console.error('✗ Error fetching SMS logs:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching SMS logs.',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/push-subscriptions
+ * Get all push notification subscriptions
+ */
+router.get('/push-subscriptions', authMiddleware, (req, res) => {
+  try {
+    const dbInstance = getDb();
+    const result = dbInstance.exec('SELECT * FROM push_subscriptions ORDER BY created_at DESC');
+
+    const subscriptions = result[0] ? result[0].values.map(row => ({
+      id: row[0],
+      session_id: row[1],
+      endpoint: row[2],
+      keys: row[3],
+      created_at: row[4]
+    })) : [];
+
+    return res.status(200).json({
+      success: true,
+      count: subscriptions.length,
+      subscriptions: subscriptions,
+    });
+  } catch (error) {
+    console.error('✗ Error fetching push subscriptions:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching push subscriptions.',
+    });
+  }
+});
+
 module.exports = router;

@@ -12,11 +12,7 @@
     tailwind.config = {
       theme: {
         extend: {
-          colors: {
-            navy: '#0F172A',
-            amber: '#F59E0B',
-            'amber-dark': '#D97706',
-          }
+          colors: { navy: '#0F172A', amber: '#F59E0B', 'amber-dark': '#D97706' }
         }
       }
     }
@@ -29,30 +25,39 @@
   </style>
 </head>
 <body class="bg-gray-50">
-
-  <!-- Header -->
   <header class="bg-navy text-white shadow-lg">
     <div class="container mx-auto px-4">
       <div class="flex items-center justify-between py-4">
-        <div class="flex items-center space-x-3">
-          <img src="/assets/logo.jpg" alt="Minnah Electricals Logo" class="h-12 w-12 rounded-full object-cover border-2 border-amber">
+        <a href="/admin/index.html" class="flex items-center space-x-3">
+          <img src="/assets/logo.jpg" alt="Logo" class="h-12 w-12 rounded-full object-cover border-2 border-amber">
           <div>
             <h1 class="text-xl font-bold">Minnah Electricals</h1>
-            <p class="text-xs text-gray-300">Order Management</p>
+            <p class="text-xs text-gray-300">Admin - Orders</p>
           </div>
-        </div>
-        <div class="flex gap-3">
-          <a href="/admin/dashboard.html" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg font-semibold transition">Dashboard</a>
-          <a href="/admin/products.html" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg font-semibold transition">Products</a>
-          <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-semibold transition">Log Out</button>
-        </div>
+        </a>
+        <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-semibold transition">Log Out</button>
       </div>
     </div>
   </header>
 
-  <!-- Main Content -->
+  <nav class="bg-white shadow-sm border-b border-gray-200">
+    <div class="container mx-auto px-4">
+      <div class="flex space-x-6 overflow-x-auto">
+        <a href="/admin/index.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Dashboard</a>
+        <a href="/admin/leads.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Leads</a>
+        <a href="/admin/products.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Products</a>
+        <a href="/admin/orders.html" class="py-4 px-1 border-b-2 border-amber text-amber font-semibold text-sm">Orders</a>
+        <a href="/admin/portfolio.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Portfolio</a>
+        <a href="/admin/gallery.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Gallery</a>
+        <a href="/admin/analytics.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Analytics</a>
+        <a href="/admin/customers.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Customers</a>
+        <a href="/admin/inventory.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Inventory</a>
+        <a href="/admin/settings.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Settings</a>
+      </div>
+    </div>
+  </nav>
+
   <main class="container mx-auto px-4 py-8">
-    
     <!-- Stats Cards -->
     <div class="grid md:grid-cols-4 gap-6 mb-8">
       <div class="bg-white rounded-lg shadow p-6">
@@ -60,16 +65,143 @@
         <div id="totalOrders" class="text-3xl font-bold text-navy">0</div>
       </div>
       <div class="bg-white rounded-lg shadow p-6">
-        <div class="text-gray-500 text-sm font-semibold mb-2">Pending</div>
-        <div id="pendingOrders" class="text-3xl font-bold text-amber">0</div>
+        <div class="text-gray-500 text-sm font-semibold mb-2">Website Orders</div>
+        <div id="websiteOrders" class="text-3xl font-bold text-blue-600">0</div>
       </div>
       <div class="bg-white rounded-lg shadow p-6">
-        <div class="text-gray-500 text-sm font-semibold mb-2">Confirmed</div>
-        <div id="confirmedOrders" class="text-3xl font-bold text-blue-600">0</div>
+        <div class="text-gray-500 text-sm font-semibold mb-2">Manual Orders</div>
+        <div id="manualOrders" class="text-3xl font-bold text-purple-600">0</div>
       </div>
       <div class="bg-white rounded-lg shadow p-6">
-        <div class="text-gray-500 text-sm font-semibold mb-2">Completed</div>
-        <div id="completedOrders" class="text-3xl font-bold text-green-600">0</div>
+        <div class="text-gray-500 text-sm font-semibold mb-2">Revenue</div>
+        <div id="totalRevenue" class="text-3xl font-bold text-green-600">₵0.00</div>
+      </div>
+    </div>
+
+    <!-- Add Manual Order Button -->
+    <div class="mb-6">
+      <button id="addManualOrderBtn" class="bg-amber hover:bg-amber-dark text-navy px-6 py-3 rounded-lg font-bold transition flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        Add Manual Order
+      </button>
+    </div>
+
+    <!-- Manual Order Modal - Invoice Style -->
+    <div id="manualOrderModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-screen overflow-y-auto">
+        <div class="p-8">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-navy">Add Manual Order</h2>
+            <button id="closeModal" class="text-gray-500 hover:text-gray-700">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+          
+          <form id="manualOrderForm" class="space-y-4">
+            <!-- Customer Information -->
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <h3 class="text-lg font-bold text-navy mb-3">Customer Information</h3>
+              <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-gray-700 text-sm font-semibold mb-2">Customer Name *</label>
+                  <input type="text" id="customerName" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="John Doe">
+                </div>
+                <div>
+                  <label class="block text-gray-700 text-sm font-semibold mb-2">Phone Number *</label>
+                  <input type="tel" id="customerPhone" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="(555) 123-4567">
+                </div>
+              </div>
+              <div class="mt-4">
+                <label class="block text-gray-700 text-sm font-semibold mb-2">Email</label>
+                <input type="email" id="customerEmail" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="john@example.com">
+              </div>
+            </div>
+
+            <!-- Products Section -->
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <div class="flex justify-between items-center mb-3">
+                <h3 class="text-lg font-bold text-navy">Products</h3>
+                <button type="button" id="addInvoiceProductBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition flex items-center">
+                  <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                  Add Product
+                </button>
+              </div>
+
+              <!-- Products Table -->
+              <div class="bg-white rounded-lg overflow-hidden border border-gray-200">
+                <table class="w-full">
+                  <thead class="bg-navy text-white">
+                    <tr>
+                      <th class="px-4 py-2 text-left text-xs font-medium uppercase">Product</th>
+                      <th class="px-4 py-2 text-left text-xs font-medium uppercase">Price</th>
+                      <th class="px-4 py-2 text-left text-xs font-medium uppercase">Qty</th>
+                      <th class="px-4 py-2 text-left text-xs font-medium uppercase">Subtotal</th>
+                      <th class="px-4 py-2 text-center text-xs font-medium uppercase">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="invoiceProductsTable" class="divide-y divide-gray-200">
+                    <tr><td colspan="5" class="px-4 py-4 text-center text-gray-500">No products added yet. Click "Add Product" to add items.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Add Product Form -->
+              <div id="addProductForm" class="hidden mt-4 bg-white p-4 rounded-lg border-2 border-dashed border-gray-300">
+                <div class="grid md:grid-cols-4 gap-3">
+                  <div>
+                    <label class="block text-gray-700 text-xs font-semibold mb-1">Select Product *</label>
+                    <select id="invoiceProductSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent text-sm">
+                      <option value="">Choose product...</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-gray-700 text-xs font-semibold mb-1">Price (₵)</label>
+                    <input type="text" id="invoiceProductPrice" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-sm" placeholder="0.00">
+                  </div>
+                  <div>
+                    <label class="block text-gray-700 text-xs font-semibold mb-1">Quantity *</label>
+                    <input type="number" id="invoiceProductQty" min="1" value="1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent text-sm">
+                  </div>
+                  <div class="flex items-end gap-2">
+                    <button type="button" id="confirmAddProduct" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg font-semibold text-sm transition">Add</button>
+                    <button type="button" id="cancelAddProduct" class="flex-1 bg-gray-300 hover:bg-gray-400 text-navy px-3 py-2 rounded-lg font-semibold text-sm transition">Cancel</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Total -->
+              <div class="mt-4 flex justify-end">
+                <div class="bg-navy text-white px-6 py-3 rounded-lg">
+                  <div class="text-sm">Total:</div>
+                  <div id="invoiceTotal" class="text-2xl font-bold">₵0.00</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Order Details -->
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <h3 class="text-lg font-bold text-navy mb-3">Order Details</h3>
+              <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-gray-700 text-sm font-semibold mb-2">Order Source *</label>
+                  <select id="orderSource" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
+                    <option value="manual">Manual (In-Store/Phone/WhatsApp)</option>
+                    <option value="website">Website Order</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-gray-700 text-sm font-semibold mb-2">Notes</label>
+                  <textarea id="orderNotes" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="Any additional notes..."></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex gap-3 pt-4">
+              <button type="submit" class="flex-1 bg-amber hover:bg-amber-dark text-navy font-bold py-3 rounded-lg transition">Save Order</button>
+              <button type="button" id="cancelBtn" class="flex-1 bg-gray-300 hover:bg-gray-400 text-navy font-bold py-3 rounded-lg transition">Cancel</button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
 
@@ -81,6 +213,7 @@
             <tr>
               <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Order ID</th>
               <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Date</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Source</th>
               <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Customer</th>
               <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Contact</th>
               <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Product</th>
@@ -89,105 +222,104 @@
               <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
-          <tbody id="ordersTableBody" class="bg-white divide-y divide-gray-200">
-            <!-- Orders will be populated here -->
-          </tbody>
+          <tbody id="ordersTableBody" class="bg-white divide-y divide-gray-200"></tbody>
         </table>
       </div>
-      
-      <!-- Empty State -->
       <div id="emptyState" class="hidden text-center py-12">
-        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-        </svg>
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
         <h3 class="mt-2 text-sm font-medium text-gray-900">No orders yet</h3>
         <p class="mt-1 text-sm text-gray-500">Orders will appear here when customers submit them.</p>
       </div>
     </div>
-
   </main>
 
-  <script src="/js/admin.js"></script>
   <script>
-    // Order Management
+    const token = localStorage.getItem('adminToken');
+    if (!token) { window.location.href = '/admin/login.html'; }
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('adminToken');
+      window.location.href = '/admin/login.html';
+    });
+
     let orders = [];
+    let products = [];
+    let invoiceProducts = [];
 
     // DOM Elements
     const ordersTableBody = document.getElementById('ordersTableBody');
     const emptyState = document.getElementById('emptyState');
+    const manualOrderModal = document.getElementById('manualOrderModal');
+    const addManualOrderBtn = document.getElementById('addManualOrderBtn');
+    const closeModal = document.getElementById('closeModal');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const manualOrderForm = document.getElementById('manualOrderForm');
+    const addInvoiceProductBtn = document.getElementById('addInvoiceProductBtn');
+    const addProductForm = document.getElementById('addProductForm');
+    const invoiceProductSelect = document.getElementById('invoiceProductSelect');
+    const invoiceProductPrice = document.getElementById('invoiceProductPrice');
+    const invoiceProductQty = document.getElementById('invoiceProductQty');
+    const confirmAddProduct = document.getElementById('confirmAddProduct');
+    const cancelAddProduct = document.getElementById('cancelAddProduct');
+    const invoiceProductsTable = document.getElementById('invoiceProductsTable');
+    const invoiceTotal = document.getElementById('invoiceTotal');
 
-    // Load orders on page load
-    document.addEventListener('DOMContentLoaded', loadOrders);
+    document.addEventListener('DOMContentLoaded', () => { loadOrders(); loadProducts(); });
+
+    addManualOrderBtn.addEventListener('click', openManualOrderModal);
+    closeModal.addEventListener('click', closeManualOrderModal);
+    cancelBtn.addEventListener('click', closeManualOrderModal);
+    manualOrderForm.addEventListener('submit', handleManualOrderSubmit);
+    addInvoiceProductBtn.addEventListener('click', () => addProductForm.classList.remove('hidden'));
+    confirmAddProduct.addEventListener('click', addProductToInvoice);
+    cancelAddProduct.addEventListener('click', hideAddProductForm);
+
+    invoiceProductSelect.addEventListener('change', (e) => {
+      const opt = e.target.selectedOptions[0];
+      invoiceProductPrice.value = opt && opt.value ? `₵${parseFloat(opt.getAttribute('data-price')).toFixed(2)}` : '';
+    });
 
     async function loadOrders() {
       try {
-        const token = localStorage.getItem('adminToken');
-        if (!token) {
-          window.location.href = '/admin/login.html';
-          return;
-        }
-
-        const response = await fetch('/api/admin/orders', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        const data = await response.json();
-        
-        if (data.success) {
-          orders = data.orders;
-          renderOrders();
-          updateStats();
-        }
-      } catch (error) {
-        console.error('Error loading orders:', error);
-        showMessage('Failed to load orders', 'error');
-      }
+        const res = await fetch('/api/admin/orders', { headers: { 'Authorization': `Bearer ${token}` } });
+        const data = await res.json();
+        if (data.success) { orders = data.orders; renderOrders(); updateStats(); }
+      } catch (error) { console.error('Error loading orders:', error); showMessage('Failed to load orders', 'error'); }
     }
 
     function updateStats() {
       const total = orders.length;
-      const pending = orders.filter(o => o.status === 'Pending').length;
-      const confirmed = orders.filter(o => o.status === 'Confirmed').length;
-      const completed = orders.filter(o => o.status === 'Completed').length;
-
+      const website = orders.filter(o => o.order_source === 'website').length;
+      const manual = orders.filter(o => o.order_source === 'manual').length;
+      const revenue = orders.filter(o => o.status === 'Completed').reduce((sum, o) => sum + (parseFloat(o.product_price || 0) * parseInt(o.quantity || 1)), 0);
       document.getElementById('totalOrders').textContent = total;
-      document.getElementById('pendingOrders').textContent = pending;
-      document.getElementById('confirmedOrders').textContent = confirmed;
-      document.getElementById('completedOrders').textContent = completed;
+      document.getElementById('websiteOrders').textContent = website;
+      document.getElementById('manualOrders').textContent = manual;
+      document.getElementById('totalRevenue').textContent = '₵' + revenue.toFixed(2);
     }
 
     function renderOrders() {
-      if (orders.length === 0) {
-        ordersTableBody.innerHTML = '';
-        emptyState.classList.remove('hidden');
-        return;
-      }
-
+      if (orders.length === 0) { ordersTableBody.innerHTML = ''; emptyState.classList.remove('hidden'); return; }
       emptyState.classList.add('hidden');
       ordersTableBody.innerHTML = orders.map(order => `
         <tr class="hover:bg-gray-50">
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-navy">#${order.id}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${new Date(order.created_at).toLocaleDateString()}</td>
           <td class="px-6 py-4 whitespace-nowrap">
-            <span class="text-sm font-bold text-navy">#${order.id}</span>
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.order_source === 'website' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}">
+              ${order.order_source === 'website' ? 'Website' : 'Manual'}
+            </span>
           </td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <span class="text-sm text-gray-900">${new Date(order.created_at).toLocaleDateString()}</span>
-          </td>
-          <td class="px-6 py-4">
-            <div class="text-sm font-medium text-navy">${order.customer_name}</div>
-          </td>
+          <td class="px-6 py-4 text-sm font-medium text-navy">${order.customer_name}</td>
           <td class="px-6 py-4">
             <div class="text-sm text-gray-900">${order.customer_phone}</div>
             ${order.customer_email ? `<div class="text-sm text-gray-500">${order.customer_email}</div>` : ''}
           </td>
           <td class="px-6 py-4">
             <div class="text-sm text-gray-900">${order.product_name || 'Product #' + order.product_id}</div>
-            <div class="text-sm text-gray-500">$${parseFloat(order.product_price || 0).toFixed(2)}</div>
+            <div class="text-sm text-gray-500">₵${parseFloat(order.product_price || 0).toFixed(2)}</div>
           </td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <span class="text-sm text-gray-900">${order.quantity}</span>
-          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${order.quantity}</td>
           <td class="px-6 py-4 whitespace-nowrap">
             <select onchange="updateOrderStatus(${order.id}, this.value)" class="text-sm border border-gray-300 rounded-lg px-3 py-1 focus:ring-2 focus:ring-amber focus:border-transparent ${getStatusColor(order.status)}">
               <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
@@ -198,9 +330,9 @@
           </td>
           <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
             <button onclick="viewOrderDetails(${order.id})" class="text-amber hover:text-amber-dark mr-3">View</button>
+            <button onclick="printOrder(${order.id})" class="text-blue-600 hover:text-blue-800">Print</button>
           </td>
-        </tr>
-      `).join('');
+        </tr>`).join('');
     }
 
     function getStatusColor(status) {
@@ -214,81 +346,128 @@
     }
 
     async function updateOrderStatus(orderId, newStatus) {
-      const token = localStorage.getItem('adminToken');
-      if (!token) {
-        window.location.href = '/admin/login.html';
-        return;
-      }
-
       try {
-        const response = await fetch(`/api/admin/orders/${orderId}`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ status: newStatus })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          showMessage(`Order #${orderId} status updated to ${newStatus}`, 'success');
-          await loadOrders();
-        } else {
-          showMessage(data.message || 'Failed to update order status', 'error');
-          await loadOrders(); // Reload to reset the dropdown
-        }
-      } catch (error) {
-        console.error('Error updating order:', error);
-        showMessage('Failed to update order status', 'error');
-        await loadOrders(); // Reload to reset the dropdown
-      }
+        const res = await fetch(`/api/admin/orders/${orderId}`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ status: newStatus }) });
+        const data = await res.json();
+        if (data.success) { showMessage(`Order #${orderId} updated to ${newStatus}`, 'success'); loadOrders(); }
+        else { showMessage(data.message || 'Failed to update', 'error'); loadOrders(); }
+      } catch (error) { showMessage('Failed to update', 'error'); loadOrders(); }
     }
 
     function viewOrderDetails(orderId) {
       const order = orders.find(o => o.id === orderId);
       if (!order) return;
+      alert(`Order #${order.id}\nDate: ${new Date(order.created_at).toLocaleString()}\nSource: ${order.order_source}\n\nCustomer: ${order.customer_name}\nPhone: ${order.customer_phone}\nEmail: ${order.customer_email || 'N/A'}\n\nProduct: ${order.product_name || 'Product #' + order.product_id}\nPrice: ₵${parseFloat(order.product_price || 0).toFixed(2)}\nQty: ${order.quantity}\nSubtotal: ₵${(parseFloat(order.product_price || 0) * parseInt(order.quantity || 1)).toFixed(2)}\nNotes: ${order.notes || 'None'}\n\nStatus: ${order.status}`);
+    }
 
-      const message = `
-Order Details:
-----------------
-Order ID: #${order.id}
-Date: ${new Date(order.created_at).toLocaleString()}
+    function printOrder(orderId) {
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+      const pw = window.open('', '_blank', 'width=800,height=600');
+      const sub = (parseFloat(order.product_price || 0) * parseInt(order.quantity || 1)).toFixed(2);
+      pw.document.write(`
+        <!DOCTYPE html><html><head><title>Order #${order.id} - Minnah Electricals</title>
+        <style>body{font-family:Arial,sans-serif;padding:20px}.header{text-align:center;border-bottom:2px solid #0F172A;padding-bottom:20px;margin-bottom:20px}.logo-container{display:flex;justify-content:center;margin-bottom:15px}.logo{width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid #F59E0B}.company-name{font-size:24px;font-weight:bold;color:#0F172A}.invoice-title{font-size:18px;color:#F59E0B;margin-top:10px}.order-info{background:#f5f5f5;padding:15px;border-radius:5px;margin-bottom:20px}.section{margin-bottom:20px}.section-title{font-weight:bold;color:#0F172A;margin-bottom:10px}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:10px;text-align:left;border-bottom:1px solid #ddd}th{background:#0F172A;color:white}.total{font-size:18px;font-weight:bold;text-align:right;margin-top:20px}.footer{margin-top:40px;text-align:center;color:#666;font-size:12px}@media print{body{padding:0}}</style></head>
+        <body><div class="header"><div class="logo-container"><img src="/assets/logo.jpg" alt="Logo" class="logo"></div><div class="company-name">Minnah Electricals</div><div class="invoice-title">INVOICE / ORDER RECEIPT</div></div>
+        <div class="order-info"><strong>Order ID:</strong> #${order.id}<br><strong>Date:</strong> ${new Date(order.created_at).toLocaleString()}<br><strong>Status:</strong> ${order.status}</div>
+        <div class="section"><div class="section-title">Customer Information</div><table><tr><td><strong>Name:</strong></td><td>${order.customer_name}</td></tr><tr><td><strong>Phone:</strong></td><td>${order.customer_phone}</td></tr><tr><td><strong>Email:</strong></td><td>${order.customer_email || 'N/A'}</td></tr></table></div>
+        <div class="section"><div class="section-title">Order Details</div><table><thead><tr><th>Product</th><th>Price</th><th>Quantity</th><th>Subtotal</th></tr></thead><tbody><tr><td>${order.product_name || 'Product #' + order.product_id}</td><td>₵${parseFloat(order.product_price || 0).toFixed(2)}</td><td>${order.quantity}</td><td><strong>₵${sub}</strong></td></tr></tbody></table><div class="total">Total: ₵${sub}</div></div>
+        ${order.notes ? `<div class="section"><div class="section-title">Notes</div><p>${order.notes}</p></div>` : ''}
+        <div class="footer"><p>Thank you for your business!</p><p>Minnah Electricals - Professional Electrical Services</p></div></body></html>`);
+      pw.document.close(); pw.focus();
+      setTimeout(() => { pw.print(); pw.close(); }, 250);
+    }
 
-Customer Information:
-- Name: ${order.customer_name}
-- Phone: ${order.customer_phone}
-- Email: ${order.customer_email || 'N/A'}
+    async function loadProducts() {
+      try {
+        const res = await fetch('/api/admin/products', { headers: { 'Authorization': `Bearer ${token}` } });
+        const data = await res.json();
+        if (data.success) { products = data.products; populateDropdowns(); }
+      } catch (error) { console.error('Error loading products:', error); }
+    }
 
-Product Information:
-- Product: ${order.product_name || 'Product #' + order.product_id}
-- Price: $${parseFloat(order.product_price || 0).toFixed(2)}
-- Quantity: ${order.quantity}
-- Notes: ${order.notes || 'None'}
+    function populateDropdowns() {
+      const opts = products.map(p => `<option value="${p.id}" data-price="${p.price}" data-name="${p.name}">${p.name} - ₵${parseFloat(p.price).toFixed(2)}</option>`).join('');
+      if (invoiceProductSelect) invoiceProductSelect.innerHTML = '<option value="">Choose product...</option>' + opts;
+    }
 
-Status: ${order.status}
-      `;
+    function openManualOrderModal() {
+      manualOrderModal.classList.remove('hidden');
+      manualOrderForm.reset();
+      invoiceProducts = [];
+      renderInvoiceProducts();
+      updateInvoiceTotal();
+    }
 
-      alert(message);
+    function closeManualOrderModal() { manualOrderModal.classList.add('hidden'); invoiceProducts = []; }
+    function hideAddProductForm() { addProductForm.classList.add('hidden'); invoiceProductSelect.value = ''; invoiceProductPrice.value = ''; invoiceProductQty.value = 1; }
+
+    function addProductToInvoice() {
+      const pid = parseInt(invoiceProductSelect.value);
+      const opt = invoiceProductSelect.selectedOptions[0];
+      if (!pid || !opt) { alert('Please select a product'); return; }
+      const name = opt.getAttribute('data-name');
+      const price = parseFloat(opt.getAttribute('data-price'));
+      const qty = parseInt(invoiceProductQty.value);
+      const idx = invoiceProducts.findIndex(p => p.product_id === pid);
+      if (idx >= 0) invoiceProducts[idx].quantity += qty;
+      else invoiceProducts.push({ product_id: pid, product_name: name, product_price: price, quantity: qty });
+      renderInvoiceProducts(); updateInvoiceTotal(); hideAddProductForm();
+    }
+
+    function removeProductFromInvoice(index) { invoiceProducts.splice(index, 1); renderInvoiceProducts(); updateInvoiceTotal(); }
+
+    function renderInvoiceProducts() {
+      if (invoiceProducts.length === 0) { invoiceProductsTable.innerHTML = '<tr><td colspan="5" class="px-4 py-4 text-center text-gray-500">No products added yet. Click "Add Product" to add items.</td></tr>'; return; }
+      invoiceProductsTable.innerHTML = invoiceProducts.map((p, i) => `
+        <tr>
+          <td class="px-4 py-3 text-sm text-navy font-medium">${p.product_name}</td>
+          <td class="px-4 py-3 text-sm text-gray-900">₵${p.product_price.toFixed(2)}</td>
+          <td class="px-4 py-3 text-sm text-gray-900">${p.quantity}</td>
+          <td class="px-4 py-3 text-sm text-gray-900 font-bold">₵${(p.product_price * p.quantity).toFixed(2)}</td>
+          <td class="px-4 py-3 text-center">
+            <button type="button" onclick="removeProductFromInvoice(${i})" class="text-red-600 hover:text-red-800">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
+          </td>
+        </tr>`).join('');
+    }
+
+    function updateInvoiceTotal() {
+      const total = invoiceProducts.reduce((sum, p) => sum + (p.product_price * p.quantity), 0);
+      invoiceTotal.textContent = '₵' + total.toFixed(2);
+    }
+
+    async function handleManualOrderSubmit(e) {
+      e.preventDefault();
+      if (invoiceProducts.length === 0) { showMessage('Please add at least one product', 'error'); return; }
+      const btn = manualOrderForm.querySelector('button[type="submit"]');
+      const orig = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Saving...';
+      try {
+        const res = await fetch('/api/admin/orders/manual', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({
+          customer_name: document.getElementById('customerName').value,
+          customer_phone: document.getElementById('customerPhone').value,
+          customer_email: document.getElementById('customerEmail').value,
+          notes: document.getElementById('orderNotes').value,
+          order_source: document.getElementById('orderSource').value,
+          products: invoiceProducts
+        })});
+        const data = await res.json();
+        if (data.success) { showMessage('Manual order added successfully!', 'success'); closeManualOrderModal(); loadOrders(); }
+        else showMessage(data.message || 'Failed to add manual order', 'error');
+      } catch (error) { showMessage('Failed to add manual order', 'error'); }
+      finally { btn.disabled = false; btn.textContent = orig; }
     }
 
     function showMessage(message, type) {
-      const messageDiv = document.createElement('div');
-      messageDiv.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
-      messageDiv.textContent = message;
-      document.body.appendChild(messageDiv);
-      
-      setTimeout(() => {
-        messageDiv.remove();
-      }, 3000);
+      const div = document.createElement('div');
+      div.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
+      div.textContent = message; document.body.appendChild(div);
+      setTimeout(() => div.remove(), 3000);
     }
 
-    // Logout
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem('adminToken');
-      window.location.href = '/admin/login.html';
-    });
+    window.removeProductFromInvoice = removeProductFromInvoice;
   </script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Admin dashboard for managing leads, products, and orders">
+  <meta name="description" content="Admin dashboard">
   <title>Admin Dashboard | Minnah Electricals</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any">
   <link rel="icon" type="image/jpeg" href="/assets/logo.jpg" sizes="32x32">
@@ -12,11 +12,7 @@
     tailwind.config = {
       theme: {
         extend: {
-          colors: {
-            navy: '#0F172A',
-            amber: '#F59E0B',
-            'amber-dark': '#D97706',
-          }
+          colors: { navy: '#0F172A', amber: '#F59E0B', 'amber-dark': '#D97706' }
         }
       }
     }
@@ -26,13 +22,9 @@
     body { font-family: 'Inter', sans-serif; }
     .fade-in { animation: fadeIn 0.3s ease-in; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
   </style>
 </head>
 <body class="bg-gray-50">
-
-  <!-- Header -->
   <header class="bg-navy text-white shadow-lg">
     <div class="container mx-auto px-4">
       <div class="flex items-center justify-between py-4">
@@ -48,1553 +40,172 @@
     </div>
   </header>
 
-  <!-- Navigation Tabs -->
   <nav class="bg-white shadow-sm border-b border-gray-200">
     <div class="container mx-auto px-4">
-      <div class="flex space-x-8">
-        <button onclick="switchTab('leads')" id="tab-leads" class="tab-btn py-4 px-1 border-b-2 border-amber text-amber font-semibold text-sm">
-          Leads
-        </button>
-        <button onclick="switchTab('products')" id="tab-products" class="tab-btn py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">
-          Products
-        </button>
-        <button onclick="switchTab('orders')" id="tab-orders" class="tab-btn py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">
-          Orders
-        </button>
-        <button onclick="switchTab('portfolio')" id="tab-portfolio" class="tab-btn py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">
-          Portfolio
-        </button>
-        <button onclick="switchTab('gallery')" id="tab-gallery" class="tab-btn py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">
-          Gallery
-        </button>
-        <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">
-          Settings
-        </button>
+      <div class="flex space-x-6 overflow-x-auto">
+        <a href="/admin/index.html" class="py-4 px-1 border-b-2 border-amber text-amber font-semibold text-sm">Dashboard</a>
+        <a href="/admin/leads.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Leads</a>
+        <a href="/admin/products.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Products</a>
+        <a href="/admin/orders.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Orders</a>
+        <a href="/admin/portfolio.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Portfolio</a>
+        <a href="/admin/gallery.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Gallery</a>
+        <a href="/admin/analytics.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Analytics</a>
+        <a href="/admin/customers.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Customers</a>
+        <a href="/admin/inventory.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Inventory</a>
+        <a href="/admin/settings.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Settings</a>
       </div>
     </div>
   </nav>
 
-  <!-- Main Content -->
   <main class="container mx-auto px-4 py-8">
-    
-    <!-- Leads Section -->
-    <div id="leads-section" class="tab-content active">
-      <!-- Stats Cards -->
-      <div class="grid md:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="text-gray-500 text-sm font-semibold mb-2">Total Leads</div>
-          <div id="totalLeads" class="text-3xl font-bold text-navy">0</div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="text-gray-500 text-sm font-semibold mb-2">New Leads</div>
-          <div id="newLeads" class="text-3xl font-bold text-amber">0</div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="text-gray-500 text-sm font-semibold mb-2">Recent (7 Days)</div>
-          <div id="recentLeads" class="text-3xl font-bold text-blue-600">0</div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="text-gray-500 text-sm font-semibold mb-2">Emergency</div>
-          <div id="emergencyLeads" class="text-3xl font-bold text-red-600">0</div>
-        </div>
-      </div>
-
-      <!-- Filters -->
-      <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div class="flex flex-wrap gap-2">
-            <button data-filter="all" class="filter-btn active bg-navy text-white px-4 py-2 rounded-lg font-semibold transition">All</button>
-            <button data-filter="New" class="filter-btn bg-gray-200 hover:bg-gray-300 text-navy px-4 py-2 rounded-lg font-semibold transition">New</button>
-            <button data-filter="Contacted" class="filter-btn bg-gray-200 hover:bg-gray-300 text-navy px-4 py-2 rounded-lg font-semibold transition">Contacted</button>
-            <button data-filter="Scheduled" class="filter-btn bg-gray-200 hover:bg-gray-300 text-navy px-4 py-2 rounded-lg font-semibold transition">Scheduled</button>
-            <button data-filter="Completed" class="filter-btn bg-gray-200 hover:bg-gray-300 text-navy px-4 py-2 rounded-lg font-semibold transition">Completed</button>
-          </div>
-          <button id="refreshLeads" class="bg-amber hover:bg-amber-dark text-navy px-4 py-2 rounded-lg font-semibold transition flex items-center">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-            </svg>
-            Refresh
-          </button>
-        </div>
-      </div>
-
-      <!-- Leads Table -->
-      <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-navy text-white">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Date</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Client Name</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Phone</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Email</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Service</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Urgency</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="leadsTableBody" class="bg-white divide-y divide-gray-200">
-              <!-- Leads will be populated here -->
-            </tbody>
-          </table>
-        </div>
-        <div id="leadsEmptyState" class="hidden text-center py-12">
-          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-          </svg>
-          <h3 class="mt-2 text-sm font-medium text-gray-900">No leads found</h3>
-          <p class="mt-1 text-sm text-gray-500">Get started by receiving a new lead from the website.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Products Section -->
-    <div id="products-section" class="tab-content">
-      <div class="mb-6">
-        <button id="addProductBtn" class="bg-amber hover:bg-amber-dark text-navy px-6 py-3 rounded-lg font-bold transition flex items-center">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-          </svg>
-          Add New Product
-        </button>
-      </div>
-
-      <!-- Product Form Modal -->
-      <div id="productModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-screen overflow-y-auto">
-          <div class="p-8">
-            <div class="flex justify-between items-center mb-6">
-              <h2 id="modalTitle" class="text-2xl font-bold text-navy">Add New Product</h2>
-              <button id="closeModal" class="text-gray-500 hover:text-gray-700">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </button>
-            </div>
-            
-            <form id="productForm" class="space-y-4">
-              <input type="hidden" id="productId">
-              
-              <div>
-                <label class="block text-gray-700 text-sm font-semibold mb-2">Product Name *</label>
-                <input type="text" id="productName" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="e.g., LED Light Bulb">
-              </div>
-
-              <div>
-                <label class="block text-gray-700 text-sm font-semibold mb-2">Description</label>
-                <textarea id="productDescription" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="Product description..."></textarea>
-              </div>
-
-              <div class="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-gray-700 text-sm font-semibold mb-2">Price (₵) *</label>
-                  <input type="number" id="productPrice" step="0.01" min="0" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="0.00">
-                </div>
-
-                <div>
-                  <label class="block text-gray-700 text-sm font-semibold mb-2">Category *</label>
-                  <select id="productCategory" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
-                    <option value="">Select a category</option>
-                    <option value="Lighting">Lighting</option>
-                    <option value="Wiring">Wiring</option>
-                    <option value="Switches">Switches</option>
-                    <option value="Outlets">Outlets</option>
-                    <option value="Circuit Breakers">Circuit Breakers</option>
-                    <option value="Tools">Tools</option>
-                    <option value="Safety Equipment">Safety Equipment</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label class="block text-gray-700 text-sm font-semibold mb-2">Product Image</label>
-                <input type="file" id="productImage" accept="image/*" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
-                <p class="text-xs text-gray-500 mt-1">Upload an image from your device (JPG, PNG, GIF)</p>
-                <div id="imagePreview" class="mt-2 hidden">
-                  <img id="previewImg" src="" alt="Preview" class="h-32 w-32 object-cover rounded-lg border-2 border-amber">
-                </div>
-              </div>
-
-              <div class="flex items-center">
-                <input type="checkbox" id="productInStock" checked class="w-4 h-4 text-amber border-gray-300 rounded focus:ring-amber">
-                <label for="productInStock" class="ml-2 text-gray-700">In Stock</label>
-              </div>
-
-              <div class="flex gap-3 pt-4">
-                <button type="submit" class="flex-1 bg-amber hover:bg-amber-dark text-navy font-bold py-3 rounded-lg transition">Save Product</button>
-                <button type="button" id="cancelBtn" class="flex-1 bg-gray-300 hover:bg-gray-400 text-navy font-bold py-3 rounded-lg transition">Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      <!-- Products Table -->
-      <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-navy text-white">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Image</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Name</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Category</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Price</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="productsTableBody" class="bg-white divide-y divide-gray-200">
-              <!-- Products will be populated here -->
-            </tbody>
-          </table>
-        </div>
-        <div id="productsEmptyState" class="hidden text-center py-12">
-          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-          </svg>
-          <h3 class="mt-2 text-sm font-medium text-gray-900">No products yet</h3>
-          <p class="mt-1 text-sm text-gray-500">Get started by adding your first product.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Orders Section -->
-    <div id="orders-section" class="tab-content">
-      <!-- Stats Cards -->
-      <div class="grid md:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="text-gray-500 text-sm font-semibold mb-2">Total Orders</div>
-          <div id="totalOrders" class="text-3xl font-bold text-navy">0</div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="text-gray-500 text-sm font-semibold mb-2">Pending</div>
-          <div id="pendingOrders" class="text-3xl font-bold text-amber">0</div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="text-gray-500 text-sm font-semibold mb-2">Confirmed</div>
-          <div id="confirmedOrders" class="text-3xl font-bold text-blue-600">0</div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="text-gray-500 text-sm font-semibold mb-2">Completed</div>
-          <div id="completedOrders" class="text-3xl font-bold text-green-600">0</div>
-        </div>
-      </div>
-
-      <!-- Orders Table -->
-      <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-navy text-white">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Order ID</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Date</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Customer</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Contact</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Product</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Qty</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="ordersTableBody" class="bg-white divide-y divide-gray-200">
-              <!-- Orders will be populated here -->
-            </tbody>
-          </table>
-        </div>
-        <div id="ordersEmptyState" class="hidden text-center py-12">
-          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-          </svg>
-          <h3 class="mt-2 text-sm font-medium text-gray-900">No orders yet</h3>
-          <p class="mt-1 text-sm text-gray-500">Orders will appear here when customers submit them.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Portfolio Section -->
-    <div id="portfolio-section" class="tab-content">
-      <div class="mb-6">
-        <button id="addPortfolioBtn" class="bg-amber hover:bg-amber-dark text-navy px-6 py-3 rounded-lg font-bold transition flex items-center">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-          </svg>
-          Add Portfolio Item
-        </button>
-      </div>
-
-      <!-- Portfolio Form Modal -->
-      <div id="portfolioModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-screen overflow-y-auto">
-          <div class="p-8">
-            <div class="flex justify-between items-center mb-6">
-              <h2 id="portfolioModalTitle" class="text-2xl font-bold text-navy">Add Portfolio Item</h2>
-              <button id="closePortfolioModal" class="text-gray-500 hover:text-gray-700">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </button>
-            </div>
-            
-            <form id="portfolioForm" class="space-y-4">
-              <input type="hidden" id="portfolioId">
-              
-              <div>
-                <label class="block text-gray-700 text-sm font-semibold mb-2">Project Title *</label>
-                <input type="text" id="portfolioTitle" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="e.g., Office Complex Wiring">
-              </div>
-
-              <div>
-                <label class="block text-gray-700 text-sm font-semibold mb-2">Description</label>
-                <textarea id="portfolioDescription" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="Project description..."></textarea>
-              </div>
-
-              <div class="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-gray-700 text-sm font-semibold mb-2">Client Name</label>
-                  <input type="text" id="portfolioClient" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="Client name">
-                </div>
-
-                <div>
-                  <label class="block text-gray-700 text-sm font-semibold mb-2">Project Date</label>
-                  <input type="text" id="portfolioDate" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="e.g., January 2024">
-                </div>
-              </div>
-
-              <div class="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-gray-700 text-sm font-semibold mb-2">Category</label>
-                  <select id="portfolioCategory" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
-                    <option value="">Select a category</option>
-                    <option value="Residential">Residential</option>
-                    <option value="Commercial">Commercial</option>
-                    <option value="Industrial">Industrial</option>
-                    <option value="Maintenance">Maintenance</option>
-                    <option value="Installation">Installation</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label class="block text-gray-700 text-sm font-semibold mb-2">Display Order</label>
-                  <input type="number" id="portfolioOrder" value="0" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
-                </div>
-              </div>
-
-              <div>
-                <label class="block text-gray-700 text-sm font-semibold mb-2">Project Image *</label>
-                <input type="file" id="portfolioImage" accept="image/*" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
-                <p class="text-xs text-gray-500 mt-1">Upload an image from your device (JPG, PNG, GIF)</p>
-                <div id="portfolioImagePreview" class="mt-2 hidden">
-                  <img id="portfolioPreviewImg" src="" alt="Preview" class="h-32 w-32 object-cover rounded-lg border-2 border-amber">
-                </div>
-              </div>
-
-              <div class="flex items-center">
-                <input type="checkbox" id="portfolioFeatured" class="w-4 h-4 text-amber border-gray-300 rounded focus:ring-amber">
-                <label for="portfolioFeatured" class="ml-2 text-gray-700">Featured Project</label>
-              </div>
-
-              <div class="flex gap-3 pt-4">
-                <button type="submit" class="flex-1 bg-amber hover:bg-amber-dark text-navy font-bold py-3 rounded-lg transition">Save Portfolio Item</button>
-                <button type="button" id="cancelPortfolioBtn" class="flex-1 bg-gray-300 hover:bg-gray-400 text-navy font-bold py-3 rounded-lg transition">Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      <!-- Portfolio Table -->
-      <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-navy text-white">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Image</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Title</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Client</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Category</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Featured</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="portfolioTableBody" class="bg-white divide-y divide-gray-200">
-              <!-- Portfolio items will be populated here -->
-            </tbody>
-          </table>
-        </div>
-        <div id="portfolioEmptyState" class="hidden text-center py-12">
-          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-          </svg>
-          <h3 class="mt-2 text-sm font-medium text-gray-900">No portfolio items yet</h3>
-          <p class="mt-1 text-sm text-gray-500">Get started by adding your first portfolio project.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Gallery Section -->
-    <div id="gallery-section" class="tab-content">
-      <div class="mb-6">
-        <button id="addGalleryBtn" class="bg-amber hover:bg-amber-dark text-navy px-6 py-3 rounded-lg font-bold transition flex items-center">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-          </svg>
-          Add Gallery Image
-        </button>
-      </div>
-
-      <!-- Gallery Form Modal -->
-      <div id="galleryModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-screen overflow-y-auto">
-          <div class="p-8">
-            <div class="flex justify-between items-center mb-6">
-              <h2 id="galleryModalTitle" class="text-2xl font-bold text-navy">Add Gallery Image</h2>
-              <button id="closeGalleryModal" class="text-gray-500 hover:text-gray-700">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </button>
-            </div>
-            
-            <form id="galleryForm" class="space-y-4">
-              <input type="hidden" id="galleryId">
-              
-              <div>
-                <label class="block text-gray-700 text-sm font-semibold mb-2">Image Title</label>
-                <input type="text" id="galleryTitle" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="e.g., Project Site">
-              </div>
-
-              <div>
-                <label class="block text-gray-700 text-sm font-semibold mb-2">Category</label>
-                <select id="galleryCategory" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
-                  <option value="">Select a category</option>
-                  <option value="Projects">Projects</option>
-                  <option value="Team">Team</option>
-                  <option value="Equipment">Equipment</option>
-                  <option value="Events">Events</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label class="block text-gray-700 text-sm font-semibold mb-2">Description</label>
-                <textarea id="galleryDescription" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="Image description..."></textarea>
-              </div>
-
-              <div>
-                <label class="block text-gray-700 text-sm font-semibold mb-2">Image *</label>
-                <input type="file" id="galleryImage" accept="image/*" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
-                <p class="text-xs text-gray-500 mt-1">Upload an image from your device (JPG, PNG, GIF)</p>
-                <div id="galleryImagePreview" class="mt-2 hidden">
-                  <img id="galleryPreviewImg" src="" alt="Preview" class="h-32 w-32 object-cover rounded-lg border-2 border-amber">
-                </div>
-              </div>
-
-              <div class="flex gap-3 pt-4">
-                <button type="submit" class="flex-1 bg-amber hover:bg-amber-dark text-navy font-bold py-3 rounded-lg transition">Save Gallery Image</button>
-                <button type="button" id="cancelGalleryBtn" class="flex-1 bg-gray-300 hover:bg-gray-400 text-navy font-bold py-3 rounded-lg transition">Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      <!-- Gallery Grid -->
+    <!-- Quick Stats -->
+    <div class="grid md:grid-cols-4 gap-6 mb-8">
       <div class="bg-white rounded-lg shadow p-6">
-        <div id="galleryGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          <!-- Gallery items will be populated here -->
-        </div>
-        <div id="galleryEmptyState" class="hidden text-center py-12">
-          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-          </svg>
-          <h3 class="mt-2 text-sm font-medium text-gray-900">No gallery images yet</h3>
-          <p class="mt-1 text-sm text-gray-500">Get started by adding your first gallery image.</p>
-        </div>
+        <div class="text-gray-500 text-sm font-semibold mb-2">Total Leads</div>
+        <div id="dashTotalLeads" class="text-3xl font-bold text-navy">0</div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm font-semibold mb-2">Total Orders</div>
+        <div id="dashTotalOrders" class="text-3xl font-bold text-blue-600">0</div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm font-semibold mb-2">Total Products</div>
+        <div id="dashTotalProducts" class="text-3xl font-bold text-purple-600">0</div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm font-semibold mb-2">Revenue</div>
+        <div id="dashRevenue" class="text-3xl font-bold text-green-600">₵0.00</div>
       </div>
     </div>
 
-    <!-- Settings Section -->
-    <div id="settings-section" class="tab-content">
-      <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 class="text-2xl font-bold text-navy mb-2">Business Settings</h2>
-        <p class="text-gray-500 text-sm mb-6">Manage your business contact information and other settings.</p>
-        
-        <form id="settingsForm" class="space-y-6 max-w-2xl">
-          <div>
-            <label class="block text-gray-700 text-sm font-semibold mb-2">Company Phone Number</label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                </svg>
-              </div>
-              <input type="tel" id="settingsPhone" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="(555) 123-4567">
-            </div>
-          </div>
+    <!-- Management Cards -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <a href="/admin/leads.html" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition group">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-navy group-hover:text-amber transition">Leads</h3>
+          <span class="bg-amber text-navy px-3 py-1 rounded-full text-sm font-semibold" id="dashNewLeads">0 new</span>
+        </div>
+        <p class="text-gray-600 text-sm">Manage customer inquiries and service requests</p>
+      </a>
 
-          <div>
-            <label class="block text-gray-700 text-sm font-semibold mb-2">Company Email Address</label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                </svg>
-              </div>
-              <input type="email" id="settingsEmail" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="info@minnahelectricals.com">
-            </div>
-          </div>
+      <a href="/admin/products.html" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition group">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-navy group-hover:text-amber transition">Products</h3>
+          <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold" id="dashProductCount">0</span>
+        </div>
+        <p class="text-gray-600 text-sm">Add and manage your product catalog</p>
+      </a>
 
-          <div>
-            <label class="block text-gray-700 text-sm font-semibold mb-2">Service Location / Area</label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
-              </div>
-              <input type="text" id="settingsLocation" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="Serving the Local Area">
-            </div>
-          </div>
+      <a href="/admin/orders.html" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition group">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-navy group-hover:text-amber transition">Orders</h3>
+          <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold" id="dashPendingOrders">0 pending</span>
+        </div>
+        <p class="text-gray-600 text-sm">View and manage customer orders</p>
+      </a>
 
-          <div class="pt-4 border-t border-gray-200">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm text-gray-500">Changes are saved immediately to the database and synced to the cloud.</p>
-              </div>
-              <button type="submit" class="bg-amber hover:bg-amber-dark text-navy font-bold px-8 py-3 rounded-lg transition flex items-center">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
-                </svg>
-                Save Settings
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
+      <a href="/admin/portfolio.html" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition group">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-navy group-hover:text-amber transition">Portfolio</h3>
+          <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-semibold" id="dashPortfolioCount">0</span>
+        </div>
+        <p class="text-gray-600 text-sm">Showcase your completed projects</p>
+      </a>
+
+      <a href="/admin/gallery.html" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition group">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-navy group-hover:text-amber transition">Gallery</h3>
+          <span class="bg-pink-100 text-pink-800 px-3 py-1 rounded-full text-sm font-semibold" id="dashGalleryCount">0</span>
+        </div>
+        <p class="text-gray-600 text-sm">Manage your image gallery</p>
+      </a>
+
+      <a href="/admin/analytics.html" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition group">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-navy group-hover:text-amber transition">Analytics</h3>
+          <svg class="w-8 h-8 text-amber" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        </div>
+        <p class="text-gray-600 text-sm">View sales performance and trends</p>
+      </a>
+
+      <a href="/admin/customers.html" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition group">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-navy group-hover:text-amber transition">Customers</h3>
+          <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+        </div>
+        <p class="text-gray-600 text-sm">View your customer database</p>
+      </a>
+
+      <a href="/admin/inventory.html" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition group">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-navy group-hover:text-amber transition">Inventory</h3>
+          <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+        </div>
+        <p class="text-gray-600 text-sm">Monitor product stock levels</p>
+      </a>
+
+      <a href="/admin/settings.html" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition group">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-navy group-hover:text-amber transition">Settings</h3>
+          <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        </div>
+        <p class="text-gray-600 text-sm">Configure business settings</p>
+      </a>
     </div>
-
   </main>
 
-  <script src="/js/admin.js"></script>
   <script>
-    // Global state
-    let currentTab = 'leads';
-    let leads = [];
-    let products = [];
-    let orders = [];
-    let portfolio = [];
-    let gallery = [];
-    let editingProductId = null;
-    let editingProductImageUrl = null;
-    let editingPortfolioId = null;
-    let editingPortfolioImageUrl = null;
-    let editingGalleryId = null;
-
-    // DOM Elements
-    const logoutBtn = document.getElementById('logoutBtn');
-    const addProductBtn = document.getElementById('addProductBtn');
-    const productModal = document.getElementById('productModal');
-    const closeModal = document.getElementById('closeModal');
-    const cancelBtn = document.getElementById('cancelBtn');
-    const productForm = document.getElementById('productForm');
-    const modalTitle = document.getElementById('modalTitle');
-    const productImageInput = document.getElementById('productImage');
-    const imagePreview = document.getElementById('imagePreview');
-    const previewImg = document.getElementById('previewImg');
-
-    // Check authentication
     const token = localStorage.getItem('adminToken');
-    if (!token) {
-      window.location.href = '/admin/login.html';
-    }
+    if (!token) { window.location.href = '/admin/login.html'; }
 
-    // Tab switching
-    function switchTab(tab) {
-      currentTab = tab;
-      
-      // Update tab buttons
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('border-amber', 'text-amber');
-        btn.classList.add('border-transparent', 'text-gray-500');
-      });
-      document.getElementById(`tab-${tab}`).classList.remove('border-transparent', 'text-gray-500');
-      document.getElementById(`tab-${tab}`).classList.add('border-amber', 'text-amber');
-      
-      // Show/hide sections
-      document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active');
-      });
-      document.getElementById(`${tab}-section`).classList.add('active');
-      
-      // Load data for the tab
-      if (tab === 'leads') loadLeads();
-      if (tab === 'products') loadProducts();
-      if (tab === 'orders') loadOrders();
-      if (tab === 'portfolio') loadPortfolio();
-      if (tab === 'gallery') loadGallery();
-      if (tab === 'settings') loadSettings();
-    }
-
-    // Logout
-    logoutBtn.addEventListener('click', () => {
+    document.getElementById('logoutBtn').addEventListener('click', () => {
       localStorage.removeItem('adminToken');
       window.location.href = '/admin/login.html';
     });
 
-    // Product modal handlers
-    addProductBtn.addEventListener('click', () => openModal());
-    closeModal.addEventListener('click', closeModalFn);
-    cancelBtn.addEventListener('click', closeModalFn);
-    productForm.addEventListener('submit', handleProductSubmit);
-    
-    productImageInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          previewImg.src = event.target.result;
-          imagePreview.classList.remove('hidden');
-        };
-        reader.readAsDataURL(file);
-      } else {
-        imagePreview.classList.add('hidden');
-      }
-    });
-
-    // Portfolio modal handlers
-    const addPortfolioBtn = document.getElementById('addPortfolioBtn');
-    const portfolioModal = document.getElementById('portfolioModal');
-    const closePortfolioModal = document.getElementById('closePortfolioModal');
-    const cancelPortfolioBtn = document.getElementById('cancelPortfolioBtn');
-    const portfolioForm = document.getElementById('portfolioForm');
-    const portfolioImageInput = document.getElementById('portfolioImage');
-    const portfolioImagePreview = document.getElementById('portfolioImagePreview');
-    const portfolioPreviewImg = document.getElementById('portfolioPreviewImg');
-
-    addPortfolioBtn.addEventListener('click', () => openPortfolioModal());
-    closePortfolioModal.addEventListener('click', closePortfolioModalFn);
-    cancelPortfolioBtn.addEventListener('click', closePortfolioModalFn);
-    portfolioForm.addEventListener('submit', handlePortfolioSubmit);
-    
-    portfolioImageInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          portfolioPreviewImg.src = event.target.result;
-          portfolioImagePreview.classList.remove('hidden');
-        };
-        reader.readAsDataURL(file);
-      } else {
-        portfolioImagePreview.classList.add('hidden');
-      }
-    });
-
-    // Gallery modal handlers
-    const addGalleryBtn = document.getElementById('addGalleryBtn');
-    const galleryModal = document.getElementById('galleryModal');
-    const closeGalleryModal = document.getElementById('closeGalleryModal');
-    const cancelGalleryBtn = document.getElementById('cancelGalleryBtn');
-    const galleryForm = document.getElementById('galleryForm');
-    const galleryImageInput = document.getElementById('galleryImage');
-    const galleryImagePreview = document.getElementById('galleryImagePreview');
-    const galleryPreviewImg = document.getElementById('galleryPreviewImg');
-
-    addGalleryBtn.addEventListener('click', () => openGalleryModal());
-    closeGalleryModal.addEventListener('click', closeGalleryModalFn);
-    cancelGalleryBtn.addEventListener('click', closeGalleryModalFn);
-    galleryForm.addEventListener('submit', handleGallerySubmit);
-    
-    galleryImageInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          galleryPreviewImg.src = event.target.result;
-          galleryImagePreview.classList.remove('hidden');
-        };
-        reader.readAsDataURL(file);
-      } else {
-        galleryImagePreview.classList.add('hidden');
-      }
-    });
-
-    // Settings form handler
-    const settingsForm = document.getElementById('settingsForm');
-    settingsForm.addEventListener('submit', handleSettingsSubmit);
-
-    // Load initial data
-    document.addEventListener('DOMContentLoaded', () => {
-      loadLeads();
-    });
-
-    // Portfolio functions
-    async function loadPortfolio() {
+    async function loadDashboardStats() {
       try {
-        const response = await fetch('/api/admin/portfolio', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await response.json();
-        
-        if (data.success) {
-          portfolio = data.portfolio;
-          renderPortfolio();
+        // Load leads stats
+        const leadsRes = await fetch('/api/admin/leads', { headers: { 'Authorization': `Bearer ${token}` } });
+        const leadsData = await leadsRes.json();
+        if (leadsData.success) {
+          document.getElementById('dashTotalLeads').textContent = leadsData.leads.length;
+          document.getElementById('dashNewLeads').textContent = leadsData.leads.filter(l => l.status === 'New').length + ' new';
         }
-      } catch (error) {
-        console.error('Error loading portfolio:', error);
-        showMessage('Failed to load portfolio', 'error');
-      }
-    }
 
-    function renderPortfolio() {
-      const tbody = document.getElementById('portfolioTableBody');
-      const emptyState = document.getElementById('portfolioEmptyState');
-      
-      if (portfolio.length === 0) {
-        tbody.innerHTML = '';
-        emptyState.classList.remove('hidden');
-        return;
-      }
-
-      emptyState.classList.add('hidden');
-      tbody.innerHTML = portfolio.map(item => `
-        <tr class="hover:bg-gray-50">
-          <td class="px-6 py-4 whitespace-nowrap">
-            ${item.image_url ? 
-              `<img src="${item.image_url}" alt="${item.title}" class="h-12 w-12 rounded-full object-cover border-2 border-amber">` :
-              `<div class="h-12 w-12 rounded-full bg-gray-200 border-2 border-amber flex items-center justify-center">
-                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                </svg>
-              </div>`
-            }
-          </td>
-          <td class="px-6 py-4">
-            <div class="text-sm font-medium text-navy">${item.title}</div>
-            <div class="text-sm text-gray-500">${item.description ? item.description.substring(0, 50) + '...' : ''}</div>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${item.client_name || 'N/A'}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${item.category || 'N/A'}</td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${item.featured ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
-              ${item.featured ? 'Featured' : 'No'}
-            </span>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-            <button onclick="editPortfolio(${item.id})" class="text-amber hover:text-amber-dark mr-3">Edit</button>
-            <button onclick="deletePortfolio(${item.id})" class="text-red-600 hover:text-red-800">Delete</button>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    function openPortfolioModal(portfolioItem = null) {
-      editingPortfolioId = portfolioItem ? portfolioItem.id : null;
-      document.getElementById('portfolioModalTitle').textContent = portfolioItem ? 'Edit Portfolio Item' : 'Add Portfolio Item';
-      
-      if (portfolioItem) {
-        document.getElementById('portfolioId').value = portfolioItem.id;
-        document.getElementById('portfolioTitle').value = portfolioItem.title;
-        document.getElementById('portfolioDescription').value = portfolioItem.description || '';
-        document.getElementById('portfolioClient').value = portfolioItem.client_name || '';
-        document.getElementById('portfolioDate').value = portfolioItem.project_date || '';
-        document.getElementById('portfolioCategory').value = portfolioItem.category || '';
-        document.getElementById('portfolioOrder').value = portfolioItem.display_order || 0;
-        document.getElementById('portfolioFeatured').checked = portfolioItem.featured == 1;
-        editingPortfolioImageUrl = portfolioItem.image_url || '';
-        
-        if (portfolioItem.image_url) {
-          portfolioPreviewImg.src = portfolioItem.image_url;
-          portfolioImagePreview.classList.remove('hidden');
-        } else {
-          portfolioImagePreview.classList.add('hidden');
+        // Load orders stats
+        const ordersRes = await fetch('/api/admin/orders', { headers: { 'Authorization': `Bearer ${token}` } });
+        const ordersData = await ordersRes.json();
+        if (ordersData.success) {
+          document.getElementById('dashTotalOrders').textContent = ordersData.orders.length;
+          const pending = ordersData.orders.filter(o => o.status === 'Pending').length;
+          document.getElementById('dashPendingOrders').textContent = pending + ' pending';
+          const revenue = ordersData.orders.filter(o => o.status === 'Completed').reduce((sum, o) => sum + (parseFloat(o.product_price || 0) * parseInt(o.quantity || 1)), 0);
+          document.getElementById('dashRevenue').textContent = '₵' + revenue.toFixed(2);
         }
-      } else {
-        portfolioForm.reset();
-        document.getElementById('portfolioId').value = '';
-        document.getElementById('portfolioOrder').value = 0;
-        editingPortfolioImageUrl = null;
-        portfolioImagePreview.classList.add('hidden');
-      }
-      
-      portfolioModal.classList.remove('hidden');
-    }
 
-    function closePortfolioModalFn() {
-      portfolioModal.classList.add('hidden');
-      editingPortfolioId = null;
-      editingPortfolioImageUrl = null;
-    }
-
-    async function handlePortfolioSubmit(e) {
-      e.preventDefault();
-      
-      const portfolioData = {
-        title: document.getElementById('portfolioTitle').value,
-        description: document.getElementById('portfolioDescription').value,
-        client_name: document.getElementById('portfolioClient').value,
-        project_date: document.getElementById('portfolioDate').value,
-        category: document.getElementById('portfolioCategory').value,
-        display_order: parseInt(document.getElementById('portfolioOrder').value) || 0,
-        featured: document.getElementById('portfolioFeatured').checked
-      };
-
-      const imageFile = document.getElementById('portfolioImage').files[0];
-      if (imageFile) {
-        try {
-          showMessage('Uploading image...', 'success');
-          const formData = new FormData();
-          formData.append('image', imageFile);
-          
-          const uploadResponse = await fetch('/api/admin/upload', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
-            body: formData
-          });
-
-          const uploadData = await uploadResponse.json();
-          
-          if (uploadData.success) {
-            portfolioData.image_url = uploadData.url;
-          } else {
-            showMessage(uploadData.message || 'Failed to upload image', 'error');
-            return;
-          }
-        } catch (error) {
-          console.error('Error uploading image:', error);
-          showMessage('Failed to upload image', 'error');
-          return;
+        // Load products stats
+        const prodRes = await fetch('/api/admin/products', { headers: { 'Authorization': `Bearer ${token}` } });
+        const prodData = await prodRes.json();
+        if (prodData.success) {
+          document.getElementById('dashTotalProducts').textContent = prodData.products.length;
+          document.getElementById('dashProductCount').textContent = prodData.products.length;
         }
-      } else if (editingPortfolioImageUrl) {
-        portfolioData.image_url = editingPortfolioImageUrl;
-      } else {
-        showMessage('Please upload an image', 'error');
-        return;
-      }
 
-      try {
-        const url = editingPortfolioId ? `/api/admin/portfolio/${editingPortfolioId}` : '/api/admin/portfolio';
-        const method = editingPortfolioId ? 'PUT' : 'POST';
+        // Load portfolio stats
+        const portRes = await fetch('/api/admin/portfolio', { headers: { 'Authorization': `Bearer ${token}` } });
+        const portData = await portRes.json();
+        if (portData.success) document.getElementById('dashPortfolioCount').textContent = portData.portfolio.length;
 
-        const response = await fetch(url, {
-          method: method,
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(portfolioData)
-        });
+        // Load gallery stats
+        const galRes = await fetch('/api/admin/gallery', { headers: { 'Authorization': `Bearer ${token}` } });
+        const galData = await galRes.json();
+        if (galData.success) document.getElementById('dashGalleryCount').textContent = galData.gallery.length;
 
-        const data = await response.json();
-
-        if (data.success) {
-          showMessage(editingPortfolioId ? 'Portfolio item updated!' : 'Portfolio item created!', 'success');
-          closePortfolioModalFn();
-          loadPortfolio();
-        } else {
-          showMessage(data.message || 'Failed to save portfolio item', 'error');
-        }
-      } catch (error) {
-        console.error('Error saving portfolio:', error);
-        showMessage('Failed to save portfolio item', 'error');
-      }
+      } catch (error) { console.error('Error loading dashboard stats:', error); }
     }
 
-    async function editPortfolio(id) {
-      const item = portfolio.find(p => p.id === id);
-      if (item) {
-        openPortfolioModal(item);
-      }
-    }
-
-    async function deletePortfolio(id) {
-      if (!confirm('Are you sure you want to delete this portfolio item?')) {
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/admin/portfolio/${id}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          showMessage('Portfolio item deleted!', 'success');
-          loadPortfolio();
-        } else {
-          showMessage(data.message || 'Failed to delete portfolio item', 'error');
-        }
-      } catch (error) {
-        console.error('Error deleting portfolio:', error);
-        showMessage('Failed to delete portfolio item', 'error');
-      }
-    }
-
-    // Gallery functions
-    async function loadGallery() {
-      try {
-        const response = await fetch('/api/admin/gallery', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await response.json();
-        
-        if (data.success) {
-          gallery = data.gallery;
-          renderGallery();
-        }
-      } catch (error) {
-        console.error('Error loading gallery:', error);
-        showMessage('Failed to load gallery', 'error');
-      }
-    }
-
-    function renderGallery() {
-      const grid = document.getElementById('galleryGrid');
-      const emptyState = document.getElementById('galleryEmptyState');
-      
-      if (gallery.length === 0) {
-        grid.innerHTML = '';
-        emptyState.classList.remove('hidden');
-        return;
-      }
-
-      emptyState.classList.add('hidden');
-      grid.innerHTML = gallery.map(item => `
-        <div class="relative group">
-          <img src="${item.image_url}" alt="${item.title || 'Gallery image'}" class="w-full h-48 object-cover rounded-lg border-2 border-amber">
-          <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition rounded-lg flex items-center justify-center">
-            <div class="hidden group-hover:flex gap-2">
-              <button onclick="editGallery(${item.id})" class="bg-amber text-navy px-3 py-1 rounded font-semibold text-sm">Edit</button>
-              <button onclick="deleteGallery(${item.id})" class="bg-red-600 text-white px-3 py-1 rounded font-semibold text-sm">Delete</button>
-            </div>
-          </div>
-          ${item.title ? `<div class="mt-2 text-sm font-medium text-navy">${item.title}</div>` : ''}
-        </div>
-      `).join('');
-    }
-
-    function openGalleryModal(galleryItem = null) {
-      editingGalleryId = galleryItem ? galleryItem.id : null;
-      document.getElementById('galleryModalTitle').textContent = galleryItem ? 'Edit Gallery Image' : 'Add Gallery Image';
-      
-      if (galleryItem) {
-        document.getElementById('galleryId').value = galleryItem.id;
-        document.getElementById('galleryTitle').value = galleryItem.title || '';
-        document.getElementById('galleryCategory').value = galleryItem.category || '';
-        document.getElementById('galleryDescription').value = galleryItem.description || '';
-        editingGalleryId = galleryItem.id;
-        
-        if (galleryItem.image_url) {
-          galleryPreviewImg.src = galleryItem.image_url;
-          galleryImagePreview.classList.remove('hidden');
-        }
-      } else {
-        galleryForm.reset();
-        document.getElementById('galleryId').value = '';
-        galleryImagePreview.classList.add('hidden');
-      }
-      
-      galleryModal.classList.remove('hidden');
-    }
-
-    function closeGalleryModalFn() {
-      galleryModal.classList.add('hidden');
-      editingGalleryId = null;
-    }
-
-    async function handleGallerySubmit(e) {
-      e.preventDefault();
-      
-      const galleryData = {
-        title: document.getElementById('galleryTitle').value,
-        category: document.getElementById('galleryCategory').value,
-        description: document.getElementById('galleryDescription').value
-      };
-
-      const imageFile = document.getElementById('galleryImage').files[0];
-      if (imageFile) {
-        try {
-          showMessage('Uploading image...', 'success');
-          const formData = new FormData();
-          formData.append('image', imageFile);
-          
-          const uploadResponse = await fetch('/api/admin/upload', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
-            body: formData
-          });
-
-          const uploadData = await uploadResponse.json();
-          
-          if (uploadData.success) {
-            galleryData.image_url = uploadData.url;
-          } else {
-            showMessage(uploadData.message || 'Failed to upload image', 'error');
-            return;
-          }
-        } catch (error) {
-          console.error('Error uploading image:', error);
-          showMessage('Failed to upload image', 'error');
-          return;
-        }
-      } else if (!editingGalleryId) {
-        showMessage('Please upload an image', 'error');
-        return;
-      }
-
-      try {
-        const url = editingGalleryId ? `/api/admin/gallery/${editingGalleryId}` : '/api/admin/gallery';
-        const method = editingGalleryId ? 'PUT' : 'POST';
-
-        const response = await fetch(url, {
-          method: method,
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(galleryData)
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          showMessage(editingGalleryId ? 'Gallery image updated!' : 'Gallery image added!', 'success');
-          closeGalleryModalFn();
-          loadGallery();
-        } else {
-          showMessage(data.message || 'Failed to save gallery image', 'error');
-        }
-      } catch (error) {
-        console.error('Error saving gallery:', error);
-        showMessage('Failed to save gallery image', 'error');
-      }
-    }
-
-    async function editGallery(id) {
-      const item = gallery.find(g => g.id === id);
-      if (item) {
-        openGalleryModal(item);
-      }
-    }
-
-    async function deleteGallery(id) {
-      if (!confirm('Are you sure you want to delete this gallery image?')) {
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/admin/gallery/${id}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          showMessage('Gallery image deleted!', 'success');
-          loadGallery();
-        } else {
-          showMessage(data.message || 'Failed to delete gallery image', 'error');
-        }
-      } catch (error) {
-        console.error('Error deleting gallery:', error);
-        showMessage('Failed to delete gallery image', 'error');
-      }
-    }
-
-    // Leads functions
-    async function loadLeads() {
-      try {
-        const response = await fetch('/api/admin/leads', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await response.json();
-        
-        if (data.success) {
-          leads = data.leads;
-          renderLeads(data.leads);
-          updateLeadStats(data.leads);
-        }
-      } catch (error) {
-        console.error('Error loading leads:', error);
-        showMessage('Failed to load leads', 'error');
-      }
-    }
-
-    function renderLeads(leads) {
-      const tbody = document.getElementById('leadsTableBody');
-      const emptyState = document.getElementById('leadsEmptyState');
-      
-      if (leads.length === 0) {
-        tbody.innerHTML = '';
-        emptyState.classList.remove('hidden');
-        return;
-      }
-
-      emptyState.classList.add('hidden');
-      tbody.innerHTML = leads.map(lead => `
-        <tr class="hover:bg-gray-50">
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${new Date(lead.created_at).toLocaleDateString()}</td>
-          <td class="px-6 py-4 text-sm font-medium text-navy">${lead.full_name}</td>
-          <td class="px-6 py-4 text-sm text-gray-900">${lead.phone}</td>
-          <td class="px-6 py-4 text-sm text-gray-900">${lead.email}</td>
-          <td class="px-6 py-4 text-sm text-gray-900">${lead.service_needed}</td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${lead.urgency === 'Emergency' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}">
-              ${lead.urgency}
-            </span>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <select onchange="updateLeadStatus(${lead.id}, this.value)" class="text-sm border border-gray-300 rounded-lg px-3 py-1 focus:ring-2 focus:ring-amber focus:border-transparent">
-              <option value="New" ${lead.status === 'New' ? 'selected' : ''}>New</option>
-              <option value="Contacted" ${lead.status === 'Contacted' ? 'selected' : ''}>Contacted</option>
-              <option value="Scheduled" ${lead.status === 'Scheduled' ? 'selected' : ''}>Scheduled</option>
-              <option value="Completed" ${lead.status === 'Completed' ? 'selected' : ''}>Completed</option>
-              <option value="Archived" ${lead.status === 'Archived' ? 'selected' : ''}>Archived</option>
-            </select>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-            <button onclick="viewLeadDetails(${lead.id})" class="text-amber hover:text-amber-dark">View</button>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    function updateLeadStats(leads) {
-      const total = leads.length;
-      const newLeads = leads.filter(l => l.status === 'New').length;
-      const recent = leads.filter(l => new Date(l.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length;
-      const emergency = leads.filter(l => l.urgency === 'Emergency' && l.status === 'New').length;
-
-      document.getElementById('totalLeads').textContent = total;
-      document.getElementById('newLeads').textContent = newLeads;
-      document.getElementById('recentLeads').textContent = recent;
-      document.getElementById('emergencyLeads').textContent = emergency;
-    }
-
-    async function updateLeadStatus(leadId, newStatus) {
-      try {
-        const response = await fetch(`/api/admin/leads/${leadId}`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ status: newStatus })
-        });
-
-        const data = await response.json();
-        if (data.success) {
-          showMessage(`Lead #${leadId} status updated to ${newStatus}`, 'success');
-          loadLeads();
-        } else {
-          showMessage(data.message || 'Failed to update status', 'error');
-        }
-      } catch (error) {
-        console.error('Error updating lead:', error);
-        showMessage('Failed to update status', 'error');
-      }
-    }
-
-    function viewLeadDetails(leadId) {
-      const lead = leads.find(l => l.id === leadId);
-      if (!lead) return;
-      alert(`Lead Details:\n\nName: ${lead.full_name}\nPhone: ${lead.phone}\nEmail: ${lead.email}\nService: ${lead.service_needed}\nUrgency: ${lead.urgency}\nMessage: ${lead.message || 'N/A'}\nStatus: ${lead.status}`);
-    }
-
-    // Products functions
-    async function loadProducts() {
-      try {
-        const response = await fetch('/api/admin/products', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await response.json();
-        
-        if (data.success) {
-          products = data.products;
-          renderProducts();
-        }
-      } catch (error) {
-        console.error('Error loading products:', error);
-        showMessage('Failed to load products', 'error');
-      }
-    }
-
-    function renderProducts() {
-      const tbody = document.getElementById('productsTableBody');
-      const emptyState = document.getElementById('productsEmptyState');
-      
-      if (products.length === 0) {
-        tbody.innerHTML = '';
-        emptyState.classList.remove('hidden');
-        return;
-      }
-
-      emptyState.classList.add('hidden');
-      tbody.innerHTML = products.map(product => `
-        <tr class="hover:bg-gray-50">
-          <td class="px-6 py-4 whitespace-nowrap">
-            ${product.image_url ? 
-              `<img src="${product.image_url}" alt="${product.name}" class="h-12 w-12 rounded-full object-cover border-2 border-amber">` :
-              `<div class="h-12 w-12 rounded-full bg-gray-200 border-2 border-amber flex items-center justify-center">
-                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                </svg>
-              </div>`
-            }
-          </td>
-          <td class="px-6 py-4">
-            <div class="text-sm font-medium text-navy">${product.name}</div>
-            <div class="text-sm text-gray-500">${product.description ? product.description.substring(0, 50) + '...' : ''}</div>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${product.category || 'N/A'}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-amber">₵${parseFloat(product.price).toFixed(2)}</td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.in_stock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-              ${product.in_stock ? 'In Stock' : 'Out of Stock'}
-            </span>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-            <button onclick="editProduct(${product.id})" class="text-amber hover:text-amber-dark mr-3">Edit</button>
-            <button onclick="deleteProduct(${product.id})" class="text-red-600 hover:text-red-800">Delete</button>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    function openModal(product = null) {
-      editingProductId = product ? product.id : null;
-      modalTitle.textContent = product ? 'Edit Product' : 'Add New Product';
-      
-      if (product) {
-        document.getElementById('productId').value = product.id;
-        document.getElementById('productName').value = product.name;
-        document.getElementById('productDescription').value = product.description || '';
-        document.getElementById('productPrice').value = product.price;
-        document.getElementById('productCategory').value = product.category || '';
-        document.getElementById('productInStock').checked = product.in_stock == 1;
-        editingProductImageUrl = product.image_url || '';
-        
-        if (product.image_url) {
-          previewImg.src = product.image_url;
-          imagePreview.classList.remove('hidden');
-        } else {
-          imagePreview.classList.add('hidden');
-        }
-      } else {
-        productForm.reset();
-        document.getElementById('productId').value = '';
-        document.getElementById('productInStock').checked = true;
-        editingProductImageUrl = null;
-        imagePreview.classList.add('hidden');
-      }
-      
-      productModal.classList.remove('hidden');
-    }
-
-    function closeModalFn() {
-      productModal.classList.add('hidden');
-      editingProductId = null;
-      editingProductImageUrl = null;
-    }
-
-    async function handleProductSubmit(e) {
-      e.preventDefault();
-      
-      const productData = {
-        name: document.getElementById('productName').value,
-        description: document.getElementById('productDescription').value,
-        price: parseFloat(document.getElementById('productPrice').value),
-        category: document.getElementById('productCategory').value,
-        in_stock: document.getElementById('productInStock').checked
-      };
-
-      const imageFile = document.getElementById('productImage').files[0];
-      if (imageFile) {
-        try {
-          showMessage('Uploading image...', 'success');
-          const formData = new FormData();
-          formData.append('image', imageFile);
-          
-          const uploadResponse = await fetch('/api/admin/upload', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
-            body: formData
-          });
-
-          const uploadData = await uploadResponse.json();
-          
-          if (uploadData.success) {
-            productData.image_url = uploadData.url;
-          } else {
-            showMessage(uploadData.message || 'Failed to upload image', 'error');
-            return;
-          }
-        } catch (error) {
-          console.error('Error uploading image:', error);
-          showMessage('Failed to upload image', 'error');
-          return;
-        }
-      } else if (editingProductImageUrl) {
-        productData.image_url = editingProductImageUrl;
-      }
-
-      try {
-        const url = editingProductId ? `/api/admin/products/${editingProductId}` : '/api/admin/products';
-        const method = editingProductId ? 'PUT' : 'POST';
-
-        const response = await fetch(url, {
-          method: method,
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(productData)
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          showMessage(editingProductId ? 'Product updated successfully!' : 'Product created successfully!', 'success');
-          closeModalFn();
-          loadProducts();
-        } else {
-          showMessage(data.message || 'Failed to save product', 'error');
-        }
-      } catch (error) {
-        console.error('Error saving product:', error);
-        showMessage('Failed to save product', 'error');
-      }
-    }
-
-    async function editProduct(id) {
-      const product = products.find(p => p.id === id);
-      if (product) {
-        openModal(product);
-      }
-    }
-
-    async function deleteProduct(id) {
-      if (!confirm('Are you sure you want to delete this product?')) {
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/admin/products/${id}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          showMessage('Product deleted successfully!', 'success');
-          loadProducts();
-        } else {
-          showMessage(data.message || 'Failed to delete product', 'error');
-        }
-      } catch (error) {
-        console.error('Error deleting product:', error);
-        showMessage('Failed to delete product', 'error');
-      }
-    }
-
-    // Orders functions
-    async function loadOrders() {
-      try {
-        const response = await fetch('/api/admin/orders', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await response.json();
-        
-        if (data.success) {
-          orders = data.orders;
-          renderOrders();
-          updateOrderStats();
-        }
-      } catch (error) {
-        console.error('Error loading orders:', error);
-        showMessage('Failed to load orders', 'error');
-      }
-    }
-
-    function updateOrderStats() {
-      const total = orders.length;
-      const pending = orders.filter(o => o.status === 'Pending').length;
-      const confirmed = orders.filter(o => o.status === 'Confirmed').length;
-      const completed = orders.filter(o => o.status === 'Completed').length;
-
-      document.getElementById('totalOrders').textContent = total;
-      document.getElementById('pendingOrders').textContent = pending;
-      document.getElementById('confirmedOrders').textContent = confirmed;
-      document.getElementById('completedOrders').textContent = completed;
-    }
-
-    function renderOrders() {
-      const tbody = document.getElementById('ordersTableBody');
-      const emptyState = document.getElementById('ordersEmptyState');
-      
-      if (orders.length === 0) {
-        tbody.innerHTML = '';
-        emptyState.classList.remove('hidden');
-        return;
-      }
-
-      emptyState.classList.add('hidden');
-      tbody.innerHTML = orders.map(order => `
-        <tr class="hover:bg-gray-50">
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-navy">#${order.id}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${new Date(order.created_at).toLocaleDateString()}</td>
-          <td class="px-6 py-4 text-sm font-medium text-navy">${order.customer_name}</td>
-          <td class="px-6 py-4">
-            <div class="text-sm text-gray-900">${order.customer_phone}</div>
-            ${order.customer_email ? `<div class="text-sm text-gray-500">${order.customer_email}</div>` : ''}
-          </td>
-          <td class="px-6 py-4">
-            <div class="text-sm text-gray-900">${order.product_name || 'Product #' + order.product_id}</div>
-            <div class="text-sm text-gray-500">₵${parseFloat(order.product_price || 0).toFixed(2)}</div>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${order.quantity}</td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <select onchange="updateOrderStatus(${order.id}, this.value)" class="text-sm border border-gray-300 rounded-lg px-3 py-1 focus:ring-2 focus:ring-amber focus:border-transparent ${getStatusColor(order.status)}">
-              <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
-              <option value="Confirmed" ${order.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
-              <option value="Completed" ${order.status === 'Completed' ? 'selected' : ''}>Completed</option>
-              <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-            </select>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-            <button onclick="viewOrderDetails(${order.id})" class="text-amber hover:text-amber-dark">View</button>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    function getStatusColor(status) {
-      switch(status) {
-        case 'Pending': return 'bg-yellow-50 text-yellow-800';
-        case 'Confirmed': return 'bg-blue-50 text-blue-800';
-        case 'Completed': return 'bg-green-50 text-green-800';
-        case 'Cancelled': return 'bg-red-50 text-red-800';
-        default: return 'bg-gray-50 text-gray-800';
-      }
-    }
-
-    async function updateOrderStatus(orderId, newStatus) {
-      try {
-        const response = await fetch(`/api/admin/orders/${orderId}`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ status: newStatus })
-        });
-
-        const data = await response.json();
-        if (data.success) {
-          showMessage(`Order #${orderId} status updated to ${newStatus}`, 'success');
-          loadOrders();
-        } else {
-          showMessage(data.message || 'Failed to update order status', 'error');
-        }
-      } catch (error) {
-        console.error('Error updating order:', error);
-        showMessage('Failed to update order status', 'error');
-      }
-    }
-
-    function viewOrderDetails(orderId) {
-      const order = orders.find(o => o.id === orderId);
-      if (!order) return;
-      alert(`Order Details:\n\nOrder ID: #${order.id}\nDate: ${new Date(order.created_at).toLocaleString()}\n\nCustomer:\n- Name: ${order.customer_name}\n- Phone: ${order.customer_phone}\n- Email: ${order.customer_email || 'N/A'}\n\nProduct: ${order.product_name || 'Product #' + order.product_id}\nPrice: ₵${parseFloat(order.product_price || 0).toFixed(2)}\nQuantity: ${order.quantity}\nNotes: ${order.notes || 'None'}\n\nStatus: ${order.status}`);
-    }
-
-    // Settings functions
-    async function loadSettings() {
-      try {
-        const response = await fetch('/api/admin/settings', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await response.json();
-        
-        if (data.success) {
-          const settings = data.settings;
-          document.getElementById('settingsPhone').value = settings.phone || '';
-          document.getElementById('settingsEmail').value = settings.email || '';
-          document.getElementById('settingsLocation').value = settings.location || '';
-        }
-      } catch (error) {
-        console.error('Error loading settings:', error);
-        showMessage('Failed to load settings', 'error');
-      }
-    }
-
-    async function handleSettingsSubmit(e) {
-      e.preventDefault();
-      
-      const settingsData = {
-        phone: document.getElementById('settingsPhone').value,
-        email: document.getElementById('settingsEmail').value,
-        location: document.getElementById('settingsLocation').value
-      };
-
-      try {
-        const response = await fetch('/api/admin/settings', {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(settingsData)
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          showMessage('Settings saved successfully!', 'success');
-        } else {
-          showMessage(data.message || 'Failed to save settings', 'error');
-        }
-      } catch (error) {
-        console.error('Error saving settings:', error);
-        showMessage('Failed to save settings', 'error');
-      }
-    }
-
-    // Message display
-    function showMessage(message, type) {
-      const messageDiv = document.createElement('div');
-      messageDiv.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
-      messageDiv.textContent = message;
-      document.body.appendChild(messageDiv);
-      
-      setTimeout(() => {
-        messageDiv.remove();
-      }, 3000);
-    }
-
-    // Filter buttons
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.filter-btn').forEach(b => {
-          b.classList.remove('bg-navy', 'text-white');
-          b.classList.add('bg-gray-200', 'text-navy');
-        });
-        e.target.classList.remove('bg-gray-200', 'text-navy');
-        e.target.classList.add('bg-navy', 'text-white');
-        // Filter logic would go here
-      });
-    });
-
-    // Refresh button
-    document.getElementById('refreshLeads')?.addEventListener('click', loadLeads);
+    document.addEventListener('DOMContentLoaded', loadDashboardStats);
   </script>
 </body>
 </html>

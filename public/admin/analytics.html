@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sales analytics">
+  <title>Analytics | Minnah Electricals</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any">
+  <link rel="icon" type="image/jpeg" href="/assets/logo.jpg" sizes="32x32">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { navy: '#0F172A', amber: '#F59E0B', 'amber-dark': '#D97706' }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <header class="bg-navy text-white shadow-lg">
+    <div class="container mx-auto px-4">
+      <div class="flex items-center justify-between py-4">
+        <a href="/admin/index.html" class="flex items-center space-x-3">
+          <img src="/assets/logo.jpg" alt="Logo" class="h-12 w-12 rounded-full object-cover border-2 border-amber">
+          <div>
+            <h1 class="text-xl font-bold">Minnah Electricals</h1>
+            <p class="text-xs text-gray-300">Admin - Analytics</p>
+          </div>
+        </a>
+        <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-semibold transition">Log Out</button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="bg-white shadow-sm border-b border-gray-200">
+    <div class="container mx-auto px-4">
+      <div class="flex space-x-6 overflow-x-auto">
+        <a href="/admin/index.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Dashboard</a>
+        <a href="/admin/leads.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Leads</a>
+        <a href="/admin/products.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Products</a>
+        <a href="/admin/orders.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Orders</a>
+        <a href="/admin/portfolio.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Portfolio</a>
+        <a href="/admin/gallery.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Gallery</a>
+        <a href="/admin/analytics.html" class="py-4 px-1 border-b-2 border-amber text-amber font-semibold text-sm">Analytics</a>
+        <a href="/admin/customers.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Customers</a>
+        <a href="/admin/inventory.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Inventory</a>
+        <a href="/admin/settings.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Settings</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+      <h2 class="text-2xl font-bold text-navy mb-2">Sales Analytics</h2>
+      <p class="text-gray-500">View your business performance metrics</p>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4 mb-6">
+      <div class="flex items-center gap-4">
+        <label class="text-gray-700 font-semibold">Period:</label>
+        <select id="analyticsPeriod" onchange="loadAnalytics()" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
+          <option value="7">Last 7 days</option>
+          <option value="30" selected>Last 30 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="365">Last year</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-6 mb-8">
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm font-semibold mb-2">Total Revenue</div>
+        <div id="analyticsRevenue" class="text-3xl font-bold text-green-600">₵0.00</div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm font-semibold mb-2">Total Orders</div>
+        <div id="analyticsOrders" class="text-3xl font-bold text-navy">0</div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm font-semibold mb-2">Unique Customers</div>
+        <div id="analyticsCustomers" class="text-3xl font-bold text-blue-600">0</div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm font-semibold mb-2">Avg Order Value</div>
+        <div id="analyticsAvgOrder" class="text-3xl font-bold text-amber">₵0.00</div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+      <h3 class="text-xl font-bold text-navy mb-4">Top Selling Products</h3>
+      <div id="topProductsList" class="space-y-3"><p class="text-gray-500">Loading...</p></div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+      <h3 class="text-xl font-bold text-navy mb-4">Daily Sales Trend</h3>
+      <div id="dailySalesChart" class="space-y-2"><p class="text-gray-500">Loading...</p></div>
+    </div>
+  </main>
+
+  <script>
+    const token = localStorage.getItem('adminToken');
+    if (!token) { window.location.href = '/admin/login.html'; }
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('adminToken');
+      window.location.href = '/admin/login.html';
+    });
+
+    async function loadAnalytics() {
+      const period = document.getElementById('analyticsPeriod').value;
+      try {
+        const response = await fetch(`/api/admin/analytics?period=${period}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const data = await response.json();
+        if (!data.success) return;
+        const a = data.analytics;
+        document.getElementById('analyticsRevenue').textContent = '₵' + parseFloat(a.total_revenue).toFixed(2);
+        document.getElementById('analyticsOrders').textContent = a.orders.total;
+        document.getElementById('analyticsCustomers').textContent = a.customers.unique_customers;
+        const avg = a.orders.total > 0 ? a.total_revenue / a.orders.total : 0;
+        document.getElementById('analyticsAvgOrder').textContent = '₵' + avg.toFixed(2);
+
+        const top = document.getElementById('topProductsList');
+        if (a.top_products.length === 0) { top.innerHTML = '<p class="text-gray-500">No sales data available</p>'; }
+        else {
+          top.innerHTML = a.top_products.map(p => `
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div><p class="font-semibold text-navy">${p.product_name}</p><p class="text-sm text-gray-600">${p.total_quantity} units sold</p></div>
+              <p class="text-lg font-bold text-amber">₵${parseFloat(p.total_sales).toFixed(2)}</p>
+            </div>
+          `).join('');
+        }
+
+        const chart = document.getElementById('dailySalesChart');
+        if (a.daily_sales.length === 0) { chart.innerHTML = '<p class="text-gray-500">No sales data available</p>'; }
+        else {
+          const max = Math.max(...a.daily_sales.map(d => d.total));
+          chart.innerHTML = a.daily_sales.map(d => `
+            <div class="flex items-center gap-3">
+              <div class="w-24 text-sm text-gray-600">${d.date}</div>
+              <div class="flex-1 bg-gray-200 rounded-full h-6 overflow-hidden">
+                <div class="bg-amber h-full rounded-full" style="width: ${(d.total / max) * 100}%"></div>
+              </div>
+              <div class="w-24 text-right text-sm font-semibold text-navy">₵${parseFloat(d.total).toFixed(2)}</div>
+            </div>
+          `).join('');
+        }
+      } catch (error) { console.error('Error loading analytics:', error); showMessage('Failed to load analytics', 'error'); }
+    }
+
+    function showMessage(message, type) {
+      const div = document.createElement('div');
+      div.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
+      div.textContent = message;
+      document.body.appendChild(div);
+      setTimeout(() => div.remove(), 3000);
+    }
+
+    document.addEventListener('DOMContentLoaded', loadAnalytics);
+  </script>
+</body>
+</html>

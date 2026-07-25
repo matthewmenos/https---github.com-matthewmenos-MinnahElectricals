@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Communication templates">
+  <title>Templates | Minnah Electricals</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any">
+  <link rel="icon" type="image/jpeg" href="/assets/logo.jpg" sizes="32x32">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { navy: '#0F172A', amber: '#F59E0B', 'amber-dark': '#D97706' }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <header class="bg-navy text-white shadow-lg">
+    <div class="container mx-auto px-4">
+      <div class="flex items-center justify-between py-4">
+        <a href="/admin/index.html" class="flex items-center space-x-3">
+          <img src="/assets/logo.jpg" alt="Logo" class="h-12 w-12 rounded-full object-cover border-2 border-amber">
+          <div>
+            <h1 class="text-xl font-bold">Minnah Electricals</h1>
+            <p class="text-xs text-gray-300">Admin - Templates</p>
+          </div>
+        </a>
+        <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-semibold transition">Log Out</button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="bg-white shadow-sm border-b border-gray-200">
+    <div class="container mx-auto px-4">
+      <div class="flex space-x-6 overflow-x-auto">
+        <a href="/admin/index.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Dashboard</a>
+        <a href="/admin/leads.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Leads</a>
+        <a href="/admin/products.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Products</a>
+        <a href="/admin/orders.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Orders</a>
+        <a href="/admin/portfolio.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Portfolio</a>
+        <a href="/admin/gallery.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Gallery</a>
+        <a href="/admin/analytics.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Analytics</a>
+        <a href="/admin/customers.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Customers</a>
+        <a href="/admin/inventory.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Inventory</a>
+        <a href="/admin/settings.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Settings</a>
+        <a href="/admin/templates.html" class="py-4 px-1 border-b-2 border-amber text-amber font-semibold text-sm">Templates</a>
+        <a href="/admin/sms-logs.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">SMS Logs</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold text-navy">Communication Templates</h2>
+      <button id="addTemplateBtn" class="bg-amber hover:bg-amber-dark text-navy px-6 py-3 rounded-lg font-bold transition flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        Add Template
+      </button>
+    </div>
+
+    <!-- Template Modal -->
+    <div id="templateModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg shadow-2xl max-3xl w-full max-h-screen overflow-y-auto">
+        <div class="p-8">
+          <div class="flex justify-between items-center mb-6">
+            <h2 id="templateModalTitle" class="text-2xl font-bold text-navy">Add Template</h2>
+            <button id="closeTemplateModal" class="text-gray-500 hover:text-gray-700">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+          <form id="templateForm" class="space-y-4">
+            <input type="hidden" id="templateId">
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-gray-700 text-sm font-semibold mb-2">Template Name *</label>
+                <input type="text" id="templateName" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="e.g., Lead Notification">
+              </div>
+              <div>
+                <label class="block text-gray-700 text-sm font-semibold mb-2">Type *</label>
+                <select id="templateType" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
+                  <option value="email">Email</option>
+                  <option value="sms">SMS</option>
+                  <option value="whatsapp">WhatsApp</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block text-gray-700 text-sm font-semibold mb-2">Subject (Email only)</label>
+              <input type="text" id="templateSubject" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="Email subject line">
+            </div>
+            <div>
+              <label class="block text-gray-700 text-sm font-semibold mb-2">Content *</label>
+              <textarea id="templateContent" required rows="10" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent font-mono text-sm" placeholder="Template content... Use {{variable}} for dynamic values."></textarea>
+              <p class="text-xs text-gray-500 mt-1">Available variables: {{customer_name}}, {{order_id}}, {{status}}, {{phone}}, {{email}}, {{service_needed}}, {{urgency}}, {{message}}, {{company_name}}, {{date}}</p>
+            </div>
+            <div class="flex gap-3 pt-4">
+              <button type="submit" class="flex-1 bg-amber hover:bg-amber-dark text-navy font-bold py-3 rounded-lg transition">Save Template</button>
+              <button type="button" id="cancelTemplateBtn" class="flex-1 bg-gray-300 hover:bg-gray-400 text-navy font-bold py-3 rounded-lg transition">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Templates Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-navy text-white">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Name</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Type</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Subject</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Content Preview</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Updated</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="templatesTableBody" class="bg-white divide-y divide-gray-200"></tbody>
+        </table>
+      </div>
+      <div id="templatesEmptyState" class="hidden text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No templates yet</h3>
+        <p class="mt-1 text-sm text-gray-500">Create your first communication template.</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const token = localStorage.getItem('adminToken');
+    if (!token) { window.location.href = '/admin/login.html'; }
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('adminToken');
+      window.location.href = '/admin/login.html';
+    });
+
+    let templates = [];
+    let editingId = null;
+
+    const addBtn = document.getElementById('addTemplateBtn');
+    const modal = document.getElementById('templateModal');
+    const closeBtn = document.getElementById('closeTemplateModal');
+    const cancelBtn = document.getElementById('cancelTemplateBtn');
+    const form = document.getElementById('templateForm');
+
+    addBtn.addEventListener('click', () => openModal());
+    closeBtn.addEventListener('click', closeModalFn);
+    cancelBtn.addEventListener('click', closeModalFn);
+    form.addEventListener('submit', handleSubmit);
+
+    async function loadTemplates() {
+      try {
+        const res = await fetch('/api/admin/templates', { headers: { 'Authorization': `Bearer ${token}` } });
+        const data = await res.json();
+        if (data.success) { templates = data.templates; render(); }
+      } catch (error) { console.error('Error loading templates:', error); showMessage('Failed to load templates', 'error'); }
+    }
+
+    function render() {
+      const tbody = document.getElementById('templatesTableBody');
+      const empty = document.getElementById('templatesEmptyState');
+      if (templates.length === 0) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
+      empty.classList.add('hidden');
+      tbody.innerHTML = templates.map(t => `
+        <tr class="hover:bg-gray-50">
+          <td class="px-6 py-4 text-sm font-medium text-navy">${t.name}</td>
+          <td class="px-6 py-4">
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${t.type === 'email' ? 'bg-blue-100 text-blue-800' : t.type === 'sms' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}">${t.type}</span>
+          </td>
+          <td class="px-6 py-4 text-sm text-gray-900">${t.subject || 'N/A'}</td>
+          <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">${t.content.substring(0, 50)}${t.content.length > 50 ? '...' : ''}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${new Date(t.updated_at).toLocaleDateString()}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+            <button onclick="editTemplate(${t.id})" class="text-amber hover:text-amber-dark mr-3">Edit</button>
+            <button onclick="deleteTemplate(${t.id})" class="text-red-600 hover:text-red-800">Delete</button>
+          </td>
+        </tr>`).join('');
+    }
+
+    function openModal(template = null) {
+      editingId = template ? template.id : null;
+      document.getElementById('templateModalTitle').textContent = template ? 'Edit Template' : 'Add Template';
+      if (template) {
+        document.getElementById('templateId').value = template.id;
+        document.getElementById('templateName').value = template.name;
+        document.getElementById('templateType').value = template.type;
+        document.getElementById('templateSubject').value = template.subject || '';
+        document.getElementById('templateContent').value = template.content;
+      } else {
+        form.reset();
+        document.getElementById('templateId').value = '';
+        document.getElementById('templateType').value = 'email';
+      }
+      modal.classList.remove('hidden');
+    }
+
+    function closeModalFn() { modal.classList.add('hidden'); editingId = null; }
+
+    async function handleSubmit(e) {
+      e.preventDefault();
+      const data = {
+        name: document.getElementById('templateName').value,
+        type: document.getElementById('templateType').value,
+        subject: document.getElementById('templateSubject').value,
+        content: document.getElementById('templateContent').value
+      };
+      try {
+        const url = editingId ? `/api/admin/templates/${editingId}` : '/api/admin/templates';
+        const method = editingId ? 'PUT' : 'POST';
+        const res = await fetch(url, { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        const result = await res.json();
+        if (result.success) { showMessage(editingId ? 'Template updated!' : 'Template created!', 'success'); closeModalFn(); loadTemplates(); }
+        else showMessage(result.message || 'Failed to save', 'error');
+      } catch (error) { showMessage('Failed to save', 'error'); }
+    }
+
+    async function editTemplate(id) { const t = templates.find(x => x.id === id); if (t) openModal(t); }
+
+    async function deleteTemplate(id) {
+      if (!confirm('Are you sure?')) return;
+      try {
+        const res = await fetch(`/api/admin/templates/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+        const data = await res.json();
+        if (data.success) { showMessage('Template deleted!', 'success'); loadTemplates(); }
+        else showMessage(data.message || 'Failed to delete', 'error');
+      } catch (error) { showMessage('Failed to delete', 'error'); }
+    }
+
+    function showMessage(message, type) {
+      const div = document.createElement('div');
+      div.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
+      div.textContent = message; document.body.appendChild(div);
+      setTimeout(() => div.remove(), 3000);
+    }
+
+    document.addEventListener('DOMContentLoaded', loadTemplates);
+  </script>
+</body>
+</html>
