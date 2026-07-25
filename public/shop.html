@@ -255,6 +255,7 @@
     
     // Shop Management
     let products = [];
+    let wishlist = [];
     let selectedProduct = null;
 
     // DOM Elements
@@ -267,10 +268,10 @@
     const selectedProductInfo = document.getElementById('selectedProductInfo');
 
     // Load products on page load
-    document.addEventListener('DOMContentLoaded', () => {
-      loadProducts();
-      loadWishlist();
-      loadCustomerInfo();
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadWishlist(); // Load wishlist first
+      await loadProducts(); // Then load and render products
+      await loadCustomerInfo();
     });
 
     // Event Listeners
@@ -285,13 +286,17 @@
         const response = await fetch('/api/products');
         const data = await response.json();
         
-        if (data.success) {
+        if (data.success && data.products) {
           products = data.products;
           renderProducts();
+        } else {
+          // Show empty state if no products
+          loadingState.classList.add('hidden');
+          emptyState.classList.remove('hidden');
         }
       } catch (error) {
         console.error('Error loading products:', error);
-        showMessage('Failed to load products', 'error');
+        loadingState.innerHTML = '<p class="text-red-600">Failed to load products. Please refresh the page.</p>';
       }
     }
 
@@ -422,7 +427,7 @@
         const data = await response.json();
         if (data.success) {
           wishlist = data.wishlist;
-          renderProducts(); // Re-render to update wishlist icons
+          // Don't re-render here, products are already rendered
         }
       } catch (error) {
         console.error('Error loading wishlist:', error);
@@ -443,7 +448,9 @@
             // Remove from wishlist
             await fetch(`/api/wishlist/${sessionId}/remove/${productId}`, { method: 'DELETE' });
           }
+          // Reload wishlist and re-render products
           await loadWishlist();
+          renderProducts(); // Re-render to update wishlist icons
           showMessage(data.already_exists ? 'Removed from wishlist' : 'Added to wishlist', 'success');
         }
       } catch (error) {
