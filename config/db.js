@@ -196,6 +196,129 @@ async function initializeDatabase() {
     )
   `);
 
+  // Create appointments table for appointment scheduling
+  db.run(`
+    CREATE TABLE IF NOT EXISTS appointments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_name TEXT NOT NULL,
+      customer_phone TEXT NOT NULL,
+      customer_email TEXT,
+      service_type TEXT NOT NULL,
+      appointment_date DATE NOT NULL,
+      appointment_time TIME NOT NULL,
+      status TEXT DEFAULT 'Pending' CHECK (status IN ('Pending', 'Confirmed', 'Completed', 'Cancelled')),
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Create newsletter_subscribers table for email newsletters
+  db.run(`
+    CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT UNIQUE NOT NULL,
+      name TEXT,
+      status TEXT DEFAULT 'active' CHECK (status IN ('active', 'unsubscribed')),
+      subscribed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      unsubscribed_at DATETIME
+    )
+  `);
+
+  // Create newsletter_campaigns table for email newsletter campaigns
+  db.run(`
+    CREATE TABLE IF NOT EXISTS newsletter_campaigns (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      subject TEXT NOT NULL,
+      content TEXT NOT NULL,
+      recipient_filter TEXT DEFAULT 'all',
+      sent_count INTEGER DEFAULT 0,
+      opened_count INTEGER DEFAULT 0,
+      clicked_count INTEGER DEFAULT 0,
+      status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'sending', 'sent', 'failed')),
+      sent_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Create loyalty_program table for customer loyalty program
+  db.run(`
+    CREATE TABLE IF NOT EXISTS loyalty_program (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_phone TEXT UNIQUE NOT NULL,
+      customer_name TEXT NOT NULL,
+      customer_email TEXT,
+      points INTEGER DEFAULT 0,
+      tier TEXT DEFAULT 'bronze' CHECK (tier IN ('bronze', 'silver', 'gold', 'platinum')),
+      total_spent REAL DEFAULT 0,
+      total_orders INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Create loyalty_transactions table for tracking loyalty point transactions
+  db.run(`
+    CREATE TABLE IF NOT EXISTS loyalty_transactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_phone TEXT NOT NULL,
+      points INTEGER NOT NULL,
+      transaction_type TEXT NOT NULL CHECK (transaction_type IN ('earned', 'redeemed', 'bonus', 'expired')),
+      description TEXT,
+      order_id INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (order_id) REFERENCES orders(id)
+    )
+  `);
+
+  // Create service_requests table for service request tracking
+  db.run(`
+    CREATE TABLE IF NOT EXISTS service_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_name TEXT NOT NULL,
+      customer_phone TEXT NOT NULL,
+      customer_email TEXT,
+      service_type TEXT NOT NULL,
+      description TEXT NOT NULL,
+      priority TEXT DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
+      status TEXT DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'on_hold', 'completed', 'cancelled')),
+      assigned_to TEXT,
+      scheduled_date DATE,
+      scheduled_time TIME,
+      completed_at DATETIME,
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Create product_specifications table for product catalog enhancements
+  db.run(`
+    CREATE TABLE IF NOT EXISTS product_specifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      spec_name TEXT NOT NULL,
+      spec_value TEXT NOT NULL,
+      display_order INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Create product_variants table for product variants
+  db.run(`
+    CREATE TABLE IF NOT EXISTS product_variants (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      variant_name TEXT NOT NULL,
+      variant_value TEXT NOT NULL,
+      price_adjustment REAL DEFAULT 0,
+      stock INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    )
+  `);
+
   // Create indexes
   db.run(`CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_leads_created_at ON leads(created_at DESC)`);
@@ -207,6 +330,16 @@ async function initializeDatabase() {
   db.run(`CREATE INDEX IF NOT EXISTS idx_gallery_category ON gallery(category)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_templates_type ON templates(type)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_sms_logs_status ON sms_logs(status)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(appointment_date)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments(status)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_newsletter_subscribers_email ON newsletter_subscribers(email)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_newsletter_campaigns_status ON newsletter_campaigns(status)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_loyalty_program_phone ON loyalty_program(customer_phone)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_loyalty_transactions_customer ON loyalty_transactions(customer_phone)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_service_requests_status ON service_requests(status)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_service_requests_priority ON service_requests(priority)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_product_specs_product ON product_specifications(product_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_product_variants_product ON product_variants(product_id)`);
 
   // Seed default admin user if none exists
   const userCount = db.exec('SELECT COUNT(*) as count FROM users')[0];

@@ -1075,7 +1075,7 @@ router.delete('/gallery/:id', authMiddleware, (req, res) => {
 
 /**
  * GET /api/admin/analytics
- * Get sales analytics (protected route)
+ * Get advanced analytics (protected route)
  */
 router.get('/analytics', authMiddleware, (req, res) => {
   try {
@@ -1153,13 +1153,106 @@ router.get('/analytics', authMiddleware, (req, res) => {
       email_subscribers: customerStatsResult[0].values[0][2] || 0
     } : { unique_customers: 0, with_email: 0, email_subscribers: 0 };
 
+    // Appointment statistics
+    const appointmentStatsResult = dbInstance.exec(`
+      SELECT 
+        COUNT(*) as total_appointments,
+        SUM(CASE WHEN status = 'Confirmed' THEN 1 ELSE 0 END) as confirmed,
+        SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending,
+        SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed,
+        SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) as cancelled
+      FROM appointments
+      WHERE created_at >= ?
+    `, [startDate.toISOString()]);
+    const appointmentStats = appointmentStatsResult[0] && appointmentStatsResult[0].values[0] ? {
+      total: appointmentStatsResult[0].values[0][0] || 0,
+      confirmed: appointmentStatsResult[0].values[0][1] || 0,
+      pending: appointmentStatsResult[0].values[0][2] || 0,
+      completed: appointmentStatsResult[0].values[0][3] || 0,
+      cancelled: appointmentStatsResult[0].values[0][4] || 0
+    } : { total: 0, confirmed: 0, pending: 0, completed: 0, cancelled: 0 };
+
+    // Service request statistics
+    const serviceRequestStatsResult = dbInstance.exec(`
+      SELECT 
+        COUNT(*) as total_requests,
+        SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) as open,
+        SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
+        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+        SUM(CASE WHEN priority = 'urgent' THEN 1 ELSE 0 END) as urgent
+      FROM service_requests
+      WHERE created_at >= ?
+    `, [startDate.toISOString()]);
+    const serviceRequestStats = serviceRequestStatsResult[0] && serviceRequestStatsResult[0].values[0] ? {
+      total: serviceRequestStatsResult[0].values[0][0] || 0,
+      open: serviceRequestStatsResult[0].values[0][1] || 0,
+      in_progress: serviceRequestStatsResult[0].values[0][2] || 0,
+      completed: serviceRequestStatsResult[0].values[0][3] || 0,
+      urgent: serviceRequestStatsResult[0].values[0][4] || 0
+    } : { total: 0, open: 0, in_progress: 0, completed: 0, urgent: 0 };
+
+    // Loyalty program statistics
+    const loyaltyStatsResult = dbInstance.exec(`
+      SELECT 
+        COUNT(*) as total_members,
+        SUM(points) as total_points_issued,
+        SUM(total_spent) as total_loyalty_spent,
+        SUM(total_orders) as total_loyalty_orders,
+        AVG(points) as avg_points_per_member
+      FROM loyalty_program
+    `);
+    const loyaltyStats = loyaltyStatsResult[0] && loyaltyStatsResult[0].values[0] ? {
+      total_members: loyaltyStatsResult[0].values[0][0] || 0,
+      total_points_issued: loyaltyStatsResult[0].values[0][1] || 0,
+      total_loyalty_spent: loyaltyStatsResult[0].values[0][2] || 0,
+      total_loyalty_orders: loyaltyStatsResult[0].values[0][3] || 0,
+      avg_points_per_member: loyaltyStatsResult[0].values[0][4] || 0
+    } : { total_members: 0, total_points_issued: 0, total_loyalty_spent: 0, total_loyalty_orders: 0, avg_points_per_member: 0 };
+
+    // Newsletter statistics
+    const newsletterStatsResult = dbInstance.exec(`
+      SELECT 
+        COUNT(*) as total_subscribers,
+        SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_subscribers,
+        COUNT(DISTINCT CASE WHEN status = 'active' THEN id END) as active_count
+      FROM newsletter_subscribers
+    `);
+    const newsletterStats = newsletterStatsResult[0] && newsletterStatsResult[0].values[0] ? {
+      total_subscribers: newsletterStatsResult[0].values[0][0] || 0,
+      active_subscribers: newsletterStatsResult[0].values[0][1] || 0
+    } : { total_subscribers: 0, active_subscribers: 0 };
+
+    // Lead statistics
+    const leadStatsResult = dbInstance.exec(`
+      SELECT 
+        COUNT(*) as total_leads,
+        SUM(CASE WHEN urgency = 'Emergency' THEN 1 ELSE 0 END) as emergency_leads,
+        SUM(CASE WHEN status = 'New' THEN 1 ELSE 0 END) as new_leads,
+        SUM(CASE WHEN status = 'Contacted' THEN 1 ELSE 0 END) as contacted_leads
+      FROM leads
+      WHERE created_at >= ?
+    `, [startDate.toISOString()]);
+    const leadStats = leadStatsResult[0] && leadStatsResult[0].values[0] ? {
+      total: leadStatsResult[0].values[0][0] || 0,
+      emergency: leadStatsResult[0].values[0][1] || 0,
+      new: leadStatsResult[0].values[0][2] || 0,
+      contacted: leadStatsResult[0].values[0][3] || 0
+    } : { total: 0, emergency: 0, new: 0, contacted: 0 };
+
     return res.status(200).json({
       success: true,
       analytics: {
         period_days: days,
-        total_revenue: totalRevenue,
-        orders: ordersStats,
+        revenue: {
+          total_revenue: totalRevenue,
+          orders: ordersStats
+        },
         customers: customerStats,
+        appointments: appointmentStats,
+        service_requests: serviceRequestStats,
+        loyalty_program: loyaltyStats,
+        newsletter: newsletterStats,
+        leads: leadStats,
         top_products: topProducts,
         daily_sales: dailySales
       }
@@ -1599,6 +1692,955 @@ router.get('/sms-logs', authMiddleware, (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'An error occurred while fetching SMS logs.',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/appointments
+ * Get all appointments (protected route)
+ */
+router.get('/appointments', authMiddleware, (req, res) => {
+  try {
+    const dbInstance = getDb();
+    const { status, date_from, date_to } = req.query;
+
+    let query = 'SELECT * FROM appointments';
+    const conditions = [];
+    const params = [];
+
+    if (status && status !== 'all') {
+      conditions.push('status = ?');
+      params.push(status);
+    }
+
+    if (date_from) {
+      conditions.push('appointment_date >= ?');
+      params.push(date_from);
+    }
+
+    if (date_to) {
+      conditions.push('appointment_date <= ?');
+      params.push(date_to);
+    }
+
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    query += ' ORDER BY appointment_date DESC, appointment_time DESC';
+
+    const result = dbInstance.exec(query, params);
+    const appointments = result[0] ? result[0].values.map(row => ({
+      id: row[0],
+      customer_name: row[1],
+      customer_phone: row[2],
+      customer_email: row[3],
+      service_type: row[4],
+      appointment_date: row[5],
+      appointment_time: row[6],
+      status: row[7],
+      notes: row[8],
+      created_at: row[9],
+      updated_at: row[10]
+    })) : [];
+
+    return res.status(200).json({
+      success: true,
+      count: appointments.length,
+      appointments: appointments,
+    });
+
+  } catch (error) {
+    console.error('✗ Error fetching appointments:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching appointments.',
+    });
+  }
+});
+
+/**
+ * PATCH /api/admin/appointments/:id
+ * Update appointment status (protected route)
+ */
+router.patch('/appointments/:id', authMiddleware, (req, res) => {
+  try {
+    const appointmentId = parseInt(req.params.id);
+    const { status, notes, assigned_to } = req.body;
+
+    const validStatuses = ['Pending', 'Confirmed', 'Completed', 'Cancelled'];
+    if (status && !validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status. Must be one of: ' + validStatuses.join(', '),
+      });
+    }
+
+    const dbInstance = getDb();
+    const checkResult = dbInstance.exec('SELECT * FROM appointments WHERE id = ?', [appointmentId]);
+
+    if (!checkResult[0] || !checkResult[0].values[0]) {
+      return res.status(404).json({
+        success: false,
+        message: 'Appointment not found',
+      });
+    }
+
+    const updates = [];
+    const params = [];
+
+    if (status) {
+      updates.push('status = ?');
+      params.push(status);
+    }
+
+    if (notes !== undefined) {
+      updates.push('notes = ?');
+      params.push(notes);
+    }
+
+    if (assigned_to !== undefined) {
+      updates.push('assigned_to = ?');
+      params.push(assigned_to);
+    }
+
+    updates.push('updated_at = CURRENT_TIMESTAMP');
+    params.push(appointmentId);
+
+    dbInstance.run(
+      `UPDATE appointments SET ${updates.join(', ')} WHERE id = ?`,
+      params
+    );
+
+    saveDatabase();
+
+    console.log(`✓ Appointment #${appointmentId} updated`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Appointment updated successfully',
+    });
+
+  } catch (error) {
+    console.error('✗ Error updating appointment:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while updating the appointment.',
+    });
+  }
+});
+
+/**
+ * DELETE /api/admin/appointments/:id
+ * Delete an appointment (protected route)
+ */
+router.delete('/appointments/:id', authMiddleware, (req, res) => {
+  try {
+    const appointmentId = parseInt(req.params.id);
+
+    const dbInstance = getDb();
+    const checkResult = dbInstance.exec('SELECT * FROM appointments WHERE id = ?', [appointmentId]);
+
+    if (!checkResult[0] || !checkResult[0].values[0]) {
+      return res.status(404).json({
+        success: false,
+        message: 'Appointment not found',
+      });
+    }
+
+    dbInstance.run('DELETE FROM appointments WHERE id = ?', [appointmentId]);
+    saveDatabase();
+
+    console.log(`✓ Appointment #${appointmentId} deleted`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Appointment deleted successfully',
+    });
+
+  } catch (error) {
+    console.error('✗ Error deleting appointment:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while deleting the appointment.',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/newsletter/subscribers
+ * Get all newsletter subscribers (protected route)
+ */
+router.get('/newsletter/subscribers', authMiddleware, (req, res) => {
+  try {
+    const dbInstance = getDb();
+    const { status = 'active' } = req.query;
+
+    let query = 'SELECT * FROM newsletter_subscribers';
+    const params = [];
+
+    if (status !== 'all') {
+      query += ' WHERE status = ?';
+      params.push(status);
+    }
+
+    query += ' ORDER BY subscribed_at DESC';
+
+    const result = dbInstance.exec(query, params);
+    const subscribers = result[0] ? result[0].values.map(row => ({
+      id: row[0],
+      email: row[1],
+      name: row[2],
+      status: row[3],
+      subscribed_at: row[4],
+      unsubscribed_at: row[5]
+    })) : [];
+
+    return res.status(200).json({
+      success: true,
+      count: subscribers.length,
+      subscribers: subscribers,
+    });
+
+  } catch (error) {
+    console.error('✗ Error fetching newsletter subscribers:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching newsletter subscribers.',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/newsletter/campaigns
+ * Get all newsletter campaigns (protected route)
+ */
+router.get('/newsletter/campaigns', authMiddleware, (req, res) => {
+  try {
+    const dbInstance = getDb();
+    const result = dbInstance.exec('SELECT * FROM newsletter_campaigns ORDER BY created_at DESC');
+
+    const campaigns = result[0] ? result[0].values.map(row => ({
+      id: row[0],
+      subject: row[1],
+      content: row[2],
+      recipient_filter: row[3],
+      sent_count: row[4],
+      opened_count: row[5],
+      clicked_count: row[6],
+      status: row[7],
+      sent_at: row[8],
+      created_at: row[9]
+    })) : [];
+
+    return res.status(200).json({
+      success: true,
+      count: campaigns.length,
+      campaigns: campaigns,
+    });
+
+  } catch (error) {
+    console.error('✗ Error fetching newsletter campaigns:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching newsletter campaigns.',
+    });
+  }
+});
+
+/**
+ * POST /api/admin/newsletter/campaigns
+ * Create a new newsletter campaign (protected route)
+ */
+router.post('/newsletter/campaigns', authMiddleware, (req, res) => {
+  try {
+    const { subject, content, recipient_filter } = req.body;
+
+    if (!subject || !content) {
+      return res.status(400).json({
+        success: false,
+        message: 'Subject and content are required',
+      });
+    }
+
+    const dbInstance = getDb();
+    dbInstance.run(
+      'INSERT INTO newsletter_campaigns (subject, content, recipient_filter, status) VALUES (?, ?, ?, ?)',
+      [subject, content, recipient_filter || 'all', 'draft']
+    );
+
+    const result = dbInstance.exec('SELECT last_insert_rowid() as id');
+    const campaignId = result[0].values[0][0];
+    saveDatabase();
+
+    console.log(`✓ Newsletter campaign created: #${campaignId}`);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Newsletter campaign created successfully',
+      campaign_id: campaignId,
+    });
+
+  } catch (error) {
+    console.error('✗ Error creating newsletter campaign:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while creating the newsletter campaign.',
+    });
+  }
+});
+
+/**
+ * POST /api/admin/newsletter/campaigns/:id/send
+ * Send a newsletter campaign (protected route)
+ */
+router.post('/newsletter/campaigns/:id/send', authMiddleware, async (req, res) => {
+  try {
+    const campaignId = parseInt(req.params.id);
+    const dbInstance = getDb();
+
+    // Get campaign details
+    const campaignResult = dbInstance.exec('SELECT * FROM newsletter_campaigns WHERE id = ?', [campaignId]);
+
+    if (!campaignResult[0] || !campaignResult[0].values[0]) {
+      return res.status(404).json({
+        success: false,
+        message: 'Campaign not found',
+      });
+    }
+
+    const campaign = {
+      id: campaignResult[0].values[0][0],
+      subject: campaignResult[0].values[0][1],
+      content: campaignResult[0].values[0][2],
+      recipient_filter: campaignResult[0].values[0][3],
+      status: campaignResult[0].values[0][7]
+    };
+
+    if (campaign.status === 'sent') {
+      return res.status(400).json({
+        success: false,
+        message: 'Campaign has already been sent',
+      });
+    }
+
+    // Get subscribers based on filter
+    let subscriberQuery = 'SELECT email, name FROM newsletter_subscribers WHERE status = ?';
+    const subscriberParams = ['active'];
+
+    if (campaign.recipient_filter !== 'all') {
+      // Add more filters as needed
+    }
+
+    const subscriberResult = dbInstance.exec(subscriberQuery, subscriberParams);
+    const subscribers = subscriberResult[0] ? subscriberResult[0].values : [];
+
+    if (subscribers.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No active subscribers found',
+      });
+    }
+
+    // Update campaign status to sending
+    dbInstance.run(
+      'UPDATE newsletter_campaigns SET status = ? WHERE id = ?',
+      ['sending', campaignId]
+    );
+
+    // Send emails (non-blocking)
+    let sentCount = 0;
+    let failedCount = 0;
+
+    for (const subscriber of subscribers) {
+      try {
+        const [email, name] = subscriber;
+        
+        // Replace placeholders in content
+        let personalizedContent = campaign.content.replace(/\{\{name\}\}/g, name || 'Subscriber');
+        personalizedContent = personalizedContent.replace(/\{\{email\}\}/g, email);
+
+        await transporter.sendMail({
+          from: process.env.SMTP_FROM || process.env.SMTP_USER,
+          to: email,
+          subject: campaign.subject,
+          html: personalizedContent,
+        });
+
+        sentCount++;
+      } catch (error) {
+        console.error(`✗ Failed to send to ${subscriber[0]}:`, error.message);
+        failedCount++;
+      }
+    }
+
+    // Update campaign with results
+    dbInstance.run(
+      `UPDATE newsletter_campaigns 
+       SET status = ?, sent_count = ?, sent_at = CURRENT_TIMESTAMP 
+       WHERE id = ?`,
+      ['sent', sentCount, campaignId]
+    );
+
+    saveDatabase();
+
+    console.log(`✓ Newsletter campaign #${campaignId} sent to ${sentCount} subscribers (${failedCount} failed)`);
+
+    return res.status(200).json({
+      success: true,
+      message: `Newsletter sent to ${sentCount} subscribers`,
+      sent_count: sentCount,
+      failed_count: failedCount,
+    });
+
+  } catch (error) {
+    console.error('✗ Error sending newsletter campaign:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while sending the newsletter campaign.',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/loyalty/members
+ * Get all loyalty program members (protected route)
+ */
+router.get('/loyalty/members', authMiddleware, (req, res) => {
+  try {
+    const dbInstance = getDb();
+    const { tier, search = '' } = req.query;
+
+    let query = 'SELECT * FROM loyalty_program';
+    const params = [];
+
+    if (tier && tier !== 'all') {
+      query += ' WHERE tier = ?';
+      params.push(tier);
+    } else if (search) {
+      query += ' WHERE customer_name LIKE ? OR customer_phone LIKE ? OR customer_email LIKE ?';
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+    }
+
+    query += ' ORDER BY points DESC, total_spent DESC';
+
+    const result = dbInstance.exec(query, params);
+    const members = result[0] ? result[0].values.map(row => ({
+      id: row[0],
+      customer_phone: row[1],
+      customer_name: row[2],
+      customer_email: row[3],
+      points: row[4],
+      tier: row[5],
+      total_spent: row[6],
+      total_orders: row[7],
+      created_at: row[8],
+      updated_at: row[9]
+    })) : [];
+
+    return res.status(200).json({
+      success: true,
+      count: members.length,
+      members: members,
+    });
+
+  } catch (error) {
+    console.error('✗ Error fetching loyalty members:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching loyalty members.',
+    });
+  }
+});
+
+/**
+ * POST /api/admin/loyalty/members
+ * Add or update loyalty program member (protected route)
+ */
+router.post('/loyalty/members', authMiddleware, (req, res) => {
+  try {
+    const { customer_phone, customer_name, customer_email, points, tier } = req.body;
+
+    if (!customer_phone || !customer_name) {
+      return res.status(400).json({
+        success: false,
+        message: 'Customer phone and name are required',
+      });
+    }
+
+    const dbInstance = getDb();
+    
+    // Check if member exists
+    const existingResult = dbInstance.exec('SELECT id FROM loyalty_program WHERE customer_phone = ?', [customer_phone]);
+
+    if (existingResult[0] && existingResult[0].values[0]) {
+      // Update existing member
+      const updates = [];
+      const params = [];
+
+      if (customer_email !== undefined) {
+        updates.push('customer_email = ?');
+        params.push(customer_email);
+      }
+
+      if (points !== undefined) {
+        updates.push('points = ?');
+        params.push(points);
+      }
+
+      if (tier) {
+        updates.push('tier = ?');
+        params.push(tier);
+      }
+
+      updates.push('updated_at = CURRENT_TIMESTAMP');
+      params.push(customer_phone);
+
+      dbInstance.run(
+        `UPDATE loyalty_program SET ${updates.join(', ')} WHERE customer_phone = ?`,
+        params
+      );
+    } else {
+      // Create new member
+      dbInstance.run(
+        `INSERT INTO loyalty_program (customer_phone, customer_name, customer_email, points, tier) VALUES (?, ?, ?, ?, ?)`,
+        [customer_phone, customer_name, customer_email || null, points || 0, tier || 'bronze']
+      );
+    }
+
+    saveDatabase();
+
+    console.log(`✓ Loyalty member saved: ${customer_phone}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Loyalty member saved successfully',
+    });
+
+  } catch (error) {
+    console.error('✗ Error saving loyalty member:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while saving loyalty member.',
+    });
+  }
+});
+
+/**
+ * POST /api/admin/loyalty/transactions
+ * Add loyalty points transaction (protected route)
+ */
+router.post('/loyalty/transactions', authMiddleware, (req, res) => {
+  try {
+    const { customer_phone, points, transaction_type, description, order_id } = req.body;
+
+    if (!customer_phone || !points || !transaction_type) {
+      return res.status(400).json({
+        success: false,
+        message: 'Customer phone, points, and transaction type are required',
+      });
+    }
+
+    const validTypes = ['earned', 'redeemed', 'bonus', 'expired'];
+    if (!validTypes.includes(transaction_type)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid transaction type. Must be one of: ' + validTypes.join(', '),
+      });
+    }
+
+    const dbInstance = getDb();
+
+    // Verify customer exists in loyalty program
+    const memberResult = dbInstance.exec('SELECT id, points FROM loyalty_program WHERE customer_phone = ?', [customer_phone]);
+
+    if (!memberResult[0] || !memberResult[0].values[0]) {
+      return res.status(404).json({
+        success: false,
+        message: 'Customer not found in loyalty program',
+      });
+    }
+
+    const memberId = memberResult[0].values[0][0];
+    const currentPoints = memberResult[0].values[0][1];
+
+    // Calculate new points
+    let newPoints = currentPoints;
+    if (transaction_type === 'earned' || transaction_type === 'bonus') {
+      newPoints = currentPoints + points;
+    } else if (transaction_type === 'redeemed' || transaction_type === 'expired') {
+      newPoints = Math.max(0, currentPoints - points);
+    }
+
+    // Update member points
+    dbInstance.run(
+      'UPDATE loyalty_program SET points = ?, updated_at = CURRENT_TIMESTAMP WHERE customer_phone = ?',
+      [newPoints, customer_phone]
+    );
+
+    // Record transaction
+    dbInstance.run(
+      `INSERT INTO loyalty_transactions (customer_phone, points, transaction_type, description, order_id) 
+       VALUES (?, ?, ?, ?, ?)`,
+      [customer_phone, points, transaction_type, description || null, order_id || null]
+    );
+
+    saveDatabase();
+
+    console.log(`✓ Loyalty transaction recorded: ${customer_phone} - ${transaction_type} ${points} points`);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Loyalty transaction recorded successfully',
+      new_balance: newPoints,
+    });
+
+  } catch (error) {
+    console.error('✗ Error recording loyalty transaction:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while recording the loyalty transaction.',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/service-requests
+ * Get all service requests (protected route)
+ */
+router.get('/service-requests', authMiddleware, (req, res) => {
+  try {
+    const dbInstance = getDb();
+    const { status, priority, assigned_to } = req.query;
+
+    let query = 'SELECT * FROM service_requests';
+    const conditions = [];
+    const params = [];
+
+    if (status && status !== 'all') {
+      conditions.push('status = ?');
+      params.push(status);
+    }
+
+    if (priority && priority !== 'all') {
+      conditions.push('priority = ?');
+      params.push(priority);
+    }
+
+    if (assigned_to) {
+      conditions.push('assigned_to = ?');
+      params.push(assigned_to);
+    }
+
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    query += ' ORDER BY created_at DESC';
+
+    const result = dbInstance.exec(query, params);
+    const serviceRequests = result[0] ? result[0].values.map(row => ({
+      id: row[0],
+      customer_name: row[1],
+      customer_phone: row[2],
+      customer_email: row[3],
+      service_type: row[4],
+      description: row[5],
+      priority: row[6],
+      status: row[7],
+      assigned_to: row[8],
+      scheduled_date: row[9],
+      scheduled_time: row[10],
+      completed_at: row[11],
+      notes: row[12],
+      created_at: row[13],
+      updated_at: row[14]
+    })) : [];
+
+    return res.status(200).json({
+      success: true,
+      count: serviceRequests.length,
+      service_requests: serviceRequests,
+    });
+
+  } catch (error) {
+    console.error('✗ Error fetching service requests:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching service requests.',
+    });
+  }
+});
+
+/**
+ * PATCH /api/admin/service-requests/:id
+ * Update service request (protected route)
+ */
+router.patch('/service-requests/:id', authMiddleware, (req, res) => {
+  try {
+    const requestId = parseInt(req.params.id);
+    const { status, priority, assigned_to, scheduled_date, scheduled_time, notes } = req.body;
+
+    const dbInstance = getDb();
+    const checkResult = dbInstance.exec('SELECT * FROM service_requests WHERE id = ?', [requestId]);
+
+    if (!checkResult[0] || !checkResult[0].values[0]) {
+      return res.status(404).json({
+        success: false,
+        message: 'Service request not found',
+      });
+    }
+
+    const updates = [];
+    const params = [];
+
+    if (status) {
+      const validStatuses = ['open', 'in_progress', 'on_hold', 'completed', 'cancelled'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid status',
+        });
+      }
+      updates.push('status = ?');
+      params.push(status);
+
+      if (status === 'completed') {
+        updates.push('completed_at = CURRENT_TIMESTAMP');
+      }
+    }
+
+    if (priority) {
+      updates.push('priority = ?');
+      params.push(priority);
+    }
+
+    if (assigned_to !== undefined) {
+      updates.push('assigned_to = ?');
+      params.push(assigned_to);
+    }
+
+    if (scheduled_date) {
+      updates.push('scheduled_date = ?');
+      params.push(scheduled_date);
+    }
+
+    if (scheduled_time) {
+      updates.push('scheduled_time = ?');
+      params.push(scheduled_time);
+    }
+
+    if (notes !== undefined) {
+      updates.push('notes = ?');
+      params.push(notes);
+    }
+
+    updates.push('updated_at = CURRENT_TIMESTAMP');
+    params.push(requestId);
+
+    dbInstance.run(
+      `UPDATE service_requests SET ${updates.join(', ')} WHERE id = ?`,
+      params
+    );
+
+    saveDatabase();
+
+    console.log(`✓ Service request #${requestId} updated`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Service request updated successfully',
+    });
+
+  } catch (error) {
+    console.error('✗ Error updating service request:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while updating the service request.',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/products/:id/specifications
+ * Get product specifications (protected route)
+ */
+router.get('/products/:id/specifications', authMiddleware, (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+    const dbInstance = getDb();
+
+    const result = dbInstance.exec(
+      'SELECT * FROM product_specifications WHERE product_id = ? ORDER BY display_order ASC',
+      [productId]
+    );
+
+    const specifications = result[0] ? result[0].values.map(row => ({
+      id: row[0],
+      product_id: row[1],
+      spec_name: row[2],
+      spec_value: row[3],
+      display_order: row[4],
+      created_at: row[5]
+    })) : [];
+
+    return res.status(200).json({
+      success: true,
+      count: specifications.length,
+      specifications: specifications,
+    });
+
+  } catch (error) {
+    console.error('✗ Error fetching product specifications:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching product specifications.',
+    });
+  }
+});
+
+/**
+ * POST /api/admin/products/:id/specifications
+ * Add product specification (protected route)
+ */
+router.post('/products/:id/specifications', authMiddleware, (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+    const { spec_name, spec_value, display_order } = req.body;
+
+    if (!spec_name || !spec_value) {
+      return res.status(400).json({
+        success: false,
+        message: 'Specification name and value are required',
+      });
+    }
+
+    const dbInstance = getDb();
+
+    // Verify product exists
+    const productResult = dbInstance.exec('SELECT id FROM products WHERE id = ?', [productId]);
+    if (!productResult[0] || !productResult[0].values[0]) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found',
+      });
+    }
+
+    dbInstance.run(
+      'INSERT INTO product_specifications (product_id, spec_name, spec_value, display_order) VALUES (?, ?, ?, ?)',
+      [productId, spec_name, spec_value, display_order || 0]
+    );
+
+    const result = dbInstance.exec('SELECT last_insert_rowid() as id');
+    const specId = result[0].values[0][0];
+    saveDatabase();
+
+    console.log(`✓ Product specification created: #${specId} for product #${productId}`);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Product specification created successfully',
+      spec_id: specId,
+    });
+
+  } catch (error) {
+    console.error('✗ Error creating product specification:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while creating product specification.',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/products/:id/variants
+ * Get product variants (protected route)
+ */
+router.get('/products/:id/variants', authMiddleware, (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+    const dbInstance = getDb();
+
+    const result = dbInstance.exec(
+      'SELECT * FROM product_variants WHERE product_id = ? ORDER BY id ASC',
+      [productId]
+    );
+
+    const variants = result[0] ? result[0].values.map(row => ({
+      id: row[0],
+      product_id: row[1],
+      variant_name: row[2],
+      variant_value: row[3],
+      price_adjustment: row[4],
+      stock: row[5],
+      created_at: row[6]
+    })) : [];
+
+    return res.status(200).json({
+      success: true,
+      count: variants.length,
+      variants: variants,
+    });
+
+  } catch (error) {
+    console.error('✗ Error fetching product variants:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching product variants.',
+    });
+  }
+});
+
+/**
+ * POST /api/admin/products/:id/variants
+ * Add product variant (protected route)
+ */
+router.post('/products/:id/variants', authMiddleware, (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+    const { variant_name, variant_value, price_adjustment, stock } = req.body;
+
+    if (!variant_name || !variant_value) {
+      return res.status(400).json({
+        success: false,
+        message: 'Variant name and value are required',
+      });
+    }
+
+    const dbInstance = getDb();
+
+    // Verify product exists
+    const productResult = dbInstance.exec('SELECT id FROM products WHERE id = ?', [productId]);
+    if (!productResult[0] || !productResult[0].values[0]) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found',
+      });
+    }
+
+    dbInstance.run(
+      'INSERT INTO product_variants (product_id, variant_name, variant_value, price_adjustment, stock) VALUES (?, ?, ?, ?, ?)',
+      [productId, variant_name, variant_value, price_adjustment || 0, stock || 0]
+    );
+
+    const result = dbInstance.exec('SELECT last_insert_rowid() as id');
+    const variantId = result[0].values[0][0];
+    saveDatabase();
+
+    console.log(`✓ Product variant created: #${variantId} for product #${productId}`);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Product variant created successfully',
+      variant_id: variantId,
+    });
+
+  } catch (error) {
+    console.error('✗ Error creating product variant:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while creating product variant.',
     });
   }
 });

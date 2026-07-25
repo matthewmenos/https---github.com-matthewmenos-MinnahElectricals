@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Newsletter Subscription - Minnah Electricals</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <div class="nav-brand">
+        <i class="fas fa-bolt"></i> Minnah Electricals
+      </div>
+      <ul class="nav-menu">
+        <li><a href="/">Home</a></li>
+        <li><a href="/services.html">Services</a></li>
+        <li><a href="/shop.html">Shop</a></li>
+        <li><a href="/portfolio.html">Portfolio</a></li>
+        <li><a href="/gallery.html">Gallery</a></li>
+        <li><a href="/contact.html">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="container">
+      <div class="page-header">
+        <h1><i class="fas fa-envelope"></i> Subscribe to Our Newsletter</h1>
+        <p>Stay updated with our latest news, offers, and electrical tips</p>
+      </div>
+
+      <div class="form-container">
+        <div id="subscribeForm">
+          <form id="newsletterForm">
+            <div class="form-group">
+              <label for="name">Your Name</label>
+              <input type="text" id="name" name="name" placeholder="Enter your name">
+            </div>
+            <div class="form-group">
+              <label for="email">Email Address *</label>
+              <input type="email" id="email" name="email" required placeholder="Enter your email address">
+            </div>
+            <button type="submit" class="btn-submit">
+              <i class="fas fa-paper-plane"></i> Subscribe Now
+            </button>
+          </form>
+        </div>
+
+        <div id="successMessage" class="success-message" style="display: none;">
+          <i class="fas fa-check-circle"></i>
+          <h3>Thank You for Subscribing!</h3>
+          <p>You've successfully subscribed to our newsletter. You'll receive our latest updates and offers directly in your inbox.</p>
+        </div>
+
+        <div id="alreadySubscribed" class="info-message" style="display: none;">
+          <i class="fas fa-info-circle"></i>
+          <h3>Already Subscribed</h3>
+          <p>You're already on our mailing list. Thank you for your continued interest!</p>
+        </div>
+
+        <div id="resubscribed" class="success-message" style="display: none;">
+          <i class="fas fa-check-circle"></i>
+          <h3>Welcome Back!</h3>
+          <p>You've been resubscribed to our newsletter. We're glad to have you back!</p>
+        </div>
+      </div>
+
+      <!-- Benefits Section -->
+      <div class="benefits-section">
+        <h2>Why Subscribe?</h2>
+        <div class="benefits-grid">
+          <div class="benefit-card">
+            <i class="fas fa-percentage"></i>
+            <h3>Exclusive Offers</h3>
+            <p>Get access to special discounts and promotions available only to our subscribers.</p>
+          </div>
+          <div class="benefit-card">
+            <i class="fas fa-lightbulb"></i>
+            <h3>Electrical Tips</h3>
+            <p>Receive helpful electrical safety tips and maintenance advice from our experts.</p>
+          </div>
+          <div class="benefit-card">
+            <i class="fas fa-bell"></i>
+            <h3>Latest News</h3>
+            <p>Stay informed about our newest services, products, and company updates.</p>
+          </div>
+          <div class="benefit-card">
+            <i class="fas fa-calendar"></i>
+            <h3>Event Invitations</h3>
+            <p>Be the first to know about community events and special gatherings.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p>&copy; 2024 Minnah Electricals. All rights reserved.</p>
+      <p class="footer-note">We respect your privacy. Unsubscribe anytime.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('newsletterForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const formData = {
+        email: document.getElementById('email').value,
+        name: document.getElementById('name').value
+      };
+
+      try {
+        const response = await fetch('/api/newsletter/subscribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          document.getElementById('subscribeForm').style.display = 'none';
+          
+          if (data.already_subscribed) {
+            document.getElementById('alreadySubscribed').style.display = 'block';
+          } else if (data.resubscribed) {
+            document.getElementById('resubscribed').style.display = 'block';
+          } else {
+            document.getElementById('successMessage').style.display = 'block';
+          }
+        } else {
+          alert(data.message || 'Failed to subscribe. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again later.');
+      }
+    });
+  </script>
+</body>
+</html>

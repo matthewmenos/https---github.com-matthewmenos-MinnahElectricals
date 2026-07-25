@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Requests - Admin Dashboard</title>
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2><i class="fas fa-bolt"></i> Admin Panel</h2>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/admin"><i class="fas fa-dashboard"></i> Dashboard</a>
+        <a href="/admin/leads"><i class="fas fa-users"></i> Leads</a>
+        <a href="/admin/orders"><i class="fas fa-shopping-cart"></i> Orders</a>
+        <a href="/admin/products"><i class="fas fa-box"></i> Products</a>
+        <a href="/admin/appointments"><i class="fas fa-calendar"></i> Appointments</a>
+        <a href="/admin/service-requests" class="active"><i class="fas fa-tools"></i> Service Requests</a>
+        <a href="/admin/customers"><i class="fas fa-user-friends"></i> Customers</a>
+        <a href="/admin/loyalty"><i class="fas fa-star"></i> Loyalty Program</a>
+        <a href="/admin/newsletter"><i class="fas fa-envelope"></i> Newsletter</a>
+        <a href="/admin/analytics"><i class="fas fa-chart-line"></i> Analytics</a>
+        <a href="/admin/settings"><i class="fas fa-cog"></i> Settings</a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="top-bar">
+        <h1>Service Request Management</h1>
+        <div class="user-info">
+          <span id="usernameDisplay"></span>
+          <button onclick="logout()" class="btn-logout">Logout</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <!-- Filters -->
+        <div class="filters">
+          <div class="filter-group">
+            <label>Status:</label>
+            <select id="statusFilter" onchange="loadServiceRequests()">
+              <option value="all">All</option>
+              <option value="open">Open</option>
+              <option value="in_progress">In Progress</option>
+              <option value="on_hold">On Hold</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Priority:</label>
+            <select id="priorityFilter" onchange="loadServiceRequests()">
+              <option value="all">All</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </div>
+          <button onclick="clearFilters()" class="btn-secondary">Clear Filters</button>
+        </div>
+
+        <!-- Service Requests Table -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Customer</th>
+                <th>Phone</th>
+                <th>Service Type</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Assigned To</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="serviceRequestsTable">
+              <tr>
+                <td colspan="8" class="loading">Loading service requests...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Edit Modal -->
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Edit Service Request</h2>
+        <span class="close" onclick="closeModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <form id="editForm">
+          <input type="hidden" id="editId">
+          <div class="form-group">
+            <label>Status</label>
+            <select id="editStatus" required>
+              <option value="open">Open</option>
+              <option value="in_progress">In Progress</option>
+              <option value="on_hold">On Hold</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Priority</label>
+            <select id="editPriority" required>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Assigned To</label>
+            <input type="text" id="editAssignedTo" placeholder="Technician name">
+          </div>
+          <div class="form-group">
+            <label>Scheduled Date</label>
+            <input type="date" id="editScheduledDate">
+          </div>
+          <div class="form-group">
+            <label>Scheduled Time</label>
+            <input type="time" id="editScheduledTime">
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea id="editNotes" rows="4"></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Save Changes</button>
+            <button type="button" onclick="closeModal()" class="btn-secondary">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let authToken = localStorage.getItem('authToken');
+    let currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+
+    // Check authentication
+    if (!authToken || !currentUser.username) {
+      window.location.href = '/admin/login';
+    } else {
+      document.getElementById('usernameDisplay').textContent = currentUser.username;
+    }
+
+    // Load service requests on page load
+    document.addEventListener('DOMContentLoaded', loadServiceRequests);
+
+    async function loadServiceRequests() {
+      const status = document.getElementById('statusFilter').value;
+      const priority = document.getElementById('priorityFilter').value;
+
+      let url = `/api/admin/service-requests?status=${status}&priority=${priority}`;
+
+      try {
+        const response = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          displayServiceRequests(data.service_requests);
+        }
+      } catch (error) {
+        console.error('Error loading service requests:', error);
+        showNotification('Error loading service requests', 'error');
+      }
+    }
+
+    function displayServiceRequests(requests) {
+      const tbody = document.getElementById('serviceRequestsTable');
+
+      if (requests.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="no-data">No service requests found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = requests.map(req => `
+        <tr>
+          <td>#${req.id}</td>
+          <td>${req.customer_name}</td>
+          <td>${req.customer_phone}</td>
+          <td>${req.service_type}</td>
+          <td><span class="priority-badge priority-${req.priority}">${req.priority}</span></td>
+          <td><span class="status-badge status-${req.status}">${req.status.replace('_', ' ')}</span></td>
+          <td>${req.assigned_to || '-'}</td>
+          <td>
+            <button onclick="editServiceRequest(${req.id})" class="btn-edit"><i class="fas fa-edit"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function editServiceRequest(id) {
+      try {
+        const response = await fetch(`/api/admin/service-requests/${id}`, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          const request = data.service_request;
+          document.getElementById('editId').value = request.id;
+          document.getElementById('editStatus').value = request.status;
+          document.getElementById('editPriority').value = request.priority;
+          document.getElementById('editAssignedTo').value = request.assigned_to || '';
+          document.getElementById('editScheduledDate').value = request.scheduled_date || '';
+          document.getElementById('editScheduledTime').value = request.scheduled_time || '';
+          document.getElementById('editNotes').value = request.notes || '';
+          document.getElementById('editModal').style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Error fetching service request:', error);
+        showNotification('Error loading service request details', 'error');
+      }
+    }
+
+    async function updateServiceRequest(e) {
+      e.preventDefault();
+
+      const id = document.getElementById('editId').value;
+      const status = document.getElementById('editStatus').value;
+      const priority = document.getElementById('editPriority').value;
+      const assigned_to = document.getElementById('editAssignedTo').value;
+      const scheduled_date = document.getElementById('editScheduledDate').value;
+      const scheduled_time = document.getElementById('editScheduledTime').value;
+      const notes = document.getElementById('editNotes').value;
+
+      try {
+        const response = await fetch(`/api/admin/service-requests/${id}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status, priority, assigned_to, scheduled_date, scheduled_time, notes })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          showNotification('Service request updated successfully', 'success');
+          closeModal();
+          loadServiceRequests();
+        } else {
+          showNotification(data.message, 'error');
+        }
+      } catch (error) {
+        console.error('Error updating service request:', error);
+        showNotification('Error updating service request', 'error');
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('editModal').style.display = 'none';
+    }
+
+    function clearFilters() {
+      document.getElementById('statusFilter').value = 'all';
+      document.getElementById('priorityFilter').value = 'all';
+      loadServiceRequests();
+    }
+
+    function logout() {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('currentUser');
+      window.location.href = '/admin/login';
+    }
+
+    function showNotification(message, type) {
+      const notification = document.createElement('div');
+      notification.className = `notification notification-${type}`;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 3000);
+    }
+
+    // Form submission
+    document.getElementById('editForm').addEventListener('submit', updateServiceRequest);
+
+    // Close modal on outside click
+    window.onclick = function(event) {
+      const modal = document.getElementById('editModal');
+      if (event.target === modal) {
+        closeModal();
+      }
+    }
+  </script>
+</body>
+</html>

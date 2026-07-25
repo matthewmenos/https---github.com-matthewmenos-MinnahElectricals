@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Track Service Request - Minnah Electricals</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <div class="nav-brand">
+        <i class="fas fa-bolt"></i> Minnah Electricals
+      </div>
+      <ul class="nav-menu">
+        <li><a href="/">Home</a></li>
+        <li><a href="/services.html">Services</a></li>
+        <li><a href="/shop.html">Shop</a></li>
+        <li><a href="/portfolio.html">Portfolio</a></li>
+        <li><a href="/gallery.html">Gallery</a></li>
+        <li><a href="/contact.html">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="container">
+      <div class="page-header">
+        <h1><i class="fas fa-search"></i> Track Service Request</h1>
+        <p>Check the status of your service request</p>
+      </div>
+
+      <div class="form-container">
+        <form id="trackingForm">
+          <div class="form-group">
+            <label for="phone">Phone Number *</label>
+            <input type="tel" id="phone" name="phone" required placeholder="Enter the phone number used for your request">
+          </div>
+          <div class="form-group">
+            <label for="requestId">Request ID (optional)</label>
+            <input type="text" id="requestId" name="requestId" placeholder="Enter request ID if you have it">
+          </div>
+          <button type="submit" class="btn-submit">
+            <i class="fas fa-search"></i> Track Request
+          </button>
+        </form>
+
+        <div id="trackingResults" class="tracking-results" style="display: none;">
+          <h2>Service Request Status</h2>
+          <div id="resultsContainer"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p>&copy; 2024 Minnah Electricals. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('trackingForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const phone = document.getElementById('phone').value;
+      const requestId = document.getElementById('requestId').value;
+
+      let url = `/api/service-requests/track?phone=${encodeURIComponent(phone)}`;
+      if (requestId) url += `&requestId=${encodeURIComponent(requestId)}`;
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.success) {
+          displayResults(data.service_requests);
+        } else {
+          alert(data.message || 'No service requests found');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again later.');
+      }
+    });
+
+    function displayResults(requests) {
+      const resultsDiv = document.getElementById('trackingResults');
+      const container = document.getElementById('resultsContainer');
+
+      if (requests.length === 0) {
+        container.innerHTML = '<p class="no-data">No service requests found for this phone number.</p>';
+      } else {
+        container.innerHTML = requests.map(req => `
+          <div class="request-card">
+            <div class="request-header">
+              <h3>Request #${req.id}</h3>
+              <span class="status-badge status-${req.status}">${req.status.replace('_', ' ').toUpperCase()}</span>
+            </div>
+            <div class="request-body">
+              <div class="request-row">
+                <span class="label">Service Type:</span>
+                <span class="value">${req.service_type}</span>
+              </div>
+              <div class="request-row">
+                <span class="label">Priority:</span>
+                <span class="priority-badge priority-${req.priority}">${req.priority.toUpperCase()}</span>
+              </div>
+              <div class="request-row">
+                <span class="label">Description:</span>
+                <span class="value">${req.description}</span>
+              </div>
+              ${req.assigned_to ? `
+              <div class="request-row">
+                <span class="label">Assigned To:</span>
+                <span class="value">${req.assigned_to}</span>
+              </div>
+              ` : ''}
+              ${req.scheduled_date ? `
+              <div class="request-row">
+                <span class="label">Scheduled Date:</span>
+                <span class="value">${req.scheduled_date}</span>
+              </div>
+              ` : ''}
+              ${req.scheduled_time ? `
+              <div class="request-row">
+                <span class="label">Scheduled Time:</span>
+                <span class="value">${req.scheduled_time}</span>
+              </div>
+              ` : ''}
+              <div class="request-row">
+                <span class="label">Submitted:</span>
+                <span class="value">${new Date(req.created_at).toLocaleString()}</span>
+              </div>
+              ${req.notes ? `
+              <div class="request-row">
+                <span class="label">Notes:</span>
+                <span class="value">${req.notes}</span>
+              </div>
+              ` : ''}
+            </div>
+          </div>
+        `).join('');
+      }
+
+      resultsDiv.style.display = 'block';
+    }
+  </script>
+</body>
+</html>

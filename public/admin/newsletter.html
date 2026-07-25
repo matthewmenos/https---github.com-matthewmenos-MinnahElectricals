@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Newsletter - Admin Dashboard</title>
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2><i class="fas fa-bolt"></i> Admin Panel</h2>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/admin"><i class="fas fa-dashboard"></i> Dashboard</a>
+        <a href="/admin/leads"><i class="fas fa-users"></i> Leads</a>
+        <a href="/admin/orders"><i class="fas fa-shopping-cart"></i> Orders</a>
+        <a href="/admin/products"><i class="fas fa-box"></i> Products</a>
+        <a href="/admin/appointments"><i class="fas fa-calendar"></i> Appointments</a>
+        <a href="/admin/service-requests"><i class="fas fa-tools"></i> Service Requests</a>
+        <a href="/admin/customers"><i class="fas fa-user-friends"></i> Customers</a>
+        <a href="/admin/loyalty"><i class="fas fa-star"></i> Loyalty Program</a>
+        <a href="/admin/newsletter" class="active"><i class="fas fa-envelope"></i> Newsletter</a>
+        <a href="/admin/analytics"><i class="fas fa-chart-line"></i> Analytics</a>
+        <a href="/admin/settings"><i class="fas fa-cog"></i> Settings</a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="top-bar">
+        <h1>Newsletter Management</h1>
+        <div class="user-info">
+          <span id="usernameDisplay"></span>
+          <button onclick="logout()" class="btn-logout">Logout</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <!-- Tabs -->
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchTab('subscribers')">Subscribers</button>
+          <button class="tab-btn" onclick="switchTab('campaigns')">Campaigns</button>
+        </div>
+
+        <!-- Subscribers Tab -->
+        <div id="subscribersTab" class="tab-content">
+          <!-- Stats -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon"><i class="fas fa-users"></i></div>
+              <div class="stat-info">
+                <h3 id="totalSubscribers">0</h3>
+                <p>Total Subscribers</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon"><i class="fas fa-user-check"></i></div>
+              <div class="stat-info">
+                <h3 id="activeSubscribers">0</h3>
+                <p>Active Subscribers</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Subscribers Table -->
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Email</th>
+                  <th>Name</th>
+                  <th>Status</th>
+                  <th>Subscribed</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="subscribersTable">
+                <tr>
+                  <td colspan="6" class="loading">Loading subscribers...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Campaigns Tab -->
+        <div id="campaignsTab" class="tab-content" style="display: none;">
+          <div class="filters">
+            <button onclick="openCampaignModal()" class="btn-primary"><i class="fas fa-plus"></i> Create Campaign</button>
+          </div>
+
+          <!-- Campaigns Table -->
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Subject</th>
+                  <th>Status</th>
+                  <th>Sent</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="campaignsTable">
+                <tr>
+                  <td colspan="6" class="loading">Loading campaigns...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Create Campaign Modal -->
+  <div id="campaignModal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+      <div class="modal-header">
+        <h2>Create Newsletter Campaign</h2>
+        <span class="close" onclick="closeCampaignModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <form id="campaignForm">
+          <div class="form-group">
+            <label>Subject *</label>
+            <input type="text" id="campaignSubject" required placeholder="Enter email subject">
+          </div>
+          <div class="form-group">
+            <label>Content *</label>
+            <textarea id="campaignContent" rows="10" required placeholder="Enter HTML content. Use {{name}} for personalization"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Recipients</label>
+            <select id="campaignRecipients">
+              <option value="all">All Subscribers</option>
+            </select>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Create Campaign</button>
+            <button type="button" onclick="closeCampaignModal()" class="btn-secondary">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let authToken = localStorage.getItem('authToken');
+    let currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+
+    // Check authentication
+    if (!authToken || !currentUser.username) {
+      window.location.href = '/admin/login';
+    } else {
+      document.getElementById('usernameDisplay').textContent = currentUser.username;
+    }
+
+    // Load data on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadSubscribers();
+      loadCampaigns();
+      loadStats();
+    });
+
+    function switchTab(tab) {
+      const subscribersTab = document.getElementById('subscribersTab');
+      const campaignsTab = document.getElementById('campaignsTab');
+      const tabBtns = document.querySelectorAll('.tab-btn');
+
+      if (tab === 'subscribers') {
+        subscribersTab.style.display = 'block';
+        campaignsTab.style.display = 'none';
+        tabBtns[0].classList.add('active');
+        tabBtns[1].classList.remove('active');
+      } else {
+        subscribersTab.style.display = 'none';
+        campaignsTab.style.display = 'block';
+        tabBtns[0].classList.remove('active');
+        tabBtns[1].classList.add('active');
+      }
+    }
+
+    async function loadStats() {
+      try {
+        const response = await fetch('/api/admin/analytics', {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          const newsletter = data.analytics.newsletter;
+          document.getElementById('totalSubscribers').textContent = newsletter.total_subscribers || 0;
+          document.getElementById('activeSubscribers').textContent = newsletter.active_subscribers || 0;
+        }
+      } catch (error) {
+        console.error('Error loading stats:', error);
+      }
+    }
+
+    async function loadSubscribers() {
+      try {
+        const response = await fetch('/api/admin/newsletter/subscribers', {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          displaySubscribers(data.subscribers);
+        }
+      } catch (error) {
+        console.error('Error loading subscribers:', error);
+        showNotification('Error loading subscribers', 'error');
+      }
+    }
+
+    function displaySubscribers(subscribers) {
+      const tbody = document.getElementById('subscribersTable');
+
+      if (subscribers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="no-data">No subscribers found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = subscribers.map(sub => `
+        <tr>
+          <td>#${sub.id}</td>
+          <td>${sub.email}</td>
+          <td>${sub.name || '-'}</td>
+          <td><span class="status-badge status-${sub.status}">${sub.status}</span></td>
+          <td>${new Date(sub.subscribed_at).toLocaleDateString()}</td>
+          <td>
+            ${sub.status === 'active' ? 
+              `<button onclick="unsubscribe('${sub.email}')" class="btn-delete" title="Unsubscribe"><i class="fas fa-user-times"></i></button>` : 
+              '-'}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function unsubscribe(email) {
+      if (!confirm(`Are you sure you want to unsubscribe ${email}?`)) return;
+
+      try {
+        const response = await fetch('/api/admin/newsletter/unsubscribe', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          showNotification('Subscriber unsubscribed successfully', 'success');
+          loadSubscribers();
+          loadStats();
+        } else {
+          showNotification(data.message, 'error');
+        }
+      } catch (error) {
+        console.error('Error unsubscribing:', error);
+        showNotification('Error unsubscribing', 'error');
+      }
+    }
+
+    async function loadCampaigns() {
+      try {
+        const response = await fetch('/api/admin/newsletter/campaigns', {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          displayCampaigns(data.campaigns);
+        }
+      } catch (error) {
+        console.error('Error loading campaigns:', error);
+        showNotification('Error loading campaigns', 'error');
+      }
+    }
+
+    function displayCampaigns(campaigns) {
+      const tbody = document.getElementById('campaignsTable');
+
+      if (campaigns.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="no-data">No campaigns found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = campaigns.map(campaign => `
+        <tr>
+          <td>#${campaign.id}</td>
+          <td>${campaign.subject}</td>
+          <td><span class="status-badge status-${campaign.status}">${campaign.status}</span></td>
+          <td>${campaign.sent_count || 0}</td>
+          <td>${new Date(campaign.created_at).toLocaleDateString()}</td>
+          <td>
+            ${campaign.status === 'draft' ? 
+              `<button onclick="sendCampaign(${campaign.id})" class="btn-primary" title="Send"><i class="fas fa-paper-plane"></i></button>` : 
+              '-'}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openCampaignModal() {
+      document.getElementById('campaignForm').reset();
+      document.getElementById('campaignModal').style.display = 'block';
+    }
+
+    async function createCampaign(e) {
+      e.preventDefault();
+
+      const subject = document.getElementById('campaignSubject').value;
+      const content = document.getElementById('campaignContent').value;
+      const recipient_filter = document.getElementById('campaignRecipients').value;
+
+      try {
+        const response = await fetch('/api/admin/newsletter/campaigns', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ subject, content, recipient_filter })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          showNotification('Campaign created successfully', 'success');
+          closeCampaignModal();
+          loadCampaigns();
+        } else {
+          showNotification(data.message, 'error');
+        }
+      } catch (error) {
+        console.error('Error creating campaign:', error);
+        showNotification('Error creating campaign', 'error');
+      }
+    }
+
+    async function sendCampaign(id) {
+      if (!confirm('Are you sure you want to send this campaign to all active subscribers?')) return;
+
+      try {
+        const response = await fetch(`/api/admin/newsletter/campaigns/${id}/send`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          showNotification(`Campaign sent to ${data.sent_count} subscribers`, 'success');
+          loadCampaigns();
+        } else {
+          showNotification(data.message, 'error');
+        }
+      } catch (error) {
+        console.error('Error sending campaign:', error);
+        showNotification('Error sending campaign', 'error');
+      }
+    }
+
+    function closeCampaignModal() {
+      document.getElementById('campaignModal').style.display = 'none';
+    }
+
+    function logout() {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('currentUser');
+      window.location.href = '/admin/login';
+    }
+
+    function showNotification(message, type) {
+      const notification = document.createElement('div');
+      notification.className = `notification notification-${type}`;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 3000);
+    }
+
+    // Form submission
+    document.getElementById('campaignForm').addEventListener('submit', createCampaign);
+
+    // Close modal on outside click
+    window.onclick = function(event) {
+      const modal = document.getElementById('campaignModal');
+      if (event.target === modal) {
+        closeCampaignModal();
+      }
+    }
+  </script>
+</body>
+</html>

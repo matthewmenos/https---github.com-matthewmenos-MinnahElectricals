@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loyalty Program - Admin Dashboard</title>
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2><i class="fas fa-bolt"></i> Admin Panel</h2>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/admin"><i class="fas fa-dashboard"></i> Dashboard</a>
+        <a href="/admin/leads"><i class="fas fa-users"></i> Leads</a>
+        <a href="/admin/orders"><i class="fas fa-shopping-cart"></i> Orders</a>
+        <a href="/admin/products"><i class="fas fa-box"></i> Products</a>
+        <a href="/admin/appointments"><i class="fas fa-calendar"></i> Appointments</a>
+        <a href="/admin/service-requests"><i class="fas fa-tools"></i> Service Requests</a>
+        <a href="/admin/customers"><i class="fas fa-user-friends"></i> Customers</a>
+        <a href="/admin/loyalty" class="active"><i class="fas fa-star"></i> Loyalty Program</a>
+        <a href="/admin/newsletter"><i class="fas fa-envelope"></i> Newsletter</a>
+        <a href="/admin/analytics"><i class="fas fa-chart-line"></i> Analytics</a>
+        <a href="/admin/settings"><i class="fas fa-cog"></i> Settings</a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="top-bar">
+        <h1>Customer Loyalty Program</h1>
+        <div class="user-info">
+          <span id="usernameDisplay"></span>
+          <button onclick="logout()" class="btn-logout">Logout</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-users"></i></div>
+            <div class="stat-info">
+              <h3 id="totalMembers">0</h3>
+              <p>Total Members</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-coins"></i></div>
+            <div class="stat-info">
+              <h3 id="totalPoints">0</h3>
+              <p>Points Issued</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-shopping-bag"></i></div>
+            <div class="stat-info">
+              <h3 id="totalLoyaltyOrders">0</h3>
+              <p>Loyalty Orders</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
+            <div class="stat-info">
+              <h3 id="totalLoyaltySpent">₵0</h3>
+              <p>Total Spent</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters">
+          <div class="filter-group">
+            <label>Tier:</label>
+            <select id="tierFilter" onchange="loadMembers()">
+              <option value="all">All Tiers</option>
+              <option value="bronze">Bronze</option>
+              <option value="silver">Silver</option>
+              <option value="gold">Gold</option>
+              <option value="platinum">Platinum</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Search:</label>
+            <input type="text" id="searchInput" placeholder="Name or phone..." oninput="loadMembers()">
+          </div>
+          <button onclick="openAddModal()" class="btn-primary"><i class="fas fa-plus"></i> Add Member</button>
+        </div>
+
+        <!-- Members Table -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Customer</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Points</th>
+                <th>Tier</th>
+                <th>Total Spent</th>
+                <th>Orders</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="membersTable">
+              <tr>
+                <td colspan="9" class="loading">Loading loyalty members...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add/Edit Modal -->
+  <div id="memberModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Add Loyalty Member</h2>
+        <span class="close" onclick="closeModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <form id="memberForm">
+          <input type="hidden" id="memberId">
+          <div class="form-group">
+            <label>Customer Name *</label>
+            <input type="text" id="memberName" required>
+          </div>
+          <div class="form-group">
+            <label>Phone Number *</label>
+            <input type="tel" id="memberPhone" required>
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="memberEmail">
+          </div>
+          <div class="form-group">
+            <label>Points</label>
+            <input type="number" id="memberPoints" value="0" min="0">
+          </div>
+          <div class="form-group">
+            <label>Tier</label>
+            <select id="memberTier">
+              <option value="bronze">Bronze</option>
+              <option value="silver">Silver</option>
+              <option value="gold">Gold</option>
+              <option value="platinum">Platinum</option>
+            </select>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Save Member</button>
+            <button type="button" onclick="closeModal()" class="btn-secondary">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Transaction Modal -->
+  <div id="transactionModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add Points Transaction</h2>
+        <span class="close" onclick="closeTransactionModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <form id="transactionForm">
+          <input type="hidden" id="transactionCustomerPhone">
+          <div class="form-group">
+            <label>Transaction Type *</label>
+            <select id="transactionType" required>
+              <option value="earned">Earned</option>
+              <option value="redeemed">Redeemed</option>
+              <option value="bonus">Bonus</option>
+              <option value="expired">Expired</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Points *</label>
+            <input type="number" id="transactionPoints" required min="1">
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea id="transactionDescription" rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Order ID (optional)</label>
+            <input type="number" id="transactionOrderId">
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Add Transaction</button>
+            <button type="button" onclick="closeTransactionModal()" class="btn-secondary">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let authToken = localStorage.getItem('authToken');
+    let currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+
+    // Check authentication
+    if (!authToken || !currentUser.username) {
+      window.location.href = '/admin/login';
+    } else {
+      document.getElementById('usernameDisplay').textContent = currentUser.username;
+    }
+
+    // Load members on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadMembers();
+      loadStats();
+    });
+
+    async function loadStats() {
+      try {
+        const response = await fetch('/api/admin/analytics', {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          const loyalty = data.analytics.loyalty_program;
+          document.getElementById('totalMembers').textContent = loyalty.total_members || 0;
+          document.getElementById('totalPoints').textContent = loyalty.total_points_issued || 0;
+          document.getElementById('totalLoyaltyOrders').textContent = loyalty.total_loyalty_orders || 0;
+          document.getElementById('totalLoyaltySpent').textContent = `₵${(loyalty.total_loyalty_spent || 0).toFixed(2)}`;
+        }
+      } catch (error) {
+        console.error('Error loading stats:', error);
+      }
+    }
+
+    async function loadMembers() {
+      const tier = document.getElementById('tierFilter').value;
+      const search = document.getElementById('searchInput').value;
+
+      let url = `/api/admin/loyalty/members?tier=${tier}`;
+      if (search) url += `&search=${encodeURIComponent(search)}`;
+
+      try {
+        const response = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          displayMembers(data.members);
+        }
+      } catch (error) {
+        console.error('Error loading members:', error);
+        showNotification('Error loading members', 'error');
+      }
+    }
+
+    function displayMembers(members) {
+      const tbody = document.getElementById('membersTable');
+
+      if (members.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="no-data">No loyalty members found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = members.map(member => `
+        <tr>
+          <td>#${member.id}</td>
+          <td>${member.customer_name}</td>
+          <td>${member.customer_phone}</td>
+          <td>${member.customer_email || '-'}</td>
+          <td><strong>${member.points}</strong></td>
+          <td><span class="tier-badge tier-${member.tier}">${member.tier.toUpperCase()}</span></td>
+          <td>₵${(member.total_spent || 0).toFixed(2)}</td>
+          <td>${member.total_orders || 0}</td>
+          <td>
+            <button onclick="addTransaction('${member.customer_phone}')" class="btn-primary" title="Add Points"><i class="fas fa-plus-circle"></i></button>
+            <button onclick="editMember(${member.id})" class="btn-edit" title="Edit"><i class="fas fa-edit"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openAddModal() {
+      document.getElementById('modalTitle').textContent = 'Add Loyalty Member';
+      document.getElementById('memberForm').reset();
+      document.getElementById('memberId').value = '';
+      document.getElementById('memberModal').style.display = 'block';
+    }
+
+    async function editMember(id) {
+      try {
+        const response = await fetch(`/api/admin/loyalty/members`, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          const member = data.members.find(m => m.id === id);
+          if (member) {
+            document.getElementById('modalTitle').textContent = 'Edit Loyalty Member';
+            document.getElementById('memberId').value = member.id;
+            document.getElementById('memberName').value = member.customer_name;
+            document.getElementById('memberPhone').value = member.customer_phone;
+            document.getElementById('memberEmail').value = member.customer_email || '';
+            document.getElementById('memberPoints').value = member.points;
+            document.getElementById('memberTier').value = member.tier;
+            document.getElementById('memberModal').style.display = 'block';
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching member:', error);
+        showNotification('Error loading member details', 'error');
+      }
+    }
+
+    async function saveMember(e) {
+      e.preventDefault();
+
+      const id = document.getElementById('memberId').value;
+      const customer_name = document.getElementById('memberName').value;
+      const customer_phone = document.getElementById('memberPhone').value;
+      const customer_email = document.getElementById('memberEmail').value;
+      const points = parseInt(document.getElementById('memberPoints').value);
+      const tier = document.getElementById('memberTier').value;
+
+      try {
+        const url = id ? `/api/admin/loyalty/members/${id}` : '/api/admin/loyalty/members';
+        const method = id ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+          method: method,
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ customer_name, customer_phone, customer_email, points, tier })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          showNotification(id ? 'Member updated successfully' : 'Member added successfully', 'success');
+          closeModal();
+          loadMembers();
+          loadStats();
+        } else {
+          showNotification(data.message, 'error');
+        }
+      } catch (error) {
+        console.error('Error saving member:', error);
+        showNotification('Error saving member', 'error');
+      }
+    }
+
+    function addTransaction(customerPhone) {
+      document.getElementById('transactionCustomerPhone').value = customerPhone;
+      document.getElementById('transactionForm').reset();
+      document.getElementById('transactionModal').style.display = 'block';
+    }
+
+    async function saveTransaction(e) {
+      e.preventDefault();
+
+      const customer_phone = document.getElementById('transactionCustomerPhone').value;
+      const transaction_type = document.getElementById('transactionType').value;
+      const points = parseInt(document.getElementById('transactionPoints').value);
+      const description = document.getElementById('transactionDescription').value;
+      const order_id = document.getElementById('transactionOrderId').value || null;
+
+      try {
+        const response = await fetch('/api/admin/loyalty/transactions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ customer_phone, transaction_type, points, description, order_id })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          showNotification(`Transaction added successfully. New balance: ${data.new_balance} points`, 'success');
+          closeTransactionModal();
+          loadMembers();
+          loadStats();
+        } else {
+          showNotification(data.message, 'error');
+        }
+      } catch (error) {
+        console.error('Error adding transaction:', error);
+        showNotification('Error adding transaction', 'error');
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('memberModal').style.display = 'none';
+    }
+
+    function closeTransactionModal() {
+      document.getElementById('transactionModal').style.display = 'none';
+    }
+
+    function logout() {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('currentUser');
+      window.location.href = '/admin/login';
+    }
+
+    function showNotification(message, type) {
+      const notification = document.createElement('div');
+      notification.className = `notification notification-${type}`;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 3000);
+    }
+
+    // Form submissions
+    document.getElementById('memberForm').addEventListener('submit', saveMember);
+    document.getElementById('transactionForm').addEventListener('submit', saveTransaction);
+
+    // Close modals on outside click
+    window.onclick = function(event) {
+      const memberModal = document.getElementById('memberModal');
+      const transactionModal = document.getElementById('transactionModal');
+      if (event.target === memberModal) closeModal();
+      if (event.target === transactionModal) closeTransactionModal();
+    }
+  </script>
+</body>
+</html>
