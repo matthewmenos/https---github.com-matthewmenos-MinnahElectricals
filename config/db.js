@@ -253,69 +253,6 @@ async function initializeDatabase() {
     )
   `);
 
-  // Create appointments table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS appointments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      customer_name TEXT NOT NULL,
-      customer_phone TEXT NOT NULL,
-      customer_email TEXT,
-      service_type TEXT NOT NULL,
-      appointment_date TEXT NOT NULL,
-      appointment_time TEXT,
-      notes TEXT,
-      status TEXT DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'confirmed', 'completed', 'cancelled', 'rescheduled')),
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  // Create newsletter_subscribers table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS newsletter_subscribers (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE NOT NULL,
-      name TEXT,
-      is_active INTEGER DEFAULT 1,
-      subscribed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      unsubscribed_at DATETIME
-    )
-  `);
-
-  // Create newsletter_campaigns table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS newsletter_campaigns (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      subject TEXT NOT NULL,
-      content TEXT NOT NULL,
-      status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'sent', 'scheduled', 'cancelled')),
-      sent_count INTEGER DEFAULT 0,
-      scheduled_at DATETIME,
-      sent_at DATETIME,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  // Create service_requests table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS service_requests (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      customer_name TEXT NOT NULL,
-      customer_phone TEXT NOT NULL,
-      customer_email TEXT,
-      service_type TEXT NOT NULL,
-      description TEXT,
-      priority TEXT DEFAULT 'normal' CHECK (priority IN ('low', 'normal', 'high', 'urgent')),
-      status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed', 'cancelled')),
-      assigned_to TEXT,
-      scheduled_date TEXT,
-      completed_date TEXT,
-      notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
   // Create indexes
   db.run(`CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_leads_created_at ON leads(created_at DESC)`);
@@ -327,14 +264,8 @@ async function initializeDatabase() {
   db.run(`CREATE INDEX IF NOT EXISTS idx_gallery_category ON gallery(category)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_templates_type ON templates(type)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_sms_logs_status ON sms_logs(status)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(appointment_date)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments(status)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_newsletter_subscribers_email ON newsletter_subscribers(email)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_newsletter_campaigns_status ON newsletter_campaigns(status)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_loyalty_program_phone ON loyalty_program(customer_phone)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_loyalty_transactions_customer ON loyalty_transactions(customer_phone)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_service_requests_status ON service_requests(status)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_service_requests_priority ON service_requests(priority)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_product_specs_product ON product_specifications(product_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_product_variants_product ON product_variants(product_id)`);
 
