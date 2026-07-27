@@ -18,15 +18,15 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up ALL caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
+      console.log('Service Worker: Clearing all caches');
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
+          console.log('Service Worker: Deleting cache:', cacheName);
+          return caches.delete(cacheName);
         })
       );
     }).then(() => self.skipWaiting())
