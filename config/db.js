@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const path = require('path');
 const fs = require('fs');
 const initSqlJs = require('sql.js');
+const r2Sync = require('./r2-sync');
 require('dotenv').config();
 
 // Ensure data directory exists
