@@ -1150,43 +1150,57 @@ router.get('/analytics', authMiddleware, (req, res) => {
       email_subscribers: customerStatsResult[0].values[0][2] || 0
     } : { unique_customers: 0, with_email: 0, email_subscribers: 0 };
 
-    // Appointment statistics
-    const appointmentStatsResult = dbInstance.exec(`
-      SELECT 
-        COUNT(*) as total_appointments,
-        SUM(CASE WHEN status = 'Confirmed' THEN 1 ELSE 0 END) as confirmed,
-        SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending,
-        SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed,
-        SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) as cancelled
-      FROM appointments
-      WHERE created_at >= ?
-    `, [startDate.toISOString()]);
-    const appointmentStats = appointmentStatsResult[0] && appointmentStatsResult[0].values[0] ? {
-      total: appointmentStatsResult[0].values[0][0] || 0,
-      confirmed: appointmentStatsResult[0].values[0][1] || 0,
-      pending: appointmentStatsResult[0].values[0][2] || 0,
-      completed: appointmentStatsResult[0].values[0][3] || 0,
-      cancelled: appointmentStatsResult[0].values[0][4] || 0
-    } : { total: 0, confirmed: 0, pending: 0, completed: 0, cancelled: 0 };
+    // Appointment statistics (gracefully handle missing table)
+    let appointmentStats = { total: 0, confirmed: 0, pending: 0, completed: 0, cancelled: 0 };
+    try {
+      const appointmentStatsResult = dbInstance.exec(`
+        SELECT 
+          COUNT(*) as total_appointments,
+          SUM(CASE WHEN status = 'Confirmed' THEN 1 ELSE 0 END) as confirmed,
+          SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending,
+          SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed,
+          SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) as cancelled
+        FROM appointments
+        WHERE created_at >= ?
+      `, [startDate.toISOString()]);
+      if (appointmentStatsResult[0] && appointmentStatsResult[0].values[0]) {
+        appointmentStats = {
+          total: appointmentStatsResult[0].values[0][0] || 0,
+          confirmed: appointmentStatsResult[0].values[0][1] || 0,
+          pending: appointmentStatsResult[0].values[0][2] || 0,
+          completed: appointmentStatsResult[0].values[0][3] || 0,
+          cancelled: appointmentStatsResult[0].values[0][4] || 0
+        };
+      }
+    } catch (e) {
+      // appointments table doesn't exist yet
+    }
 
-    // Service request statistics
-    const serviceRequestStatsResult = dbInstance.exec(`
-      SELECT 
-        COUNT(*) as total_requests,
-        SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) as open,
-        SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
-        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
-        SUM(CASE WHEN priority = 'urgent' THEN 1 ELSE 0 END) as urgent
-      FROM service_requests
-      WHERE created_at >= ?
-    `, [startDate.toISOString()]);
-    const serviceRequestStats = serviceRequestStatsResult[0] && serviceRequestStatsResult[0].values[0] ? {
-      total: serviceRequestStatsResult[0].values[0][0] || 0,
-      open: serviceRequestStatsResult[0].values[0][1] || 0,
-      in_progress: serviceRequestStatsResult[0].values[0][2] || 0,
-      completed: serviceRequestStatsResult[0].values[0][3] || 0,
-      urgent: serviceRequestStatsResult[0].values[0][4] || 0
-    } : { total: 0, open: 0, in_progress: 0, completed: 0, urgent: 0 };
+    // Service request statistics (gracefully handle missing table)
+    let serviceRequestStats = { total: 0, open: 0, in_progress: 0, completed: 0, urgent: 0 };
+    try {
+      const serviceRequestStatsResult = dbInstance.exec(`
+        SELECT 
+          COUNT(*) as total_requests,
+          SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) as open,
+          SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
+          SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+          SUM(CASE WHEN priority = 'urgent' THEN 1 ELSE 0 END) as urgent
+        FROM service_requests
+        WHERE created_at >= ?
+      `, [startDate.toISOString()]);
+      if (serviceRequestStatsResult[0] && serviceRequestStatsResult[0].values[0]) {
+        serviceRequestStats = {
+          total: serviceRequestStatsResult[0].values[0][0] || 0,
+          open: serviceRequestStatsResult[0].values[0][1] || 0,
+          in_progress: serviceRequestStatsResult[0].values[0][2] || 0,
+          completed: serviceRequestStatsResult[0].values[0][3] || 0,
+          urgent: serviceRequestStatsResult[0].values[0][4] || 0
+        };
+      }
+    } catch (e) {
+      // service_requests table doesn't exist yet
+    }
 
     // Loyalty program statistics
     const loyaltyStatsResult = dbInstance.exec(`
@@ -1206,18 +1220,24 @@ router.get('/analytics', authMiddleware, (req, res) => {
       avg_points_per_member: loyaltyStatsResult[0].values[0][4] || 0
     } : { total_members: 0, total_points_issued: 0, total_loyalty_spent: 0, total_loyalty_orders: 0, avg_points_per_member: 0 };
 
-    // Newsletter statistics
-    const newsletterStatsResult = dbInstance.exec(`
-      SELECT 
-        COUNT(*) as total_subscribers,
-        SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_subscribers,
-        COUNT(DISTINCT CASE WHEN status = 'active' THEN id END) as active_count
-      FROM newsletter_subscribers
-    `);
-    const newsletterStats = newsletterStatsResult[0] && newsletterStatsResult[0].values[0] ? {
-      total_subscribers: newsletterStatsResult[0].values[0][0] || 0,
-      active_subscribers: newsletterStatsResult[0].values[0][1] || 0
-    } : { total_subscribers: 0, active_subscribers: 0 };
+    // Newsletter statistics (gracefully handle missing table)
+    let newsletterStats = { total_subscribers: 0, active_subscribers: 0 };
+    try {
+      const newsletterStatsResult = dbInstance.exec(`
+        SELECT 
+          COUNT(*) as total_subscribers,
+          SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_subscribers
+        FROM newsletter_subscribers
+      `);
+      if (newsletterStatsResult[0] && newsletterStatsResult[0].values[0]) {
+        newsletterStats = {
+          total_subscribers: newsletterStatsResult[0].values[0][0] || 0,
+          active_subscribers: newsletterStatsResult[0].values[0][1] || 0
+        };
+      }
+    } catch (e) {
+      // newsletter_subscribers table doesn't exist yet
+    }
 
     // Lead statistics
     const leadStatsResult = dbInstance.exec(`
