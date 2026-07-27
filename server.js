@@ -104,12 +104,13 @@ app.use((err, req, res, next) => {
 // Initialize R2 sync and start server
 async function startServer() {
   try {
-    // Initialize database first
+    // Initialize R2 sync FIRST (download database from R2 if exists)
+    console.log('🔄 Checking R2 for existing database...');
+    await r2Sync.initialize();
+    
+    // Initialize database AFTER R2 download (will load downloaded DB or create fresh)
     await initializeDatabase();
     console.log('✓ Database initialized');
-    
-    // Initialize R2 sync (download database if exists)
-    await r2Sync.initialize();
 
     // Start Express server
     app.listen(PORT, () => {
