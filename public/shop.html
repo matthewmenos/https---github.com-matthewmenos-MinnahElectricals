@@ -269,9 +269,12 @@
 
     // Load products on page load
     document.addEventListener('DOMContentLoaded', async () => {
-      await loadWishlist(); // Load wishlist first
-      await loadProducts(); // Then load and render products
-      await loadCustomerInfo();
+      // Load products immediately (don't wait for other functions)
+      loadProducts().catch(err => console.error('Error loading products:', err));
+      
+      // Load other data in parallel
+      loadWishlist().catch(err => console.error('Error loading wishlist:', err));
+      loadCustomerInfo().catch(err => console.error('Error loading customer info:', err));
     });
 
     // Event Listeners
@@ -283,20 +286,30 @@
 
     async function loadProducts() {
       try {
+        console.log('Loading products...');
         const response = await fetch('/api/products');
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
+        console.log('Response data:', data);
         
         if (data.success && data.products) {
           products = data.products;
+          console.log('Products loaded:', products.length);
           renderProducts();
         } else {
           // Show empty state if no products
+          console.log('No products found or unsuccessful response');
           loadingState.classList.add('hidden');
           emptyState.classList.remove('hidden');
         }
       } catch (error) {
         console.error('Error loading products:', error);
-        loadingState.innerHTML = '<p class="text-red-600">Failed to load products. Please refresh the page.</p>';
+        loadingState.innerHTML = `<p class="text-red-600">Failed to load products: ${error.message}. Please refresh the page.</p>`;
       }
     }
 
