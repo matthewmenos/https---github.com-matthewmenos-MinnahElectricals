@@ -99,8 +99,8 @@
   <section class="py-20">
     <div class="container mx-auto px-4">
       
-      <!-- Loading State -->
-      <div id="loadingState" class="text-center py-12">
+      <!-- Loading State (hidden by default) -->
+      <div id="loadingState" class="hidden text-center py-12">
         <svg class="animate-spin h-12 w-12 text-amber mx-auto mb-4" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -303,25 +303,23 @@
           renderProducts();
         } else {
           // Show empty state if no products
-          console.log('No products found or unsuccessful response');
-          loadingState.classList.add('hidden');
+          console.log('No products found');
           emptyState.classList.remove('hidden');
         }
       } catch (error) {
         console.error('Error loading products:', error);
-        loadingState.innerHTML = `<p class="text-red-600">Failed to load products: ${error.message}. Please refresh the page.</p>`;
+        emptyState.classList.remove('hidden');
+        emptyState.innerHTML = `<p class="text-red-600">Failed to load products: ${error.message}. Please refresh the page.</p>`;
       }
     }
 
     function renderProducts() {
       if (products.length === 0) {
-        loadingState.classList.add('hidden');
         productsGrid.classList.add('hidden');
         emptyState.classList.remove('hidden');
         return;
       }
 
-      loadingState.classList.add('hidden');
       emptyState.classList.add('hidden');
       productsGrid.classList.remove('hidden');
 
