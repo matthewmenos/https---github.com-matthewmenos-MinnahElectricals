@@ -3,10 +3,25 @@ const router = express.Router();
 const { getDb, saveDatabase } = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
 const r2Sync = require('../config/r2-sync');
 const { authMiddleware } = require('../middleware/auth');
 const { sendOrderConfirmationEmail, sendAdminNotificationEmail } = require('../config/email');
 require('dotenv').config();
+
+// Configure multer for file uploads (memory storage)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.'), false);
+    }
+  }
+});
 
 /**
  * POST /api/admin/login
@@ -697,44 +712,26 @@ router.patch('/orders/:id', authMiddleware, (req, res) => {
  * POST /api/admin/upload
  * Upload image to R2 bucket (protected route)
  */
-router.post('/upload', authMiddleware, async (req, res) => {
+router.post('/upload', authMiddleware, upload.single('image'), async (req, res) => {
   try {
-    if (!req.files || !req.files.image) {
+    if (!req.file) {
       return res.status(400).json({
         success: false,
         message: 'No image file provided',
       });
     }
 
-    const imageFile = req.files.image;
+    const imageFile = req.file;
     
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    if (!allowedTypes.includes(imageFile.mimetype)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid file type. Only JPG, PNG, GIF, and WebP are allowed.',
-      });
-    }
-
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (imageFile.size > maxSize) {
-      return res.status(400).json({
-        success: false,
-        message: 'File size too large. Maximum size is 5MB.',
-      });
-    }
-
     // Generate unique filename
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 15);
-    const originalName = imageFile.name.replace(/\s+/g, '-');
+    const originalName = imageFile.originalname.replace(/\s+/g, '-');
     const extension = originalName.split('.').pop();
     const filename = `product_${timestamp}_${randomString}.${extension}`;
 
     // Upload to R2
-    const mediaUrl = await r2Sync.uploadMediaToR2(imageFile.data, filename, imageFile.mimetype);
+    const mediaUrl = await r2Sync.uploadMediaToR2(imageFile.buffer, filename, imageFile.mimetype);
 
     if (!mediaUrl) {
       return res.status(500).json({
