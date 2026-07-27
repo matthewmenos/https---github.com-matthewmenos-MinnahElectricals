@@ -360,12 +360,19 @@ async function initializeDatabase() {
   return db;
 }
 
-// Save database to file
+// Save database to file and sync to R2
 function saveDatabase() {
   if (db) {
     const data = db.export();
     const buffer = Buffer.from(data);
     fs.writeFileSync(dbPath, buffer);
+    
+    // Sync to R2 (non-blocking)
+    if (r2Sync && r2Sync.isConfigured()) {
+      r2Sync.sync().catch(err => {
+        console.error('R2 sync error:', err.message);
+      });
+    }
   }
 }
 
