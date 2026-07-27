@@ -400,9 +400,11 @@ router.post('/products', authMiddleware, (req, res) => {
     }
 
     const dbInstance = getDb();
+    // Default to in_stock = 1 if not provided
+    const inStockValue = in_stock !== undefined && in_stock !== null ? (in_stock ? 1 : 0) : 1;
     dbInstance.run(
       `INSERT INTO products (name, description, price, image_url, category, in_stock) VALUES (?, ?, ?, ?, ?, ?)`,
-      [name, description || '', price, image_url || '', category || '', in_stock ? 1 : 0]
+      [name, description || '', price, image_url || '', category || '', inStockValue]
     );
     
     const result = dbInstance.exec('SELECT last_insert_rowid() as id');

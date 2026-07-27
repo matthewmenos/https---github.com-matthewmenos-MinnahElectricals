@@ -144,11 +144,20 @@ async function initialize() {
   console.log('🔄 Initializing R2 sync...');
   
   try {
-    const downloaded = await downloadFromR2();
-    
-    if (downloaded) {
-      // Perform initial sync after download to ensure we have the latest
-      await uploadToR2();
+    // Only download from R2 if local database doesn't exist
+    // This prevents overwriting local changes with older R2 data
+    if (!fs.existsSync(DB_PATH)) {
+      console.log('ℹ️  No local database found, downloading from R2...');
+      const downloaded = await downloadFromR2();
+      
+      if (downloaded) {
+        console.log('✓ Database downloaded from R2');
+      } else {
+        console.log('ℹ️  No database found in R2, starting fresh');
+      }
+    } else {
+      console.log('✓ Local database exists, skipping R2 download to preserve local data');
+      console.log('  (Database will be synced to R2 on next save)');
     }
   } catch (error) {
     console.error('✗ R2 initialization failed:', error.message);
