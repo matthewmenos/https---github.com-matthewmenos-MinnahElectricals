@@ -17,6 +17,17 @@ let db = null;
 // Initialize database
 async function initializeDatabase() {
   const SQL = await initSqlJs();
+
+  // If there is no local database yet, try restoring from R2 first.
+  // This prevents a redeploy from creating a blank database and overwriting
+  // the last known backup in cloud storage.
+  if (!fs.existsSync(dbPath)) {
+    try {
+      await r2Sync.initialize();
+    } catch (error) {
+      console.warn('R2 initialization warning:', error.message);
+    }
+  }
   
   // Load existing database or create new one
   if (fs.existsSync(dbPath)) {
