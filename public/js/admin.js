@@ -2,6 +2,28 @@
 let currentToken = localStorage.getItem('adminToken');
 let currentFilter = 'all';
 
+function redirectToLogin() {
+  localStorage.removeItem('adminToken');
+  window.location.href = '/admin/login.html';
+}
+
+function getAuthToken() {
+  const token = localStorage.getItem('adminToken');
+  if (!token) {
+    redirectToLogin();
+    return null;
+  }
+  return token;
+}
+
+function handleAuthError(data) {
+  if (data && data.message && data.message.toLowerCase().includes('invalid or expired token')) {
+    redirectToLogin();
+    return true;
+  }
+  return false;
+}
+
 // Check authentication on page load
 document.addEventListener('DOMContentLoaded', () => {
   const isLoginPage = document.getElementById('loginForm');
@@ -11,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // On login page
     if (currentToken) {
       // Already logged in, redirect to dashboard
-      window.location.href = '/admin/dashboard';
+      window.location.href = '/admin';
       return;
     }
     setupLoginForm();
@@ -59,8 +81,8 @@ function setupLoginForm() {
           currentToken = result.token;
           localStorage.setItem('adminToken', currentToken);
           
-          // Redirect to dashboard
-          window.location.href = '/admin/dashboard';
+          // Redirect to admin home
+          window.location.href = '/admin';
         } else {
           // Show error
           loginMessage.className = 'mt-4 p-4 bg-red-50 border border-red-200 rounded-lg';

@@ -262,9 +262,8 @@
 
     async function loadProducts() {
       try {
-        const token = localStorage.getItem('adminToken');
+        const token = getAuthToken();
         if (!token) {
-          window.location.href = '/admin/login.html';
           return;
         }
 
@@ -275,6 +274,9 @@
         });
 
         const data = await response.json();
+        if (handleAuthError(data)) {
+          return;
+        }
         
         if (data.success) {
           products = data.products;
@@ -332,9 +334,8 @@
     async function handleProductSubmit(e) {
       e.preventDefault();
       
-      const token = localStorage.getItem('adminToken');
+      const token = getAuthToken();
       if (!token) {
-        window.location.href = '/admin/login.html';
         return;
       }
 
@@ -363,6 +364,9 @@
           });
 
           const uploadData = await uploadResponse.json();
+          if (handleAuthError(uploadData)) {
+            return;
+          }
           
           if (uploadData.success) {
             productData.image_url = uploadData.url;
@@ -394,6 +398,9 @@
         });
 
         const data = await response.json();
+        if (handleAuthError(data)) {
+          return;
+        }
 
         if (data.success) {
           showMessage(editingProductId ? 'Product updated successfully!' : 'Product created successfully!', 'success');
@@ -420,9 +427,8 @@
         return;
       }
 
-      const token = localStorage.getItem('adminToken');
+      const token = getAuthToken();
       if (!token) {
-        window.location.href = '/admin/login.html';
         return;
       }
 
@@ -435,6 +441,9 @@
         });
 
         const data = await response.json();
+        if (handleAuthError(data)) {
+          return;
+        }
 
         if (data.success) {
           showMessage('Product deleted successfully!', 'success');
