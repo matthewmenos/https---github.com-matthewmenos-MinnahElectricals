@@ -227,6 +227,7 @@ router.get('/products', (req, res) => {
       updated_at: row[8]
     })) : [];
 
+    res.set('Cache-Control', 'no-store');
     return res.status(200).json({
       success: true,
       count: products.length,

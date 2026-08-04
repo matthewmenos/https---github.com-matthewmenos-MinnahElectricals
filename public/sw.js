@@ -95,6 +95,16 @@ self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
 
+  // Always fetch API responses fresh
+  if (event.request.url.includes('/api/')) {
+    event.respondWith(fetch(event.request).catch(() => {
+      if (event.request.mode === 'navigate') {
+        return caches.match('/');
+      }
+    }));
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {

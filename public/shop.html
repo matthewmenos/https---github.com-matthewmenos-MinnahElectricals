@@ -287,7 +287,7 @@
     async function loadProducts() {
       try {
         console.log('Loading products...');
-        const response = await fetch('/api/products');
+        const response = await fetch('/api/products', { cache: 'no-store' });
         console.log('Response status:', response.status);
         
         if (!response.ok) {
