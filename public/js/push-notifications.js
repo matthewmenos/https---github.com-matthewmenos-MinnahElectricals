@@ -18,19 +18,17 @@ async function initPushNotifications() {
   }
 
   try {
-    // Get VAPID public key from server
-    const response = await fetch('/api/push/vapid-key');
-    const data = await response.json();
-    if (data.success && data.publicKey) {
-      vapidPublicKey = data.publicKey;
-    } else {
-      console.log('⚠️ Push notifications not configured on server');
-      return false;
+    // Unregister any existing service workers to disable push and service-worker caching.
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      if (registrations.length > 0) {
+        await Promise.all(registrations.map(reg => reg.unregister()));
+        console.log('✓ Service worker unregistered');
+      }
     }
 
-    // Register service worker
-    registration = await navigator.serviceWorker.register('/sw.js');
-    console.log('✓ Service worker registered for push notifications');
+    // Push notifications are temporarily disabled while service worker support is being removed.
+    return false;
 
     // Check for existing subscription
     subscription = await registration.pushManager.getSubscription();
