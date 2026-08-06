@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const { sendLeadSms } = require('../config/sms');
 const { sendAutoResponder } = require('../config/auto-responder');
+const { sendOrderConfirmationEmail, sendAdminNotificationEmail } = require('../config/email');
 require('dotenv').config();
 
 // Initialize Nodemailer transporter
