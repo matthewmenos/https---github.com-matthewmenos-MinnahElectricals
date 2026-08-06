@@ -53,7 +53,7 @@
         </div>
 
         <!-- Desktop Navigation -->
-        <nav class="hidden md:flex items-center space-x-8">
+        <nav class="hidden md:flex items-center space-x-6">
           <a href="/" class="hover:text-amber transition">Home</a>
           <a href="/services.html" class="hover:text-amber transition">Services</a>
           <a href="/portfolio.html" class="hover:text-amber transition">Portfolio</a>
@@ -100,7 +100,23 @@
   <section class="bg-navy text-white py-16">
     <div class="container mx-auto px-4 text-center">
       <h1 class="text-4xl md:text-5xl font-bold mb-4">Our Shop</h1>
-      <p class="text-xl text-gray-300">Quality electrical products and supplies</p>
+      <p class="text-xl text-gray-300 mb-6">Quality electrical products and supplies</p>
+      
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <button onclick="openWishlistModal()" class="bg-amber hover:bg-amber-dark text-navy px-6 py-3 rounded-lg font-semibold transition flex items-center">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+          </svg>
+          My Wishlist
+        </button>
+        <button onclick="openTrackOrderModal()" class="bg-white hover:bg-gray-100 text-navy px-6 py-3 rounded-lg font-semibold transition flex items-center">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+          </svg>
+          Track Order
+        </button>
+      </div>
     </div>
   </section>
 
@@ -118,7 +134,7 @@
       </div>
 
       <!-- Products Grid -->
-      <div id="productsGrid" class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 hidden">
+      <div id="productsGrid" class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 lg:gap-8 hidden">
         <!-- Products will be populated here -->
       </div>
 
@@ -133,6 +149,76 @@
 
     </div>
   </section>
+
+  <!-- Track Order Modal -->
+  <div id="trackOrderModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 modal">
+    <div class="glass-card max-w-md w-full max-h-screen overflow-y-auto modal-content">
+      <div class="p-6 md:p-8">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl md:text-3xl font-bold text-navy">Track Your Order</h2>
+          <button onclick="closeTrackOrderModal()" class="text-gray-500 hover:text-gray-700 transition transform hover:scale-110">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        
+        <form id="trackOrderForm" class="space-y-4">
+          <div>
+            <label class="block text-gray-700 text-sm font-semibold mb-2">Phone Number *</label>
+            <input type="tel" id="trackPhone" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent" placeholder="Enter your phone number">
+          </div>
+          <button type="submit" class="w-full bg-amber hover:bg-amber-dark text-navy font-bold py-3 rounded-lg transition">
+            Track Order
+          </button>
+        </form>
+
+        <div id="trackOrderResults" class="mt-6 hidden">
+          <!-- Tracking results will appear here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wishlist Modal -->
+  <div id="wishlistModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 modal">
+    <div class="glass-card max-w-4xl w-full max-h-screen overflow-y-auto modal-content">
+      <div class="p-6 md:p-8">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl md:text-3xl font-bold text-navy">My Wishlist</h2>
+          <button onclick="closeWishlistModal()" class="text-gray-500 hover:text-gray-700 transition transform hover:scale-110">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        
+        <div id="wishlistContent">
+          <!-- Wishlist items will be populated here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Detail Modal -->
+  <div id="productDetailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 modal">
+    <div class="glass-card max-w-4xl w-full max-h-screen overflow-y-auto modal-content">
+      <div class="p-6 md:p-8">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl md:text-3xl font-bold text-navy">Product Details</h2>
+          <button id="closeProductDetailModal" class="text-gray-500 hover:text-gray-700 transition transform hover:scale-110">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        
+        <div id="productDetailContent">
+          <!-- Product details will be populated here -->
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Order Modal -->
   <div id="orderModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 modal">
@@ -257,10 +343,22 @@
     let wishlist = [];
     let selectedProduct = null;
 
+    // Helper function to safely format price
+    function formatPrice(price) {
+      const numPrice = parseFloat(price);
+      if (isNaN(numPrice) || numPrice < 0) {
+        return '0.00';
+      }
+      return numPrice.toFixed(2);
+    }
+
     // DOM Elements
     const loadingState = document.getElementById('loadingState');
     const productsGrid = document.getElementById('productsGrid');
     const emptyState = document.getElementById('emptyState');
+    const productDetailModal = document.getElementById('productDetailModal');
+    const closeProductDetailModal = document.getElementById('closeProductDetailModal');
+    const productDetailContent = document.getElementById('productDetailContent');
     const orderModal = document.getElementById('orderModal');
     const closeOrderModal = document.getElementById('closeOrderModal');
     const orderForm = document.getElementById('orderForm');
@@ -268,20 +366,88 @@
 
     // Load products on page load
     document.addEventListener('DOMContentLoaded', async () => {
+      // Show loading state
+      loadingState.classList.remove('hidden');
+      productsGrid.classList.add('hidden');
+      emptyState.classList.add('hidden');
+      
       // Load products immediately (don't wait for other functions)
-      loadProducts().catch(err => console.error('Error loading products:', err));
+      await loadProducts();
       
       // Load other data in parallel
-      loadWishlist().catch(err => console.error('Error loading wishlist:', err));
-      loadCustomerInfo().catch(err => console.error('Error loading customer info:', err));
+      await Promise.all([
+        loadWishlist().catch(err => console.error('Error loading wishlist:', err)),
+        loadCustomerInfo().catch(err => console.error('Error loading customer info:', err))
+      ]);
     });
 
     // Event Listeners
+    closeProductDetailModal.addEventListener('click', () => {
+      productDetailModal.classList.add('hidden');
+    });
+
     closeOrderModal.addEventListener('click', () => {
       orderModal.classList.add('hidden');
     });
 
     orderForm.addEventListener('submit', handleOrderSubmit);
+
+    // Product Detail Functions
+    function openProductDetail(productId) {
+      const product = products.find(p => p.id === productId);
+      if (!product) return;
+
+      productDetailContent.innerHTML = `
+        <div class="grid md:grid-cols-2 gap-6 md:gap-8">
+          <!-- Product Image -->
+          <div class="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
+            ${product.image_url ? 
+              `<img src="${product.image_url}" alt="${product.name}" class="w-full h-full object-cover">` :
+              `<div class="text-center p-8">
+                <svg class="w-24 h-24 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <p class="text-gray-500">No Image Available</p>
+              </div>`
+            }
+          </div>
+
+          <!-- Product Info -->
+          <div class="flex flex-col">
+            <h3 class="text-2xl md:text-3xl font-bold text-navy mb-2">${product.name}</h3>
+            ${product.category ? `<span class="text-sm bg-amber bg-opacity-10 text-amber px-3 py-1 rounded-full font-semibold inline-block mb-3 w-fit">${product.category}</span>` : ''}
+            <p class="text-3xl md:text-4xl font-bold text-amber mb-4">${product.currency || '₵'}${formatPrice(product.price)}</p>
+            
+            <div class="mb-6">
+              <h4 class="text-lg font-bold text-navy mb-2">Description</h4>
+              <p class="text-gray-700 leading-relaxed">${product.description || 'No description available for this product.'}</p>
+            </div>
+
+            ${product.specifications ? `
+            <div class="mb-6">
+              <h4 class="text-lg font-bold text-navy mb-2">Specifications</h4>
+              <p class="text-gray-700 leading-relaxed">${product.specifications}</p>
+            </div>
+            ` : ''}
+
+            <div class="mt-auto">
+              <button onclick="closeProductDetailAndOpenOrder(${product.id})" class="btn-primary w-full text-center py-3 text-base">
+                Order Now
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      productDetailModal.classList.remove('hidden');
+    }
+
+    function closeProductDetailAndOpenOrder(productId) {
+      productDetailModal.classList.add('hidden');
+      setTimeout(() => {
+        openOrderModal(productId);
+      }, 100);
+    }
 
     async function loadProducts() {
       try {
@@ -313,6 +479,9 @@
     }
 
     function renderProducts() {
+      // Hide loading state
+      loadingState.classList.add('hidden');
+      
       if (products.length === 0) {
         productsGrid.classList.add('hidden');
         emptyState.classList.remove('hidden');
@@ -325,31 +494,31 @@
       productsGrid.innerHTML = products.map((product, index) => {
         const inWishlist = wishlist.some(item => item.product_id === product.id);
         return `
-        <div class="glass-card overflow-hidden hover:shadow-2xl transition fade-in stagger-${(index % 4) + 1} bounce-on-hover">
-          <div class="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center relative overflow-hidden group">
+        <div class="glass-card overflow-hidden hover:shadow-2xl transition fade-in stagger-${(index % 4) + 1} bounce-on-hover flex flex-col h-full cursor-pointer" onclick="openProductDetail(${product.id})">
+          <div class="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center relative overflow-hidden group flex-shrink-0">
             ${product.image_url ? 
               `<img src="${product.image_url}" alt="${product.name}" class="w-full h-full object-cover group-hover:scale-110 transition duration-300">` :
-              `<div class="text-center p-8">
-                <svg class="w-16 h-16 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              `<div class="text-center p-3 md:p-4">
+                <svg class="w-8 h-8 md:w-10 md:h-10 text-gray-400 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                 </svg>
-                <p class="text-gray-500 text-sm">No Image</p>
+                <p class="text-gray-500 text-xs">No Image</p>
               </div>`
             }
-            <button onclick="toggleWishlist(${product.id})" class="absolute top-3 right-3 bg-white rounded-full p-2 shadow-md hover:shadow-lg transition transform hover:scale-110">
-              <svg class="w-6 h-6 ${inWishlist ? 'text-red-500 fill-current' : 'text-gray-400'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button onclick="event.stopPropagation(); toggleWishlist(${product.id})" class="absolute top-1.5 right-1.5 md:top-2 md:right-2 bg-white rounded-full p-1 md:p-1.5 shadow-md hover:shadow-lg transition transform hover:scale-110">
+              <svg class="w-4 h-4 md:w-5 md:h-5 ${inWishlist ? 'text-red-500 fill-current' : 'text-gray-400'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
               </svg>
             </button>
           </div>
-          <div class="p-6">
-            <h3 class="text-xl font-bold text-navy mb-2">${product.name}</h3>
-            <p class="text-gray-600 text-sm mb-4 line-clamp-2">${product.description || 'No description available'}</p>
-            <div class="flex items-center justify-between mb-4">
-              <span class="text-2xl font-bold text-amber">${product.currency || '₵'}${parseFloat(product.price).toFixed(2)}</span>
-              ${product.category ? `<span class="text-xs bg-amber bg-opacity-10 text-amber px-3 py-1 rounded-full font-semibold">${product.category}</span>` : ''}
+          <div class="p-3 md:p-4 flex flex-col flex-grow">
+            <h3 class="text-sm md:text-base font-bold text-navy mb-1 line-clamp-2">${product.name}</h3>
+            <p class="text-gray-600 text-xs mb-2 line-clamp-2 flex-grow">${product.description || 'No description available'}</p>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-sm md:text-base font-bold text-amber">${product.currency || '₵'}${formatPrice(product.price)}</span>
+              ${product.category ? `<span class="text-xs bg-amber bg-opacity-10 text-amber px-1.5 py-0.5 rounded-full font-semibold">${product.category}</span>` : ''}
             </div>
-            <button onclick="openOrderModal(${product.id})" class="btn-primary w-full text-center">
+            <button onclick="event.stopPropagation(); openOrderModal(${product.id})" class="btn-primary w-full text-center py-1 md:py-1.5 text-xs">
               Order Now
             </button>
           </div>
@@ -375,7 +544,7 @@
           </div>
           <div class="flex-1">
             <h3 class="text-lg font-bold text-navy">${selectedProduct.name}</h3>
-            <p class="text-amber font-bold text-xl">₵${parseFloat(selectedProduct.price).toFixed(2)}</p>
+            <p class="text-amber font-bold text-xl">₵${formatPrice(selectedProduct.price)}</p>
           </div>
         </div>
       `;
@@ -425,6 +594,13 @@
           orderModal.classList.add('hidden');
           orderForm.reset();
           selectedProduct = null;
+          
+          // Redirect to order confirmation page
+          const orderId = data.order.id;
+          const phone = encodeURIComponent(orderData.customer_phone);
+          setTimeout(() => {
+            window.location.href = `/order-confirmation.html?orderId=${orderId}&phone=${phone}`;
+          }, 1500);
         } else {
           // Server returned an error response
           const errorMessage = data.message || 'Failed to submit order. Please try again.';
@@ -573,6 +749,127 @@
         messageDiv.style.animation = 'fadeOut 0.3s ease-out forwards';
         setTimeout(() => messageDiv.remove(), 300);
       }, 4000);
+    }
+
+    // Track Order Modal Functions
+    function openTrackOrderModal() {
+      document.getElementById('trackOrderModal').classList.remove('hidden');
+    }
+
+    function closeTrackOrderModal() {
+      document.getElementById('trackOrderModal').classList.add('hidden');
+      document.getElementById('trackOrderResults').classList.add('hidden');
+    }
+
+    // Track Order Form Submit
+    document.getElementById('trackOrderForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const phone = document.getElementById('trackPhone').value;
+      const resultsDiv = document.getElementById('trackOrderResults');
+      
+      try {
+        const response = await fetch(`/api/orders/track?phone=${encodeURIComponent(phone)}`);
+        const data = await response.json();
+        
+        if (data.success && data.orders.length > 0) {
+          resultsDiv.classList.remove('hidden');
+          resultsDiv.innerHTML = `
+            <h4 class="font-bold text-navy mb-3">Your Orders (${data.orders.length})</h4>
+            <div class="space-y-3 max-h-96 overflow-y-auto">
+              ${data.orders.map(order => `
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <div class="flex justify-between items-start mb-2">
+                    <div>
+                      <p class="font-bold text-navy">Order #${order.id}</p>
+                      <p class="text-sm text-gray-600">${new Date(order.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <span class="px-3 py-1 bg-${getStatusColor(order.status)} text-${getStatusColor(order.status)} rounded-full text-sm font-semibold">
+                      ${order.status}
+                    </span>
+                  </div>
+                  <p class="text-sm text-gray-700">${order.product_name || 'Product #' + order.product_id}</p>
+                  <p class="text-sm text-gray-600">Qty: ${order.quantity} | Total: ₵${formatPrice(order.product_price * order.quantity)}</p>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        } else {
+          resultsDiv.classList.remove('hidden');
+          resultsDiv.innerHTML = `
+            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-lg">
+              <p class="text-yellow-800">No orders found for this phone number.</p>
+            </div>
+          `;
+        }
+      } catch (err) {
+        console.error('Error tracking order:', err);
+        showMessage('Failed to track order', 'error');
+      }
+    });
+
+    // Wishlist Modal Functions
+    function openWishlistModal() {
+      const wishlistContent = document.getElementById('wishlistContent');
+      
+      if (wishlist.length === 0) {
+        wishlistContent.innerHTML = `
+          <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+            </svg>
+            <p class="text-gray-500">Your wishlist is empty</p>
+            <p class="text-sm text-gray-400 mt-2">Add products to your wishlist by clicking the heart icon</p>
+          </div>
+        `;
+      } else {
+        wishlistContent.innerHTML = `
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+            ${wishlist.map(item => {
+              const product = products.find(p => p.id === item.product_id);
+              if (!product) return '';
+              return `
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 flex items-center space-x-4">
+                  <div class="flex-shrink-0">
+                    ${product.image_url ? 
+                      `<img src="${product.image_url}" alt="${product.name}" class="h-16 w-16 rounded-lg object-cover">` :
+                      `<div class="h-16 w-16 rounded-lg bg-gray-200 flex items-center justify-center">
+                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                      </div>`
+                    }
+                  </div>
+                  <div class="flex-1">
+                    <p class="font-semibold text-navy">${product.name}</p>
+                    <p class="text-amber font-bold">₵${formatPrice(product.price)}</p>
+                  </div>
+                  <button onclick="event.stopPropagation(); toggleWishlist(${product.id}); openWishlistModal();" class="text-red-500 hover:text-red-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                  </button>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      }
+      
+      document.getElementById('wishlistModal').classList.remove('hidden');
+    }
+
+    function closeWishlistModal() {
+      document.getElementById('wishlistModal').classList.add('hidden');
+    }
+
+    function getStatusColor(status) {
+      switch(status) {
+        case 'Pending': return 'yellow-100 text-yellow-800';
+        case 'Confirmed': return 'blue-100 text-blue-800';
+        case 'Completed': return 'green-100 text-green-800';
+        case 'Cancelled': return 'red-100 text-red-800';
+        default: return 'gray-100 text-gray-800';
+      }
     }
   </script>
 </body>

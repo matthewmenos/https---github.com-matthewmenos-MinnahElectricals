@@ -212,7 +212,7 @@
             <li><a href="/services.html" class="text-gray-300 hover:text-amber transition">Services</a></li>
             <li><a href="/shop.html" class="text-amber transition">Shop</a></li>
             <li><a href="/contact.html" class="text-gray-300 hover:text-amber transition">Contact</a></li>
-          </ul>
+          </ul> 
         </div>
         <div>
           <h4 class="text-lg font-semibold mb-4">Contact Info</h4>
@@ -242,6 +242,15 @@
   <script>
     // Set current year
     document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+    // Helper function to safely format price
+    function formatPrice(price) {
+      const numPrice = parseFloat(price);
+      if (isNaN(numPrice) || numPrice < 0) {
+        return '0.00';
+      }
+      return numPrice.toFixed(2);
+    }
 
     // Load order details from URL parameters
     function loadOrderFromURL() {
@@ -288,7 +297,7 @@
       document.getElementById('customerPhone').textContent = order.customer_phone;
       document.getElementById('customerEmail').textContent = order.customer_email || 'N/A';
       document.getElementById('orderDate').textContent = new Date(order.created_at).toLocaleString();
-      document.getElementById('orderTotal').textContent = `₵${(order.product_price * order.quantity).toFixed(2)}`;
+      document.getElementById('orderTotal').textContent = `₵${formatPrice(order.product_price * order.quantity)}`;
 
       // Display products
       const productsList = document.getElementById('productsList');
@@ -298,10 +307,10 @@
             <div class="flex-1">
               <p class="font-semibold text-navy">${order.product_name || 'Product #' + order.product_id}</p>
               <p class="text-sm text-gray-600">Quantity: ${order.quantity}</p>
-              <p class="text-sm text-gray-600">Price: ₵${parseFloat(order.product_price).toFixed(2)}</p>
+              <p class="text-sm text-gray-600">Price: ₵${formatPrice(order.product_price)}</p>
             </div>
             <div class="text-right">
-              <p class="font-bold text-navy">₵${(order.product_price * order.quantity).toFixed(2)}</p>
+              <p class="font-bold text-navy">₵${formatPrice(order.product_price * order.quantity)}</p>
             </div>
           </div>
         </div>
@@ -373,8 +382,11 @@
         <body>
           <div class="container">
             <div class="header">
-              <div class="logo">Minnah Electricals</div>
-              <div class="tagline">Professional Electrical Services</div>
+              <div style="text-align: center; margin-bottom: 20px;">
+                <img src="/assets/logo.jpg" alt="Minnah Electricals Logo" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #F59E0B;">
+                <div class="logo" style="font-size: 28px; font-weight: bold; color: #0F172A; margin-top: 10px;">Minnah Electricals</div>
+                <div class="tagline" style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px;">Professional Electrical Services</div>
+              </div>
             </div>
 
             <div class="order-title">✓ Order Confirmed</div>
@@ -411,7 +423,7 @@
                   <tr>
                     <td class="product-name">${order.product_name}</td>
                     <td style="text-align: center;">${order.quantity}</td>
-                    <td class="product-price">₵${parseFloat(order.product_price).toFixed(2)}</td>
+                    <td class="product-price">₵${formatPrice(order.product_price)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -420,11 +432,11 @@
             <div class="total-section">
               <div class="total-row">
                 <span>Subtotal:</span>
-                <span>₵${(parseFloat(order.product_price) * order.quantity).toFixed(2)}</span>
+                <span>₵${formatPrice(order.product_price * order.quantity)}</span>
               </div>
               <div class="total-row final">
                 <span>Total Amount:</span>
-                <span class="amount">₵${(parseFloat(order.product_price) * order.quantity).toFixed(2)}</span>
+                <span class="amount">₵${formatPrice(order.product_price * order.quantity)}</span>
               </div>
             </div>
 
@@ -501,7 +513,7 @@
                     </span>
                   </div>
                   <p class="text-sm text-gray-700">${order.product_name || 'Product #' + order.product_id}</p>
-                  <p class="text-sm text-gray-600">Qty: ${order.quantity} | Total: ₵${(order.product_price * order.quantity).toFixed(2)}</p>
+                  <p class="text-sm text-gray-600">Qty: ${order.quantity} | Total: ₵${formatPrice(order.product_price * order.quantity)}</p>
                 </div>
               `).join('')}
             </div>
