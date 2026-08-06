@@ -401,6 +401,12 @@
         notes: document.getElementById('orderNotes').value
       };
 
+      // Validate required fields before sending
+      if (!orderData.customer_name || !orderData.customer_phone) {
+        showMessage('Please fill in all required fields', 'error');
+        return;
+      }
+
       try {
         const response = await fetch('/api/orders', {
           method: 'POST',
@@ -410,23 +416,34 @@
           body: JSON.stringify(orderData)
         });
 
+        // Parse response
         const data = await response.json();
+        console.log('Order response:', data, 'Status:', response.status);
 
-        if (data.success) {
+        if (response.ok && data.success) {
           showMessage('Order submitted successfully! Redirecting...', 'success');
           orderModal.classList.add('hidden');
+          orderForm.reset();
           selectedProduct = null;
           
-          // Redirect to confirmation page
+          // Redirect to confirmation page with order ID
           setTimeout(() => {
-            window.location.href = `/order-confirmation.html?orderId=${data.order.id}&phone=${encodeURIComponent(orderData.customer_phone)}`;
+            if (data.order && data.order.id) {
+              window.location.href = `/order-confirmation.html?orderId=${data.order.id}&phone=${encodeURIComponent(orderData.customer_phone)}`;
+            } else {
+              // Fallback redirect if order ID not available
+              window.location.href = `/order-confirmation.html?phone=${encodeURIComponent(orderData.customer_phone)}`;
+            }
           }, 1500);
         } else {
-          showMessage(data.message || 'Failed to submit order', 'error');
+          // Server returned an error response
+          const errorMessage = data.message || 'Failed to submit order. Please try again.';
+          console.error('Order submission failed:', errorMessage);
+          showMessage(errorMessage, 'error');
         }
       } catch (error) {
         console.error('Error submitting order:', error);
-        showMessage('Failed to submit order. Please try again.', 'error');
+        showMessage('An error occurred while submitting your order. Please try again.', 'error');
       }
     }
 
@@ -553,13 +570,19 @@
 
     function showMessage(message, type) {
       const messageDiv = document.createElement('div');
-      messageDiv.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
-      messageDiv.textContent = message;
+      const bgClass = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+      const icon = type === 'success' 
+        ? '<svg class="w-5 h-5 inline mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>'
+        : '<svg class="w-5 h-5 inline mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>';
+      
+      messageDiv.className = `fixed top-4 right-4 px-6 py-4 rounded-lg shadow-xl z-50 ${bgClass} text-white font-semibold flex items-center fade-in max-w-md`;
+      messageDiv.innerHTML = icon + message;
       document.body.appendChild(messageDiv);
       
       setTimeout(() => {
-        messageDiv.remove();
-      }, 3000);
+        messageDiv.style.animation = 'fadeOut 0.3s ease-out forwards';
+        setTimeout(() => messageDiv.remove(), 300);
+      }, 4000);
     }
   </script>
 </body>
