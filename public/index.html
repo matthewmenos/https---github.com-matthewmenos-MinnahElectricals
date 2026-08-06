@@ -8,6 +8,7 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any">
   <link rel="icon" type="image/jpeg" href="/assets/logo.jpg" sizes="32x32">
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/style.css">
   <script>
     tailwind.config = {
       theme: {
@@ -16,6 +17,14 @@
             navy: '#0F172A',
             amber: '#F59E0B',
             'amber-dark': '#D97706',
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.6s ease-out forwards',
+            'slide-left': 'slideInLeft 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+            'slide-right': 'slideInRight 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+            'bounce-custom': 'bounce 0.6s ease-in-out',
+            'float': 'float 3s ease-in-out infinite',
+            'glow-pulse': 'glow 2s ease-in-out infinite',
           }
         }
       }
@@ -33,25 +42,25 @@
   <!-- Header -->
   <header class="bg-navy text-white sticky top-0 z-50 shadow-lg">
     <div class="container mx-auto px-4">
-      <div class="flex items-center justify-between py-4">
+      <div class="flex items-center justify-between py-4 fade-in">
         <!-- Logo -->
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center space-x-3 icon-hover">
           <img src="/assets/logo.jpg" alt="Minnah Electricals Logo" class="h-12 w-12 rounded-full object-cover border-2 border-amber">
           <div>
-            <h1 class="text-xl font-bold">Minnah Electricals</h1>
+            <h1 class="text-xl font-bold gradient-text">Minnah Electricals</h1>
             <p class="text-xs text-gray-300">Professional Services</p>
           </div>
         </div>
 
         <!-- Desktop Navigation -->
         <nav class="hidden md:flex items-center space-x-6">
-          <a href="/" class="text-amber transition">Home</a>
-          <a href="/services.html" class="hover:text-amber transition">Services</a>
-          <a href="/portfolio.html" class="hover:text-amber transition">Portfolio</a>
-          <a href="/gallery.html" class="hover:text-amber transition">Gallery</a>
-          <a href="/shop.html" class="hover:text-amber transition">Shop</a>
-          <a href="/contact.html" class="hover:text-amber transition">Contact</a>
-          <a data-setting-href="phone" class="bg-amber hover:bg-amber-dark text-navy px-6 py-2 rounded-lg font-semibold transition flex items-center">
+          <a href="/" class="text-amber transition relative">Home</a>
+          <a href="/services.html" class="hover:text-amber transition relative">Services</a>
+          <a href="/portfolio.html" class="hover:text-amber transition relative">Portfolio</a>
+          <a href="/gallery.html" class="hover:text-amber transition relative">Gallery</a>
+          <a href="/shop.html" class="hover:text-amber transition relative">Shop</a>
+          <a href="/contact.html" class="hover:text-amber transition relative">Contact</a>
+          <a data-setting-href="phone" class="btn-primary flex items-center">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
             </svg>
@@ -192,17 +201,17 @@
   </section>
 
   <!-- Services Grid -->
-  <section class="py-20 bg-white">
+  <section class="py-20 bg-gradient-to-br from-gray-50 to-white">
     <div class="container mx-auto px-4">
-      <div class="text-center mb-12">
+      <div class="text-center mb-12 fade-in">
         <h2 class="text-4xl font-bold text-navy mb-4">Our Services</h2>
         <p class="text-xl text-gray-600">Comprehensive electrical solutions for residential & commercial properties</p>
       </div>
 
       <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
         <!-- Service Card 1 -->
-        <div class="bg-gray-50 rounded-lg p-6 hover:shadow-xl transition">
-          <div class="text-amber mb-4">
+        <div class="service-card fade-in stagger-1 bounce-on-hover">
+          <div class="text-amber mb-4 icon-hover">
             <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
             </svg>
@@ -213,8 +222,8 @@
         </div>
 
         <!-- Service Card 2 -->
-        <div class="bg-gray-50 rounded-lg p-6 hover:shadow-xl transition">
-          <div class="text-amber mb-4">
+        <div class="service-card fade-in stagger-2 bounce-on-hover">
+          <div class="text-amber mb-4 icon-hover">
             <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
               <path d="M7 17h2v-2H7v2zm4-4h2v-2h-2v2zm4-4h2V7h-2v2zM7 13h2v-2H7v2zm4-4h2V7h-2v2zm4-4h2V3h-2v2zM5 21h14v-2H5v2z"/>
             </svg>
@@ -225,8 +234,8 @@
         </div>
 
         <!-- Service Card 3 -->
-        <div class="bg-gray-50 rounded-lg p-6 hover:shadow-xl transition">
-          <div class="text-red-600 mb-4">
+        <div class="service-card fade-in stagger-3 bounce-on-hover">
+          <div class="text-red-600 mb-4 icon-hover">
             <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
             </svg>
@@ -237,8 +246,8 @@
         </div>
 
         <!-- Service Card 4 -->
-        <div class="bg-gray-50 rounded-lg p-6 hover:shadow-xl transition">
-          <div class="text-amber mb-4">
+        <div class="service-card fade-in stagger-4 bounce-on-hover">
+          <div class="text-amber mb-4 icon-hover">
             <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
             </svg>

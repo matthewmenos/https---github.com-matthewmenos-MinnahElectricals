@@ -8,11 +8,20 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any">
   <link rel="icon" type="image/jpeg" href="/assets/logo.jpg" sizes="32x32">
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/style.css">
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          colors: { navy: '#0F172A', amber: '#F59E0B', 'amber-dark': '#D97706' }
+          colors: { navy: '#0F172A', amber: '#F59E0B', 'amber-dark': '#D97706' },
+          animation: {
+            'fade-in': 'fadeIn 0.6s ease-out forwards',
+            'slide-left': 'slideInLeft 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+            'slide-right': 'slideInRight 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+            'bounce-custom': 'bounce 0.6s ease-in-out',
+            'float': 'float 3s ease-in-out infinite',
+            'glow-pulse': 'glow 2s ease-in-out infinite',
+          }
         }
       }
     }
