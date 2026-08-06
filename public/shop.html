@@ -421,10 +421,13 @@
         console.log('Order response:', data, 'Status:', response.status);
 
         if (response.ok && data.success) {
-          showMessage('Order submitted successfully! Redirecting...', 'success');
+          showMessage('Order submitted successfully!', 'success');
           orderModal.classList.add('hidden');
           orderForm.reset();
           selectedProduct = null;
+          
+          // Show print confirmation
+          showPrintConfirmation(data.order, orderData);
           
           // Redirect to confirmation page with order ID
           setTimeout(() => {
@@ -434,7 +437,7 @@
               // Fallback redirect if order ID not available
               window.location.href = `/order-confirmation.html?phone=${encodeURIComponent(orderData.customer_phone)}`;
             }
-          }, 1500);
+          }, 2000);
         } else {
           // Server returned an error response
           const errorMessage = data.message || 'Failed to submit order. Please try again.';
@@ -566,6 +569,157 @@
           `).join('')}
         </div>
       `;
+    }
+
+    function showPrintConfirmation(order, orderData) {
+      const printWindow = window.open('', '_blank');
+      const orderDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const orderTime = new Date().toLocaleTimeString('en-US');
+      
+      const html = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Order Confirmation - Minnah Electricals</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: 'Arial', sans-serif; padding: 20px; background: #f5f5f5; }
+            .container { max-width: 800px; margin: 0 auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+            .header { border-bottom: 3px solid #F59E0B; padding-bottom: 20px; margin-bottom: 30px; }
+            .logo { font-size: 28px; font-weight: bold; color: #0F172A; margin-bottom: 5px; }
+            .tagline { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+            .order-title { font-size: 24px; font-weight: bold; color: #0F172A; margin: 20px 0; }
+            .order-number { font-size: 18px; color: #F59E0B; font-weight: bold; margin-bottom: 10px; }
+            .section { margin: 25px 0; }
+            .section-title { font-size: 14px; font-weight: bold; text-transform: uppercase; color: #0F172A; border-bottom: 2px solid #F59E0B; padding-bottom: 8px; margin-bottom: 15px; }
+            .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+            .info-label { font-weight: 600; color: #0F172A; width: 40%; }
+            .info-value { color: #333; text-align: right; width: 60%; }
+            .product-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+            .product-table th { background: #0F172A; color: white; padding: 12px; text-align: left; font-size: 12px; font-weight: bold; }
+            .product-table td { padding: 12px; border-bottom: 1px solid #eee; }
+            .product-table .product-name { font-weight: 600; color: #0F172A; }
+            .product-table .product-price { color: #F59E0B; font-weight: bold; text-align: right; }
+            .total-section { background: #f9f9f9; padding: 20px; border-radius: 6px; margin-top: 20px; }
+            .total-row { display: flex; justify-content: space-between; padding: 10px 0; font-size: 16px; }
+            .total-row.final { font-size: 20px; font-weight: bold; color: #0F172A; border-top: 2px solid #F59E0B; padding-top: 15px; margin-top: 10px; }
+            .total-row.final .amount { color: #F59E0B; }
+            .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #666; }
+            .footer-text { margin: 5px 0; }
+            .status-badge { display: inline-block; background: #FCD34D; color: #0F172A; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; margin: 5px 0; }
+            @media print {
+              body { padding: 0; background: white; }
+              .container { box-shadow: none; max-width: 100%; }
+              .no-print { display: none; }
+              .status-badge { border: 2px solid #0F172A; }
+            }
+            .print-button { background: #F59E0B; color: #0F172A; padding: 12px 24px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; margin-top: 20px; no-print: true; }
+            .print-button:hover { background: #D97706; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div class="logo">Minnah Electricals</div>
+              <div class="tagline">Professional Electrical Services</div>
+            </div>
+
+            <div class="order-title">✓ Order Confirmed</div>
+            <div class="order-number">Order ID: #${order.id}</div>
+            <div><span class="status-badge">PENDING</span></div>
+
+            <div class="section">
+              <div class="section-title">Customer Information</div>
+              <div class="info-row">
+                <span class="info-label">Name:</span>
+                <span class="info-value">${orderData.customer_name}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Phone:</span>
+                <span class="info-value">${orderData.customer_phone}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Email:</span>
+                <span class="info-value">${orderData.customer_email || 'Not provided'}</span>
+              </div>
+            </div>
+
+            <div class="section">
+              <div class="section-title">Order Details</div>
+              <table class="product-table">
+                <thead>
+                  <tr>
+                    <th style="width: 50%;">Product</th>
+                    <th style="width: 20%; text-align: center;">Quantity</th>
+                    <th style="width: 30%; text-align: right;">Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="product-name">${order.product_name}</td>
+                    <td style="text-align: center;">${order.quantity}</td>
+                    <td class="product-price">₵${parseFloat(order.product_price).toFixed(2)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="total-section">
+              <div class="total-row">
+                <span>Subtotal:</span>
+                <span>₵${(parseFloat(order.product_price) * order.quantity).toFixed(2)}</span>
+              </div>
+              <div class="total-row final">
+                <span>Total Amount:</span>
+                <span class="amount">₵${(parseFloat(order.product_price) * order.quantity).toFixed(2)}</span>
+              </div>
+            </div>
+
+            ${orderData.notes ? `
+            <div class="section">
+              <div class="section-title">Special Notes</div>
+              <div style="padding: 10px; background: #f9f9f9; border-left: 3px solid #F59E0B; border-radius: 4px;">
+                ${orderData.notes}
+              </div>
+            </div>
+            ` : ''}
+
+            <div class="section">
+              <div class="section-title">Order Timeline</div>
+              <div class="info-row">
+                <span class="info-label">Order Date:</span>
+                <span class="info-value">${orderDate}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Order Time:</span>
+                <span class="info-value">${orderTime}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Status:</span>
+                <span class="info-value">Pending - Awaiting Confirmation</span>
+              </div>
+            </div>
+
+            <div class="footer">
+              <div class="footer-text"><strong>Thank you for your order!</strong></div>
+              <div class="footer-text">We will contact you shortly to confirm and process your order.</div>
+              <div class="footer-text">Minnah Electricals | Professional Electrical Services</div>
+              <div class="footer-text">© ${new Date().getFullYear()} All Rights Reserved</div>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px; no-print: true;">
+              <button class="print-button" onclick="window.print()">🖨️ Print Confirmation</button>
+              <button class="print-button" style="background: #6B7280; margin-left: 10px;" onclick="window.close()">Close</button>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      printWindow.document.write(html);
+      printWindow.document.close();
     }
 
     function showMessage(message, type) {
