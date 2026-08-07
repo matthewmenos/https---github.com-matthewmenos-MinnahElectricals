@@ -18,7 +18,6 @@ const initSqlJs = require('sql.js');
 const r2Sync = require('./r2-sync');
 
 // Use /tmp on Vercel (read-only filesystem), use data/ locally
-const isVercel = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
 const dataDir = isVercel ? '/tmp' : path.join(__dirname, '..', 'data');
 
 // Ensure data directory exists
