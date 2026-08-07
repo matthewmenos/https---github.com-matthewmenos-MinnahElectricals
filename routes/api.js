@@ -216,17 +216,27 @@ router.get('/products', (req, res) => {
     const dbInstance = getDb();
     const result = dbInstance.exec('SELECT * FROM products WHERE in_stock = 1 ORDER BY created_at DESC');
     
-    const products = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      name: row[1],
-      description: row[2],
-      price: row[3],
-      image_url: row[4],
-      category: row[5],
-      in_stock: row[6],
-      created_at: row[7],
-      updated_at: row[8]
-    })) : [];
+    const products = result[0] ? result[0].values.map(row => {
+      let imageUrl = row[4];
+      // If image_url is a relative path, make it absolute
+      if (imageUrl && !imageUrl.startsWith('http')) {
+        // Remove leading slash if present
+        const cleanPath = imageUrl.startsWith('/') ? imageUrl.substring(1) : imageUrl;
+        imageUrl = `${req.protocol}://${req.get('host')}/${cleanPath}`;
+      }
+      
+      return {
+        id: row[0],
+        name: row[1],
+        description: row[2],
+        price: row[3],
+        image_url: imageUrl,
+        category: row[5],
+        in_stock: row[6],
+        created_at: row[7],
+        updated_at: row[8]
+      };
+    }) : [];
 
     res.set('Cache-Control', 'no-store');
     return res.status(200).json({
@@ -261,12 +271,18 @@ router.get('/products/:id', (req, res) => {
       });
     }
 
+    let imageUrl = result[0].values[0][4];
+    if (imageUrl && !imageUrl.startsWith('http')) {
+      const cleanPath = imageUrl.startsWith('/') ? imageUrl.substring(1) : imageUrl;
+      imageUrl = `${req.protocol}://${req.get('host')}/${cleanPath}`;
+    }
+    
     const product = {
       id: result[0].values[0][0],
       name: result[0].values[0][1],
       description: result[0].values[0][2],
       price: result[0].values[0][3],
-      image_url: result[0].values[0][4],
+      image_url: imageUrl,
       category: result[0].values[0][5],
       in_stock: result[0].values[0][6],
       created_at: result[0].values[0][7],
