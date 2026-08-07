@@ -5,13 +5,24 @@ const initSqlJs = require('sql.js');
 const r2Sync = require('./r2-sync');
 require('dotenv').config();
 
+// Use /tmp on Vercel (read-only filesystem), use data/ locally
+const isVercel = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+const dataDir = isVercel ? '/tmp' : path.join(__dirname, '..', 'data');
+
 // Ensure data directory exists
-const dataDir = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+  try {
+    fs.mkdirSync(dataDir, { recursive: true });
+  } catch (err) {
+    console.warn('Could not create data directory:', err.message);
+  }
 }
 
 const dbPath = path.join(dataDir, 'electrical.db');
+
+// Log database path for debugging
+console.log(`📁 Database path: ${dbPath}`);
+console.log(`   Environment: ${isVercel ? 'Vercel (production)' : 'Local'}`);
 let db = null;
 
 // Initialize database
