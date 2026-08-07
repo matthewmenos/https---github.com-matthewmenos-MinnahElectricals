@@ -43,6 +43,7 @@ tmp/
 temp/
 *.tmp
 *.temp
+VERCEL_DEPLOYMENT.md
 
 # Uploads (if any)
 uploads/

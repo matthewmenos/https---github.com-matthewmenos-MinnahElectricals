@@ -217,20 +217,13 @@ router.get('/products', (req, res) => {
     const result = dbInstance.exec('SELECT * FROM products WHERE in_stock = 1 ORDER BY created_at DESC');
     
     const products = result[0] ? result[0].values.map(row => {
-      let imageUrl = row[4];
-      // If image_url is a relative path, make it absolute
-      if (imageUrl && !imageUrl.startsWith('http')) {
-        // Remove leading slash if present
-        const cleanPath = imageUrl.startsWith('/') ? imageUrl.substring(1) : imageUrl;
-        imageUrl = `${req.protocol}://${req.get('host')}/${cleanPath}`;
-      }
-      
+      // Return image_url as-is from database (R2 URLs are already complete)
       return {
         id: row[0],
         name: row[1],
         description: row[2],
         price: row[3],
-        image_url: imageUrl,
+        image_url: row[4], // R2 public URL from database
         category: row[5],
         in_stock: row[6],
         created_at: row[7],

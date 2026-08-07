@@ -734,12 +734,20 @@ router.post('/upload', authMiddleware, upload.single('image'), async (req, res) 
 
     let mediaUrl;
 
-    // Try R2 first if configured
+    // Try R2 first (your bucket is public and working)
     if (r2Sync.isConfigured()) {
-      mediaUrl = await r2Sync.uploadMediaToR2(imageFile.buffer, filename, imageFile.mimetype);
+      try {
+        mediaUrl = await r2Sync.uploadMediaToR2(imageFile.buffer, filename, imageFile.mimetype);
+        if (mediaUrl) {
+          console.log(`✓ Image uploaded to R2: ${filename}`);
+        }
+      } catch (r2Error) {
+        console.error('✗ R2 upload failed:', r2Error);
+        mediaUrl = null;
+      }
     }
 
-    // Fallback to local storage if R2 fails or not configured
+    // Fallback to local storage if R2 fails
     if (!mediaUrl) {
       try {
         const fs = require('fs');
@@ -747,29 +755,23 @@ router.post('/upload', authMiddleware, upload.single('image'), async (req, res) 
         
         // Create uploads directory if it doesn't exist
         const uploadsDir = path.join(__dirname, '..', 'public', 'uploads', 'products');
-        console.log(`📁 Creating uploads directory: ${uploadsDir}`);
+        console.log(`📁 R2 failed, saving locally: ${uploadsDir}`);
         
         if (!fs.existsSync(uploadsDir)) {
           fs.mkdirSync(uploadsDir, { recursive: true });
-          console.log(`✓ Directory created`);
         }
 
         // Save file locally
         const filePath = path.join(uploadsDir, filename);
-        console.log(`💾 Saving file to: ${filePath}`);
         fs.writeFileSync(filePath, imageFile.buffer);
-        console.log(`✓ File saved successfully`);
 
-        // Return local URL
+        // Return local URL (served statically by Express)
         mediaUrl = `/uploads/products/${filename}`;
         console.log(`✓ Image saved locally: ${filename}`);
-        console.log(`  URL: ${mediaUrl}`);
       } catch (localError) {
-        console.error('✗ Local storage failed:', localError);
+        console.error('✗ Local storage also failed:', localError);
         mediaUrl = null;
       }
-    } else {
-      console.log(`✓ Image uploaded to R2: ${filename}`);
     }
 
     console.log(`  URL: ${mediaUrl}`);
