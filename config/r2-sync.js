@@ -186,9 +186,25 @@ async function uploadMediaToR2(fileBuffer, fileName, contentType) {
 
     await s3Client.send(command);
     
-    // Return the public URL (assuming public bucket or CDN)
-    const mediaUrl = `${process.env.R2_ENDPOINT.replace(/\/$/, '')}/${MEDIA_BUCKET_NAME}/media/${fileName}`;
+    // Return the public URL
+    let mediaUrl;
+    if (process.env.R2_PUBLIC_URL) {
+      // Use custom public URL (e.g., CDN or custom domain)
+      const publicUrl = process.env.R2_PUBLIC_URL.replace(/\/$/, '');
+      mediaUrl = `${publicUrl}/${fileName}`;
+    } else if (process.env.R2_ACCOUNT_ID) {
+      // Use R2.dev public endpoint (requires bucket to be public)
+      // Format: https://{account}.r2.dev/{bucket}/{key}
+      const accountId = process.env.R2_ACCOUNT_ID;
+      mediaUrl = `https://${accountId}.r2.dev/${MEDIA_BUCKET_NAME}/media/${fileName}`;
+    } else {
+      // Fallback to API endpoint (won't work for public access without auth)
+      const endpoint = process.env.R2_ENDPOINT.replace(/\/$/, '');
+      mediaUrl = `${endpoint}/${MEDIA_BUCKET_NAME}/media/${fileName}`;
+    }
+    
     console.log(`✓ Media uploaded to R2: ${fileName}`);
+    console.log(`  URL: ${mediaUrl}`);
     return mediaUrl;
   } catch (error) {
     console.error('✗ Failed to upload media to R2:', error.message);
