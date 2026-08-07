@@ -28,5 +28,8 @@
   },
   "optionalDependencies": {
     "@aws-sdk/client-s3": "^3.450.0"
+  },
+  "devDependencies": {
+    "web-push": "^3.6.7"
   }
 }
