@@ -1,9 +1,21 @@
 const bcrypt = require('bcryptjs');
 const path = require('path');
 const fs = require('fs');
+require('dotenv').config();
+
+// Configure sql.js WASM path for Vercel BEFORE requiring it
+const isVercel = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+if (isVercel) {
+  // Set the WASM file location for Vercel
+  const wasmPath = path.join(__dirname, '..', 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm');
+  if (fs.existsSync(wasmPath)) {
+    process.env.SQLJS_LOAD_WASM = wasmPath;
+  }
+}
+
+// Now require sql.js after setting the environment variable
 const initSqlJs = require('sql.js');
 const r2Sync = require('./r2-sync');
-require('dotenv').config();
 
 // Use /tmp on Vercel (read-only filesystem), use data/ locally
 const isVercel = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
@@ -27,7 +39,20 @@ let db = null;
 
 // Initialize database
 async function initializeDatabase() {
-  const SQL = await initSqlJs();
+  // Configure sql.js with WASM location
+  const sqlJsConfig = {};
+  
+  if (isVercel) {
+    const wasmPath = path.join(__dirname, '..', 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm');
+    sqlJsConfig.locateFile = (file) => {
+      if (file === 'sql-wasm.wasm') {
+        return wasmPath;
+      }
+      return file;
+    };
+  }
+  
+  const SQL = await initSqlJs(sqlJsConfig);
 
   // If there is no local database yet, try restoring from R2 first.
   // This prevents a redeploy from creating a blank database and overwriting
