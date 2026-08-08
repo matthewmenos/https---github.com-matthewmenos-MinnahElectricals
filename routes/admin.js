@@ -170,7 +170,7 @@ router.get('/leads', authMiddleware, (req, res) => {
  * PATCH /api/admin/leads/:id
  * Update lead status (protected route)
  */
-router.patch('/leads/:id', authMiddleware, (req, res) => {
+router.patch('/leads/:id', authMiddleware, async (req, res) => {
   try {
     const leadId = parseInt(req.params.id);
     const { status } = req.body;
@@ -234,7 +234,7 @@ router.patch('/leads/:id', authMiddleware, (req, res) => {
  * DELETE /api/admin/leads/:id
  * Delete a lead (protected route)
  */
-router.delete('/leads/:id', authMiddleware, (req, res) => {
+router.delete('/leads/:id', authMiddleware, async (req, res) => {
   try {
     const leadId = parseInt(req.params.id);
 
@@ -342,7 +342,7 @@ router.get('/stats', authMiddleware, (req, res) => {
  * GET /api/admin/products/:id/specifications
  * Get product specifications (protected route)
  */
-router.delete('/portfolio/:id', authMiddleware, (req, res) => {
+router.delete('/portfolio/:id', authMiddleware, async (req, res) => {
   try {
     const portfolioId = parseInt(req.params.id);
 
@@ -455,7 +455,7 @@ router.post('/gallery', authMiddleware, async (req, res) => {
  * PUT /api/admin/gallery/:id
  * Update a gallery item (protected route)
  */
-router.put('/gallery/:id', authMiddleware, (req, res) => {
+router.put('/gallery/:id', authMiddleware, async (req, res) => {
   try {
     const galleryId = parseInt(req.params.id);
     const { title, image_url, category, description, display_order } = req.body;
@@ -496,7 +496,7 @@ router.put('/gallery/:id', authMiddleware, (req, res) => {
  * DELETE /api/admin/gallery/:id
  * Delete a gallery item (protected route)
  */
-router.delete('/gallery/:id', authMiddleware, (req, res) => {
+router.delete('/gallery/:id', authMiddleware, async (req, res) => {
   try {
     const galleryId = parseInt(req.params.id);
 
@@ -865,7 +865,7 @@ router.get('/inventory', authMiddleware, (req, res) => {
  * PATCH /api/admin/orders/bulk-status
  * Update multiple orders status at once (protected route)
  */
-router.patch('/orders/bulk-status', authMiddleware, (req, res) => {
+router.patch('/orders/bulk-status', authMiddleware, async (req, res) => {
   try {
     const { order_ids, status } = req.body;
 
@@ -941,7 +941,7 @@ router.get('/settings', authMiddleware, (req, res) => {
  * PUT /api/admin/settings
  * Update settings (protected route)
  */
-router.put('/settings', authMiddleware, (req, res) => {
+router.put('/settings', authMiddleware, async (req, res) => {
   try {
     const { phone, email, location, whatsapp } = req.body;
     const dbInstance = getDb();
@@ -1019,7 +1019,7 @@ router.get('/templates', authMiddleware, (req, res) => {
  * POST /api/admin/templates
  * Create a new communication template
  */
-router.post('/templates', authMiddleware, (req, res) => {
+router.post('/templates', authMiddleware, async (req, res) => {
   try {
     const { name, type, subject, content } = req.body;
 
@@ -1068,7 +1068,7 @@ router.post('/templates', authMiddleware, (req, res) => {
  * PUT /api/admin/templates/:id
  * Update a communication template
  */
-router.put('/templates/:id', authMiddleware, (req, res) => {
+router.put('/templates/:id', authMiddleware, async (req, res) => {
   try {
     const templateId = parseInt(req.params.id);
     const { name, type, subject, content } = req.body;
@@ -1108,7 +1108,7 @@ router.put('/templates/:id', authMiddleware, (req, res) => {
  * DELETE /api/admin/templates/:id
  * Delete a communication template
  */
-router.delete('/templates/:id', authMiddleware, (req, res) => {
+router.delete('/templates/:id', authMiddleware, async (req, res) => {
   try {
     const templateId = parseInt(req.params.id);
 
@@ -1462,7 +1462,7 @@ router.get('/loyalty/members', authMiddleware, (req, res) => {
  * POST /api/admin/loyalty/members
  * Add or update loyalty program member (protected route)
  */
-router.post('/loyalty/members', authMiddleware, (req, res) => {
+router.post('/loyalty/members', authMiddleware, async (req, res) => {
   try {
     const { customer_phone, customer_name, customer_email, points, tier } = req.body;
 
@@ -1535,7 +1535,7 @@ router.post('/loyalty/members', authMiddleware, (req, res) => {
  * POST /api/admin/loyalty/transactions
  * Add loyalty points transaction (protected route)
  */
-router.post('/loyalty/transactions', authMiddleware, (req, res) => {
+router.post('/loyalty/transactions', authMiddleware, async (req, res) => {
   try {
     const { customer_phone, points, transaction_type, description, order_id } = req.body;
 
@@ -1681,7 +1681,7 @@ router.get('/service-requests', authMiddleware, (req, res) => {
  * PATCH /api/admin/service-requests/:id
  * Update service request (protected route)
  */
-router.patch('/service-requests/:id', authMiddleware, (req, res) => {
+router.patch('/service-requests/:id', authMiddleware, async (req, res) => {
   try {
     const requestId = parseInt(req.params.id);
     const { status, priority, assigned_to, scheduled_date, scheduled_time, notes } = req.body;
@@ -1808,7 +1808,7 @@ router.get('/products/:id/specifications', authMiddleware, (req, res) => {
  * POST /api/admin/products/:id/specifications
  * Add product specification (protected route)
  */
-router.post('/products/:id/specifications', authMiddleware, (req, res) => {
+router.post('/products/:id/specifications', authMiddleware, async (req, res) => {
   try {
     const productId = parseInt(req.params.id);
     const { spec_name, spec_value, display_order } = req.body;
@@ -1900,7 +1900,7 @@ router.get('/products/:id/variants', authMiddleware, (req, res) => {
  * POST /api/admin/products/:id/variants
  * Add product variant (protected route)
  */
-router.post('/products/:id/variants', authMiddleware, (req, res) => {
+router.post('/products/:id/variants', authMiddleware, async (req, res) => {
   try {
     const productId = parseInt(req.params.id);
     const { variant_name, variant_value, price_adjustment, stock } = req.body;
