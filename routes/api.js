@@ -218,12 +218,19 @@ router.get('/products', (req, res) => {
     
     const products = result[0] ? result[0].values.map(row => {
       // Return image_url as-is from database (R2 URLs are already complete)
+      const imageUrl = row[4];
+      
+      // Debug logging
+      if (process.env.NODE_ENV === 'production') {
+        console.log(`Product ${row[0]} (${row[1]}): image_url = ${imageUrl || 'NULL/EMPTY'}`);
+      }
+      
       return {
         id: row[0],
         name: row[1],
         description: row[2],
         price: row[3],
-        image_url: row[4], // R2 public URL from database
+        image_url: imageUrl, // R2 public URL from database
         category: row[5],
         in_stock: row[6],
         created_at: row[7],
@@ -231,6 +238,8 @@ router.get('/products', (req, res) => {
       };
     }) : [];
 
+    console.log(`✓ Fetched ${products.length} products from database`);
+    
     res.set('Cache-Control', 'no-store');
     return res.status(200).json({
       success: true,
