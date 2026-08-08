@@ -16,7 +16,10 @@ const s3Client = new S3Client({
 const DB_BUCKET_NAME = process.env.R2_BUCKET_NAME;
 const MEDIA_BUCKET_NAME = process.env.R2_MEDIA_BUCKET_NAME;
 const DB_KEY = 'electrical.db';
-const DB_PATH = path.join(__dirname, '..', 'data', 'electrical.db');
+
+// Use /tmp on Vercel (read-only filesystem), use data/ locally
+const isVercel = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+const DB_PATH = isVercel ? '/tmp/electrical.db' : path.join(__dirname, '..', 'data', 'electrical.db');
 
 let syncInProgress = false;
 let lastSyncTime = null;
