@@ -885,7 +885,7 @@ router.get('/wishlist/:session_id', (req, res) => {
  * POST /api/wishlist/:session_id/add
  * Add item to wishlist (public route)
  */
-router.post('/wishlist/:session_id/add', (req, res) => {
+router.post('/wishlist/:session_id/add', async (req, res) => {
   try {
     const sessionId = req.params.session_id;
     const { product_id } = req.body;
@@ -944,7 +944,7 @@ router.post('/wishlist/:session_id/add', (req, res) => {
  * DELETE /api/wishlist/:session_id/remove/:product_id
  * Remove item from wishlist (public route)
  */
-router.delete('/wishlist/:session_id/remove/:product_id', (req, res) => {
+router.delete('/wishlist/:session_id/remove/:product_id', async (req, res) => {
   try {
     const sessionId = req.params.session_id;
     const productId = parseInt(req.params.product_id);
@@ -1017,7 +1017,7 @@ router.get('/customer-info/:session_id', (req, res) => {
  * POST /api/customer-info/:session_id
  * Save customer info for quick checkout (public route)
  */
-router.post('/customer-info/:session_id', (req, res) => {
+router.post('/customer-info/:session_id', async (req, res) => {
   try {
     const sessionId = req.params.session_id;
     const { customer_name, customer_phone, customer_email } = req.body;
@@ -1234,7 +1234,7 @@ router.get('/push/vapid-key', (req, res) => {
  * POST /api/push/subscribe
  * Save push subscription to database
  */
-router.post('/push/subscribe', (req, res) => {
+router.post('/push/subscribe', async (req, res) => {
   try {
     const { session_id, endpoint, keys } = req.body;
 
