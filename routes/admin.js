@@ -1257,7 +1257,7 @@ router.get('/newsletter/campaigns', authMiddleware, (req, res) => {
  * POST /api/admin/newsletter/campaigns
  * Create a new newsletter campaign (protected route)
  */
-router.post('/newsletter/campaigns', authMiddleware, (req, res) => {
+router.post('/newsletter/campaigns', authMiddleware, async (req, res) => {
   try {
     const { subject, content, recipient_filter } = req.body;
 
