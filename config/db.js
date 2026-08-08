@@ -407,11 +407,15 @@ async function saveDatabase() {
     // Upload directly to R2 (no local file)
     if (r2Sync && r2Sync.isConfigured()) {
       try {
+        // Wait for R2 upload to complete before continuing
         await r2Sync.uploadDatabaseToR2(buffer);
-        console.log('✓ Database saved to R2');
+        console.log('✓ Database saved to R2 successfully');
       } catch (err) {
         console.error('✗ Failed to save database to R2:', err.message);
+        // Don't throw - allow the operation to continue even if R2 sync fails
       }
+    } else {
+      console.warn('⚠️  R2 not configured - database changes will NOT persist across cold starts!');
     }
   }
 }

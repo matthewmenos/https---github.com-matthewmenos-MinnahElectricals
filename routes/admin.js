@@ -208,12 +208,7 @@ router.patch('/leads/:id', authMiddleware, (req, res) => {
 
     // Update lead status
     dbInstance.run('UPDATE leads SET status = ? WHERE id = ?', [status, leadId]);
-    saveDatabase();
-
-    // Trigger R2 sync (non-blocking)
-    r2Sync.sync().catch(err => {
-      console.error('R2 sync error:', err.message);
-    });
+    await saveDatabase();
 
     console.log(`✓ Lead #${leadId} status updated to: ${status}`);
 
@@ -267,12 +262,7 @@ router.delete('/leads/:id', authMiddleware, (req, res) => {
 
     // Delete lead
     dbInstance.run('DELETE FROM leads WHERE id = ?', [leadId]);
-    saveDatabase();
-
-    // Trigger R2 sync (non-blocking)
-    r2Sync.sync().catch(err => {
-      console.error('R2 sync error:', err.message);
-    });
+    await saveDatabase();
 
     console.log(`✓ Lead #${leadId} deleted`);
 
@@ -349,572 +339,8 @@ router.get('/stats', authMiddleware, (req, res) => {
 });
 
 /**
- * GET /api/admin/products
- * Get all products (protected route)
- */
-router.get('/products', authMiddleware, (req, res) => {
-  try {
-    const dbInstance = getDb();
-    const result = dbInstance.exec('SELECT * FROM products ORDER BY created_at DESC');
-    
-    const products = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      name: row[1],
-      description: row[2],
-      price: row[3],
-      image_url: row[4],
-      category: row[5],
-      in_stock: row[6],
-      created_at: row[7],
-      updated_at: row[8]
-    })) : [];
-
-    return res.status(200).json({
-      success: true,
-      count: products.length,
-      products: products,
-    });
-
-  } catch (error) {
-    console.error('✗ Error fetching products:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while fetching products.',
-    });
-  }
-});
-
-/**
- * POST /api/admin/products
- * Create a new product (protected route)
- */
-router.post('/products', authMiddleware, (req, res) => {
-  try {
-    const { name, description, price, image_url, category, in_stock } = req.body;
-
-    if (!name || price === undefined) {
-      return res.status(400).json({
-        success: false,
-        message: 'Product name and price are required',
-      });
-    }
-
-    const dbInstance = getDb();
-    // Default to in_stock = 1 if not provided
-    const inStockValue = in_stock !== undefined && in_stock !== null ? (in_stock ? 1 : 0) : 1;
-    dbInstance.run(
-      `INSERT INTO products (name, description, price, image_url, category, in_stock) VALUES (?, ?, ?, ?, ?, ?)`,
-      [name, description || '', price, image_url || '', category || '', inStockValue]
-    );
-    
-    const result = dbInstance.exec('SELECT last_insert_rowid() as id');
-    const productId = result[0].values[0][0];
-    saveDatabase();
-
-    console.log(`✓ Product created: #${productId} - ${name}`);
-
-    return res.status(201).json({
-      success: true,
-      message: 'Product created successfully',
-      product: { id: productId, name, description, price, image_url, category, in_stock }
-    });
-
-  } catch (error) {
-    console.error('✗ Error creating product:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while creating the product.',
-    });
-  }
-});
-
-/**
- * PUT /api/admin/products/:id
- * Update a product (protected route)
- */
-router.put('/products/:id', authMiddleware, (req, res) => {
-  try {
-    const productId = parseInt(req.params.id);
-    const { name, description, price, image_url, category, in_stock } = req.body;
-
-    const dbInstance = getDb();
-    const checkResult = dbInstance.exec('SELECT * FROM products WHERE id = ?', [productId]);
-    
-    if (!checkResult[0] || !checkResult[0].values[0]) {
-      return res.status(404).json({
-        success: false,
-        message: 'Product not found',
-      });
-    }
-
-    dbInstance.run(
-      `UPDATE products SET name = ?, description = ?, price = ?, image_url = ?, category = ?, in_stock = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-      [name, description || '', price, image_url || '', category || '', in_stock ? 1 : 0, productId]
-    );
-    saveDatabase();
-
-    console.log(`✓ Product updated: #${productId}`);
-
-    return res.status(200).json({
-      success: true,
-      message: 'Product updated successfully',
-    });
-
-  } catch (error) {
-    console.error('✗ Error updating product:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while updating the product.',
-    });
-  }
-});
-
-/**
- * DELETE /api/admin/products/:id
- * Delete a product (protected route)
- */
-router.delete('/products/:id', authMiddleware, (req, res) => {
-  try {
-    const productId = parseInt(req.params.id);
-
-    const dbInstance = getDb();
-    const checkResult = dbInstance.exec('SELECT * FROM products WHERE id = ?', [productId]);
-    
-    if (!checkResult[0] || !checkResult[0].values[0]) {
-      return res.status(404).json({
-        success: false,
-        message: 'Product not found',
-      });
-    }
-
-    dbInstance.run('DELETE FROM products WHERE id = ?', [productId]);
-    saveDatabase();
-
-    console.log(`✓ Product deleted: #${productId}`);
-
-    return res.status(200).json({
-      success: true,
-      message: 'Product deleted successfully',
-    });
-
-  } catch (error) {
-    console.error('✗ Error deleting product:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while deleting the product.',
-    });
-  }
-});
-
-/**
- * GET /api/admin/orders
- * Get all orders (protected route)
- */
-router.get('/orders', authMiddleware, (req, res) => {
-  try {
-    const dbInstance = getDb();
-    const result = dbInstance.exec(`
-      SELECT o.*, p.name as product_name, p.price as product_price 
-      FROM orders o 
-      LEFT JOIN products p ON o.product_id = p.id 
-      ORDER BY o.created_at DESC
-    `);
-    
-    const orders = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      customer_name: row[1],
-      customer_phone: row[2],
-      customer_email: row[3],
-      product_id: row[4],
-      product_name: row[5],
-      product_price: row[6],
-      quantity: row[7],
-      notes: row[8],
-      order_source: row[9],
-      status: row[10],
-      created_at: row[11]
-    })) : [];
-
-    return res.status(200).json({
-      success: true,
-      count: orders.length,
-      orders: orders,
-    });
-
-  } catch (error) {
-    console.error('✗ Error fetching orders:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while fetching orders.',
-    });
-  }
-});
-
-/**
- * POST /api/admin/orders/manual
- * Create a manual order with multiple products (protected route)
- */
-router.post('/orders/manual', authMiddleware, (req, res) => {
-  try {
-    const { customer_name, customer_phone, customer_email, notes, order_source, products } = req.body;
-
-    if (!customer_name || !customer_phone || !products || !Array.isArray(products) || products.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Customer name, phone, and at least one product are required',
-      });
-    }
-
-    const dbInstance = getDb();
-    const orderIds = [];
-
-    // Create one order record per product
-    products.forEach((productItem, index) => {
-      const { product_id, product_name, product_price, quantity } = productItem;
-
-      // Verify product exists in database
-      const productResult = dbInstance.exec('SELECT * FROM products WHERE id = ?', [product_id]);
-      const dbProduct = productResult[0] && productResult[0].values[0] ? {
-        id: productResult[0].values[0][0],
-        name: productResult[0].values[0][1],
-        price: productResult[0].values[0][3]
-      } : null;
-
-      // Use provided product details or fallback to database
-      const finalProductName = product_name || (dbProduct ? dbProduct.name : 'Unknown Product');
-      const finalProductPrice = product_price || (dbProduct ? dbProduct.price : 0);
-
-      dbInstance.run(
-        `INSERT INTO orders (customer_name, customer_phone, customer_email, product_id, product_name, product_price, quantity, notes, order_source, status) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          customer_name,
-          customer_phone,
-          customer_email || null,
-          product_id,
-          finalProductName,
-          finalProductPrice,
-          quantity || 1,
-          notes || null,
-          order_source || 'manual',
-          'Pending'
-        ]
-      );
-
-      const result = dbInstance.exec('SELECT last_insert_rowid() as id');
-      const orderId = result[0].values[0][0];
-      orderIds.push(orderId);
-    });
-
-    saveDatabase();
-
-    console.log(`✓ Manual order created: #${orderIds[0]} (${orderIds.length} items) - ${customer_name}`);
-
-    // Send email notifications (non-blocking)
-    if (customer_email) {
-      sendOrderConfirmationEmail(customer_email, customer_name, {
-        orderId: orderIds[0],
-        date: new Date().toISOString(),
-        status: 'Pending',
-        products: products.map(p => ({
-          name: p.product_name,
-          price: p.product_price,
-          quantity: p.quantity
-        })),
-        total: products.reduce((sum, p) => sum + (p.product_price * p.quantity), 0),
-        customerName: customer_name,
-        customerPhone: customer_phone,
-        customerEmail: customer_email,
-        notes: notes
-      }).catch(err => console.error('Manual order confirmation email error:', err.message));
-    }
-
-    sendAdminNotificationEmail({
-      orderId: orderIds[0],
-      date: new Date().toISOString(),
-      source: order_source || 'Manual',
-      customerName: customer_name,
-      customerPhone: customer_phone,
-      customerEmail: customer_email,
-      products: products.map(p => ({
-        name: p.product_name,
-        price: p.product_price,
-        quantity: p.quantity
-      })),
-      total: products.reduce((sum, p) => sum + (p.product_price * p.quantity), 0),
-      notes: notes
-    }).catch(err => console.error('Manual order admin notification email error:', err.message));
-
-    return res.status(201).json({
-      success: true,
-      message: `Manual order created successfully with ${orderIds.length} item(s)`,
-      orderIds: orderIds,
-      customer_name,
-      customer_phone,
-      customer_email,
-      products_count: orderIds.length
-    });
-
-  } catch (error) {
-    console.error('✗ Error creating manual order:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while creating the manual order.',
-    });
-  }
-});
-
-/**
- * PATCH /api/admin/orders/:id
- * Update order status (protected route)
- */
-router.patch('/orders/:id', authMiddleware, (req, res) => {
-  try {
-    const orderId = parseInt(req.params.id);
-    const { status } = req.body;
-
-    const validStatuses = ['Pending', 'Confirmed', 'Completed', 'Cancelled'];
-    if (!status || !validStatuses.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid status. Must be one of: ' + validStatuses.join(', '),
-      });
-    }
-
-    const dbInstance = getDb();
-    const checkResult = dbInstance.exec('SELECT * FROM orders WHERE id = ?', [orderId]);
-    
-    if (!checkResult[0] || !checkResult[0].values[0]) {
-      return res.status(404).json({
-        success: false,
-        message: 'Order not found',
-      });
-    }
-
-    dbInstance.run('UPDATE orders SET status = ? WHERE id = ?', [status, orderId]);
-    saveDatabase();
-
-    console.log(`✓ Order #${orderId} status updated to: ${status}`);
-
-    return res.status(200).json({
-      success: true,
-      message: 'Order status updated successfully',
-    });
-
-  } catch (error) {
-    console.error('✗ Error updating order:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while updating the order.',
-    });
-  }
-});
-
-/**
- * POST /api/admin/upload
- * Upload image to R2 bucket or local storage (protected route)
- */
-router.post('/upload', authMiddleware, upload.single('image'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: 'No image file provided',
-      });
-    }
-
-    const imageFile = req.file;
-    
-    // Generate unique filename
-    const timestamp = Date.now();
-    const randomString = Math.random().toString(36).substring(2, 15);
-    const originalName = imageFile.originalname.replace(/\s+/g, '-');
-    const extension = originalName.split('.').pop();
-    const filename = `product_${timestamp}_${randomString}.${extension}`;
-
-    let mediaUrl;
-
-    // Try R2 first (your bucket is public and working)
-    if (r2Sync.isConfigured()) {
-      try {
-        mediaUrl = await r2Sync.uploadMediaToR2(imageFile.buffer, filename, imageFile.mimetype);
-        if (mediaUrl) {
-          console.log(`✓ Image uploaded to R2: ${filename}`);
-        }
-      } catch (r2Error) {
-        console.error('✗ R2 upload failed:', r2Error);
-        mediaUrl = null;
-      }
-    }
-
-    // Fallback to local storage if R2 fails
-    if (!mediaUrl) {
-      try {
-        const fs = require('fs');
-        const path = require('path');
-        
-        // Create uploads directory if it doesn't exist
-        const uploadsDir = path.join(__dirname, '..', 'public', 'uploads', 'products');
-        console.log(`📁 R2 failed, saving locally: ${uploadsDir}`);
-        
-        if (!fs.existsSync(uploadsDir)) {
-          fs.mkdirSync(uploadsDir, { recursive: true });
-        }
-
-        // Save file locally
-        const filePath = path.join(uploadsDir, filename);
-        fs.writeFileSync(filePath, imageFile.buffer);
-
-        // Return local URL (served statically by Express)
-        mediaUrl = `/uploads/products/${filename}`;
-        console.log(`✓ Image saved locally: ${filename}`);
-      } catch (localError) {
-        console.error('✗ Local storage also failed:', localError);
-        mediaUrl = null;
-      }
-    }
-
-    console.log(`  URL: ${mediaUrl}`);
-
-    return res.status(200).json({
-      success: true,
-      message: 'Image uploaded successfully',
-      url: mediaUrl,
-      filename: filename,
-    });
-
-  } catch (error) {
-    console.error('✗ Error uploading image:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while uploading the image.',
-    });
-  }
-});
-
-/**
- * GET /api/admin/portfolio
- * Get all portfolio items (protected route)
- */
-router.get('/portfolio', authMiddleware, (req, res) => {
-  try {
-    const dbInstance = getDb();
-    const result = dbInstance.exec('SELECT * FROM portfolio ORDER BY display_order ASC, created_at DESC');
-    
-    const portfolio = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      title: row[1],
-      description: row[2],
-      image_url: row[3],
-      category: row[4],
-      client_name: row[5],
-      project_date: row[6],
-      featured: row[7],
-      display_order: row[8],
-      created_at: row[9]
-    })) : [];
-
-    return res.status(200).json({
-      success: true,
-      count: portfolio.length,
-      portfolio: portfolio,
-    });
-
-  } catch (error) {
-    console.error('✗ Error fetching portfolio:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while fetching portfolio.',
-    });
-  }
-});
-
-/**
- * POST /api/admin/portfolio
- * Create a new portfolio item (protected route)
- */
-router.post('/portfolio', authMiddleware, async (req, res) => {
-  try {
-    const { title, description, image_url, category, client_name, project_date, featured, display_order } = req.body;
-
-    if (!title || !image_url) {
-      return res.status(400).json({
-        success: false,
-        message: 'Portfolio title and image are required',
-      });
-    }
-
-    const dbInstance = getDb();
-    dbInstance.run(
-      `INSERT INTO portfolio (title, description, image_url, category, client_name, project_date, featured, display_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [title, description || '', image_url, category || '', client_name || '', project_date || '', featured ? 1 : 0, display_order || 0]
-    );
-    
-    const result = dbInstance.exec('SELECT last_insert_rowid() as id');
-    const portfolioId = result[0].values[0][0];
-    saveDatabase();
-
-    console.log(`✓ Portfolio item created: #${portfolioId} - ${title}`);
-
-    return res.status(201).json({
-      success: true,
-      message: 'Portfolio item created successfully',
-      portfolio: { id: portfolioId, title, description, image_url, category, client_name, project_date, featured, display_order }
-    });
-
-  } catch (error) {
-    console.error('✗ Error creating portfolio item:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while creating the portfolio item.',
-    });
-  }
-});
-
-/**
- * PUT /api/admin/portfolio/:id
- * Update a portfolio item (protected route)
- */
-router.put('/portfolio/:id', authMiddleware, (req, res) => {
-  try {
-    const portfolioId = parseInt(req.params.id);
-    const { title, description, image_url, category, client_name, project_date, featured, display_order } = req.body;
-
-    const dbInstance = getDb();
-    const checkResult = dbInstance.exec('SELECT * FROM portfolio WHERE id = ?', [portfolioId]);
-    
-    if (!checkResult[0] || !checkResult[0].values[0]) {
-      return res.status(404).json({
-        success: false,
-        message: 'Portfolio item not found',
-      });
-    }
-
-    dbInstance.run(
-      `UPDATE portfolio SET title = ?, description = ?, image_url = ?, category = ?, client_name = ?, project_date = ?, featured = ?, display_order = ? WHERE id = ?`,
-      [title, description || '', image_url, category || '', client_name || '', project_date || '', featured ? 1 : 0, display_order || 0, portfolioId]
-    );
-    saveDatabase();
-
-    console.log(`✓ Portfolio item updated: #${portfolioId}`);
-
-    return res.status(200).json({
-      success: true,
-      message: 'Portfolio item updated successfully',
-    });
-
-  } catch (error) {
-    console.error('✗ Error updating portfolio item:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while updating the portfolio item.',
-    });
-  }
-});
-
-/**
- * DELETE /api/admin/portfolio/:id
- * Delete a portfolio item (protected route)
+ * GET /api/admin/products/:id/specifications
+ * Get product specifications (protected route)
  */
 router.delete('/portfolio/:id', authMiddleware, (req, res) => {
   try {
@@ -931,7 +357,7 @@ router.delete('/portfolio/:id', authMiddleware, (req, res) => {
     }
 
     dbInstance.run('DELETE FROM portfolio WHERE id = ?', [portfolioId]);
-    saveDatabase();
+    await saveDatabase();
 
     console.log(`✓ Portfolio item deleted: #${portfolioId}`);
 
@@ -1006,7 +432,7 @@ router.post('/gallery', authMiddleware, async (req, res) => {
     
     const result = dbInstance.exec('SELECT last_insert_rowid() as id');
     const galleryId = result[0].values[0][0];
-    saveDatabase();
+    await saveDatabase();
 
     console.log(`✓ Gallery item created: #${galleryId}`);
 
@@ -1048,7 +474,7 @@ router.put('/gallery/:id', authMiddleware, (req, res) => {
       `UPDATE gallery SET title = ?, image_url = ?, category = ?, description = ?, display_order = ? WHERE id = ?`,
       [title || '', image_url, category || '', description || '', display_order || 0, galleryId]
     );
-    saveDatabase();
+    await saveDatabase();
 
     console.log(`✓ Gallery item updated: #${galleryId}`);
 
@@ -1085,7 +511,7 @@ router.delete('/gallery/:id', authMiddleware, (req, res) => {
     }
 
     dbInstance.run('DELETE FROM gallery WHERE id = ?', [galleryId]);
-    saveDatabase();
+    await saveDatabase();
 
     console.log(`✓ Gallery item deleted: #${galleryId}`);
 
@@ -1471,7 +897,7 @@ router.patch('/orders/bulk-status', authMiddleware, (req, res) => {
       `UPDATE orders SET status = ? WHERE id IN (${placeholders})`,
       [status, ...order_ids]
     );
-    saveDatabase();
+    await saveDatabase();
 
     console.log(`✓ Bulk updated ${order_ids.length} orders to status: ${status}`);
 
@@ -1536,8 +962,7 @@ router.put('/settings', authMiddleware, (req, res) => {
       if (location !== undefined) dbInstance.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['location', location]);
       if (whatsapp !== undefined) dbInstance.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['whatsapp', whatsapp]);
     }
-    saveDatabase();
-    r2Sync.sync().catch(err => console.error('R2 sync error:', err.message));
+    await saveDatabase();
     console.log('Settings updated');
     return res.status(200).json({ success: true, message: 'Settings updated successfully' });
   } catch (error) {
@@ -1621,7 +1046,7 @@ router.post('/templates', authMiddleware, (req, res) => {
 
     const result = dbInstance.exec('SELECT last_insert_rowid() as id');
     const templateId = result[0].values[0][0];
-    saveDatabase();
+    await saveDatabase();
 
     console.log(`✓ Template created: #${templateId} - ${name}`);
 
@@ -1662,7 +1087,7 @@ router.put('/templates/:id', authMiddleware, (req, res) => {
       'UPDATE templates SET name = ?, type = ?, subject = ?, content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       [name, type, subject || null, content, templateId]
     );
-    saveDatabase();
+    await saveDatabase();
 
     console.log(`✓ Template updated: #${templateId}`);
 
@@ -1698,7 +1123,7 @@ router.delete('/templates/:id', authMiddleware, (req, res) => {
     }
 
     dbInstance.run('DELETE FROM templates WHERE id = ?', [templateId]);
-    saveDatabase();
+    await saveDatabase();
 
     console.log(`✓ Template deleted: #${templateId}`);
 
@@ -1748,180 +1173,8 @@ router.get('/sms-logs', authMiddleware, (req, res) => {
 });
 
 /**
- * GET /api/admin/appointments
- * Get all appointments (protected route)
- */
-router.get('/appointments', authMiddleware, (req, res) => {
-  try {
-    const dbInstance = getDb();
-    const { status, date_from, date_to } = req.query;
-
-    let query = 'SELECT * FROM appointments';
-    const conditions = [];
-    const params = [];
-
-    if (status && status !== 'all') {
-      conditions.push('status = ?');
-      params.push(status);
-    }
-
-    if (date_from) {
-      conditions.push('appointment_date >= ?');
-      params.push(date_from);
-    }
-
-    if (date_to) {
-      conditions.push('appointment_date <= ?');
-      params.push(date_to);
-    }
-
-    if (conditions.length > 0) {
-      query += ' WHERE ' + conditions.join(' AND ');
-    }
-
-    query += ' ORDER BY appointment_date DESC, appointment_time DESC';
-
-    const result = dbInstance.exec(query, params);
-    const appointments = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      customer_name: row[1],
-      customer_phone: row[2],
-      customer_email: row[3],
-      service_type: row[4],
-      appointment_date: row[5],
-      appointment_time: row[6],
-      status: row[7],
-      notes: row[8],
-      created_at: row[9],
-      updated_at: row[10]
-    })) : [];
-
-    return res.status(200).json({
-      success: true,
-      count: appointments.length,
-      appointments: appointments,
-    });
-
-  } catch (error) {
-    console.error('✗ Error fetching appointments:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while fetching appointments.',
-    });
-  }
-});
-
-/**
- * PATCH /api/admin/appointments/:id
- * Update appointment status (protected route)
- */
-router.patch('/appointments/:id', authMiddleware, (req, res) => {
-  try {
-    const appointmentId = parseInt(req.params.id);
-    const { status, notes, assigned_to } = req.body;
-
-    const validStatuses = ['Pending', 'Confirmed', 'Completed', 'Cancelled'];
-    if (status && !validStatuses.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid status. Must be one of: ' + validStatuses.join(', '),
-      });
-    }
-
-    const dbInstance = getDb();
-    const checkResult = dbInstance.exec('SELECT * FROM appointments WHERE id = ?', [appointmentId]);
-
-    if (!checkResult[0] || !checkResult[0].values[0]) {
-      return res.status(404).json({
-        success: false,
-        message: 'Appointment not found',
-      });
-    }
-
-    const updates = [];
-    const params = [];
-
-    if (status) {
-      updates.push('status = ?');
-      params.push(status);
-    }
-
-    if (notes !== undefined) {
-      updates.push('notes = ?');
-      params.push(notes);
-    }
-
-    if (assigned_to !== undefined) {
-      updates.push('assigned_to = ?');
-      params.push(assigned_to);
-    }
-
-    updates.push('updated_at = CURRENT_TIMESTAMP');
-    params.push(appointmentId);
-
-    dbInstance.run(
-      `UPDATE appointments SET ${updates.join(', ')} WHERE id = ?`,
-      params
-    );
-
-    saveDatabase();
-
-    console.log(`✓ Appointment #${appointmentId} updated`);
-
-    return res.status(200).json({
-      success: true,
-      message: 'Appointment updated successfully',
-    });
-
-  } catch (error) {
-    console.error('✗ Error updating appointment:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while updating the appointment.',
-    });
-  }
-});
-
-/**
- * DELETE /api/admin/appointments/:id
- * Delete an appointment (protected route)
- */
-router.delete('/appointments/:id', authMiddleware, (req, res) => {
-  try {
-    const appointmentId = parseInt(req.params.id);
-
-    const dbInstance = getDb();
-    const checkResult = dbInstance.exec('SELECT * FROM appointments WHERE id = ?', [appointmentId]);
-
-    if (!checkResult[0] || !checkResult[0].values[0]) {
-      return res.status(404).json({
-        success: false,
-        message: 'Appointment not found',
-      });
-    }
-
-    dbInstance.run('DELETE FROM appointments WHERE id = ?', [appointmentId]);
-    saveDatabase();
-
-    console.log(`✓ Appointment #${appointmentId} deleted`);
-
-    return res.status(200).json({
-      success: true,
-      message: 'Appointment deleted successfully',
-    });
-
-  } catch (error) {
-    console.error('✗ Error deleting appointment:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while deleting the appointment.',
-    });
-  }
-});
-
-/**
- * GET /api/admin/newsletter/subscribers
- * Get all newsletter subscribers (protected route)
+ * GET /api/admin/sms-logs
+ * Get SMS delivery logs
  */
 router.get('/newsletter/subscribers', authMiddleware, (req, res) => {
   try {
@@ -2023,7 +1276,7 @@ router.post('/newsletter/campaigns', authMiddleware, (req, res) => {
 
     const result = dbInstance.exec('SELECT last_insert_rowid() as id');
     const campaignId = result[0].values[0][0];
-    saveDatabase();
+    await saveDatabase();
 
     console.log(`✓ Newsletter campaign created: #${campaignId}`);
 
@@ -2248,21 +1501,21 @@ router.post('/loyalty/members', authMiddleware, (req, res) => {
       updates.push('updated_at = CURRENT_TIMESTAMP');
       params.push(customer_phone);
 
-      dbInstance.run(
-        `UPDATE loyalty_program SET ${updates.join(', ')} WHERE customer_phone = ?`,
-        params
-      );
-    } else {
-      // Create new member
-      dbInstance.run(
-        `INSERT INTO loyalty_program (customer_phone, customer_name, customer_email, points, tier) VALUES (?, ?, ?, ?, ?)`,
-        [customer_phone, customer_name, customer_email || null, points || 0, tier || 'bronze']
-      );
-    }
+    dbInstance.run(
+      `UPDATE loyalty_program SET ${updates.join(', ')} WHERE customer_phone = ?`,
+      params
+    );
+  } else {
+    // Create new member
+    dbInstance.run(
+      `INSERT INTO loyalty_program (customer_phone, customer_name, customer_email, points, tier) VALUES (?, ?, ?, ?, ?)`,
+      [customer_phone, customer_name, customer_email || null, points || 0, tier || 'bronze']
+    );
+  }
 
-    saveDatabase();
+  await saveDatabase();
 
-    console.log(`✓ Loyalty member saved: ${customer_phone}`);
+  console.log(`✓ Loyalty member saved: ${customer_phone}`);
 
     return res.status(200).json({
       success: true,
@@ -2337,7 +1590,7 @@ router.post('/loyalty/transactions', authMiddleware, (req, res) => {
       [customer_phone, points, transaction_type, description || null, order_id || null]
     );
 
-    saveDatabase();
+    await saveDatabase();
 
     console.log(`✓ Loyalty transaction recorded: ${customer_phone} - ${transaction_type} ${points} points`);
 
@@ -2495,7 +1748,7 @@ router.patch('/service-requests/:id', authMiddleware, (req, res) => {
       params
     );
 
-    saveDatabase();
+    await saveDatabase();
 
     console.log(`✓ Service request #${requestId} updated`);
 
@@ -2585,7 +1838,7 @@ router.post('/products/:id/specifications', authMiddleware, (req, res) => {
 
     const result = dbInstance.exec('SELECT last_insert_rowid() as id');
     const specId = result[0].values[0][0];
-    saveDatabase();
+    await saveDatabase();
 
     console.log(`✓ Product specification created: #${specId} for product #${productId}`);
 
@@ -2677,7 +1930,7 @@ router.post('/products/:id/variants', authMiddleware, (req, res) => {
 
     const result = dbInstance.exec('SELECT last_insert_rowid() as id');
     const variantId = result[0].values[0][0];
-    saveDatabase();
+    await saveDatabase();
 
     console.log(`✓ Product variant created: #${variantId} for product #${productId}`);
 

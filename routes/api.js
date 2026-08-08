@@ -161,7 +161,7 @@ router.post('/leads', async (req, res) => {
     const result = dbInstance.exec('SELECT last_insert_rowid() as id');
     const leadId = result[0].values[0][0];
     
-    saveDatabase();
+    await saveDatabase();
 
     const newLead = {
       id: leadId,
@@ -346,7 +346,7 @@ router.post('/orders', async (req, res) => {
     
     const result = dbInstance.exec('SELECT last_insert_rowid() as id');
     const orderId = result[0].values[0][0];
-    saveDatabase();
+    await saveDatabase();
 
     const newOrder = {
       id: orderId,
@@ -819,7 +819,7 @@ router.post('/products/:id/reviews', async (req, res) => {
 
     const result = dbInstance.exec('SELECT last_insert_rowid() as id');
     const reviewId = result[0].values[0][0];
-    saveDatabase();
+    await saveDatabase();
 
     console.log(`✓ Review created: #${reviewId} for product #${productId}`);
 
@@ -914,7 +914,7 @@ router.post('/wishlist/:session_id/add', (req, res) => {
         'INSERT INTO wishlist (product_id, session_id) VALUES (?, ?)',
         [product_id, sessionId]
       );
-      saveDatabase();
+      await saveDatabase();
     } catch (err) {
       // Item already in wishlist
       return res.status(200).json({
@@ -954,7 +954,7 @@ router.delete('/wishlist/:session_id/remove/:product_id', (req, res) => {
       'DELETE FROM wishlist WHERE session_id = ? AND product_id = ?',
       [sessionId, productId]
     );
-    saveDatabase();
+    await saveDatabase();
 
     console.log(`✓ Item removed from wishlist: product #${productId}`);
 
@@ -1047,7 +1047,7 @@ router.post('/customer-info/:session_id', (req, res) => {
       );
     }
 
-    saveDatabase();
+    await saveDatabase();
 
     console.log(`✓ Customer info saved for session: ${sessionId}`);
 
@@ -1231,351 +1231,6 @@ router.get('/push/vapid-key', (req, res) => {
 });
 
 /**
- * POST /api/appointments
- * Book a new appointment (public route)
- */
-router.post('/appointments', async (req, res) => {
-  try {
-    const { customer_name, customer_phone, customer_email, service_type, appointment_date, appointment_time, notes } = req.body;
-
-    // Validate required fields
-    if (!customer_name || !customer_phone || !service_type || !appointment_date || !appointment_time) {
-      return res.status(400).json({
-        success: false,
-        message: 'Missing required fields: customer_name, customer_phone, service_type, appointment_date, and appointment_time are required',
-      });
-    }
-
-    // Validate date format
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(appointment_date)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid date format. Use YYYY-MM-DD',
-      });
-    }
-
-    // Validate time format
-    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
-    if (!timeRegex.test(appointment_time)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid time format. Use HH:MM (24-hour format)',
-      });
-    }
-
-    const dbInstance = getDb();
-    dbInstance.run(
-      `INSERT INTO appointments (customer_name, customer_phone, customer_email, service_type, appointment_date, appointment_time, notes) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [
-        customer_name.trim().substring(0, 100),
-        customer_phone.trim().substring(0, 20),
-        customer_email?.trim() || null,
-        service_type.trim().substring(0, 200),
-        appointment_date,
-        appointment_time,
-        notes?.trim() || null
-      ]
-    );
-
-    const result = dbInstance.exec('SELECT last_insert_rowid() as id');
-    const appointmentId = result[0].values[0][0];
-    saveDatabase();
-
-    const newAppointment = {
-      id: appointmentId,
-      customer_name: customer_name.trim(),
-      customer_phone: customer_phone.trim(),
-      customer_email: customer_email?.trim() || null,
-      service_type: service_type.trim(),
-      appointment_date,
-      appointment_time,
-      status: 'Pending',
-      notes: notes?.trim() || null,
-      created_at: new Date().toISOString(),
-    };
-
-    // Trigger R2 sync (non-blocking)
-    r2Sync.sync().catch(err => {
-      console.error('R2 sync error:', err.message);
-    });
-
-    console.log(`✓ New appointment created: #${newAppointment.id} - ${customer_name}`);
-
-    return res.status(201).json({
-      success: true,
-      message: 'Appointment booked successfully! We will contact you to confirm.',
-      appointment: newAppointment,
-    });
-
-  } catch (error) {
-    console.error('✗ Error creating appointment:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while booking the appointment. Please try again.',
-    });
-  }
-});
-
-/**
- * POST /api/newsletter/subscribe
- * Subscribe to newsletter (public route)
- */
-router.post('/newsletter/subscribe', async (req, res) => {
-  try {
-    const { email, name } = req.body;
-
-    if (!email) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email is required',
-      });
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid email format',
-      });
-    }
-
-    const dbInstance = getDb();
-    
-    // Check if already subscribed
-    const existingResult = dbInstance.exec('SELECT id, status FROM newsletter_subscribers WHERE email = ?', [email.toLowerCase()]);
-    
-    if (existingResult[0] && existingResult[0].values[0]) {
-      const existingId = existingResult[0].values[0][0];
-      const existingStatus = existingResult[0].values[0][1];
-      
-      if (existingStatus === 'active') {
-        return res.status(200).json({
-          success: true,
-          message: 'You are already subscribed to our newsletter!',
-          already_subscribed: true,
-        });
-      } else {
-        // Resubscribe
-        dbInstance.run(
-          'UPDATE newsletter_subscribers SET status = ?, subscribed_at = CURRENT_TIMESTAMP, unsubscribed_at = NULL WHERE id = ?',
-          ['active', existingId]
-        );
-        saveDatabase();
-        
-        return res.status(200).json({
-          success: true,
-          message: 'Welcome back! You have been resubscribed to our newsletter.',
-          resubscribed: true,
-        });
-      }
-    }
-
-    // Add new subscriber
-    dbInstance.run(
-      'INSERT INTO newsletter_subscribers (email, name, status) VALUES (?, ?, ?)',
-      [email.toLowerCase(), name?.trim() || null, 'active']
-    );
-
-    const result = dbInstance.exec('SELECT last_insert_rowid() as id');
-    const subscriberId = result[0].values[0][0];
-    saveDatabase();
-
-    console.log(`✓ New newsletter subscriber: #${subscriberId} - ${email}`);
-
-    return res.status(201).json({
-      success: true,
-      message: 'Thank you for subscribing to our newsletter!',
-      subscriber_id: subscriberId,
-    });
-
-  } catch (error) {
-    console.error('✗ Error subscribing to newsletter:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while subscribing. Please try again.',
-    });
-  }
-});
-
-/**
- * POST /api/newsletter/unsubscribe
- * Unsubscribe from newsletter (public route)
- */
-router.post('/newsletter/unsubscribe', (req, res) => {
-  try {
-    const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email is required',
-      });
-    }
-
-    const dbInstance = getDb();
-    const result = dbInstance.exec('SELECT id FROM newsletter_subscribers WHERE email = ? AND status = ?', [email.toLowerCase(), 'active']);
-
-    if (!result[0] || !result[0].values[0]) {
-      return res.status(404).json({
-        success: false,
-        message: 'Email not found in our subscriber list',
-      });
-    }
-
-    const subscriberId = result[0].values[0][0];
-    dbInstance.run(
-      'UPDATE newsletter_subscribers SET status = ?, unsubscribed_at = CURRENT_TIMESTAMP WHERE id = ?',
-      ['unsubscribed', subscriberId]
-    );
-    saveDatabase();
-
-    console.log(`✓ Newsletter unsubscribed: #${subscriberId} - ${email}`);
-
-    return res.status(200).json({
-      success: true,
-      message: 'You have been unsubscribed from our newsletter.',
-    });
-
-  } catch (error) {
-    console.error('✗ Error unsubscribing from newsletter:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while unsubscribing. Please try again.',
-    });
-  }
-});
-
-/**
- * POST /api/service-requests
- * Submit a service request (public route)
- */
-router.post('/service-requests', async (req, res) => {
-  try {
-    const { customer_name, customer_phone, customer_email, service_type, description, priority } = req.body;
-
-    // Validate required fields
-    if (!customer_name || !customer_phone || !service_type || !description) {
-      return res.status(400).json({
-        success: false,
-        message: 'Missing required fields: customer_name, customer_phone, service_type, and description are required',
-      });
-    }
-
-    const dbInstance = getDb();
-    dbInstance.run(
-      `INSERT INTO service_requests (customer_name, customer_phone, customer_email, service_type, description, priority) VALUES (?, ?, ?, ?, ?, ?)`,
-      [
-        customer_name.trim().substring(0, 100),
-        customer_phone.trim().substring(0, 20),
-        customer_email?.trim() || null,
-        service_type.trim().substring(0, 200),
-        description.trim().substring(0, 1000),
-        priority === 'urgent' ? 'urgent' : priority === 'high' ? 'high' : priority === 'low' ? 'low' : 'medium'
-      ]
-    );
-
-    const result = dbInstance.exec('SELECT last_insert_rowid() as id');
-    const serviceRequestId = result[0].values[0][0];
-    saveDatabase();
-
-    const newServiceRequest = {
-      id: serviceRequestId,
-      customer_name: customer_name.trim(),
-      customer_phone: customer_phone.trim(),
-      customer_email: customer_email?.trim() || null,
-      service_type: service_type.trim(),
-      description: description.trim(),
-      priority: priority === 'urgent' ? 'urgent' : priority === 'high' ? 'high' : priority === 'low' ? 'low' : 'medium',
-      status: 'open',
-      created_at: new Date().toISOString(),
-    };
-
-    // Trigger R2 sync (non-blocking)
-    r2Sync.sync().catch(err => {
-      console.error('R2 sync error:', err.message);
-    });
-
-    console.log(`✓ New service request created: #${newServiceRequest.id} - ${customer_name}`);
-
-    return res.status(201).json({
-      success: true,
-      message: 'Service request submitted successfully! We will contact you shortly.',
-      service_request: newServiceRequest,
-    });
-
-  } catch (error) {
-    console.error('✗ Error creating service request:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while submitting your service request. Please try again.',
-    });
-  }
-});
-
-/**
- * GET /api/service-requests/track
- * Track service requests by phone number (public route)
- */
-router.get('/service-requests/track', (req, res) => {
-  try {
-    const { phone, requestId } = req.query;
-
-    if (!phone) {
-      return res.status(400).json({
-        success: false,
-        message: 'Phone number is required',
-      });
-    }
-
-    const dbInstance = getDb();
-    let query = 'SELECT * FROM service_requests WHERE customer_phone = ?';
-    const params = [phone];
-
-    if (requestId) {
-      query += ' AND id = ?';
-      params.push(parseInt(requestId));
-    }
-
-    query += ' ORDER BY created_at DESC';
-
-    const result = dbInstance.exec(query, params);
-
-    const serviceRequests = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      customer_name: row[1],
-      customer_phone: row[2],
-      customer_email: row[3],
-      service_type: row[4],
-      description: row[5],
-      priority: row[6],
-      status: row[7],
-      assigned_to: row[8],
-      scheduled_date: row[9],
-      scheduled_time: row[10],
-      completed_at: row[11],
-      notes: row[12],
-      created_at: row[13],
-      updated_at: row[14]
-    })) : [];
-
-    return res.status(200).json({
-      success: true,
-      count: serviceRequests.length,
-      service_requests: serviceRequests,
-    });
-
-  } catch (error) {
-    console.error('✗ Error tracking service requests:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while tracking service requests.',
-    });
-  }
-});
-
-/**
  * POST /api/push/subscribe
  * Save push subscription to database
  */
@@ -1595,7 +1250,7 @@ router.post('/push/subscribe', (req, res) => {
       'INSERT OR IGNORE INTO push_subscriptions (session_id, endpoint, keys) VALUES (?, ?, ?)',
       [session_id, endpoint, keys || '{}']
     );
-    saveDatabase();
+    await saveDatabase();
 
     console.log(`✓ Push subscription saved for session: ${session_id}`);
 
