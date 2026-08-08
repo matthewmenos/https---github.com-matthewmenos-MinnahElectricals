@@ -240,6 +240,68 @@ async function deleteMediaFromR2(fileName) {
 }
 
 /**
+ * Download database from R2 and return as Buffer
+ */
+async function downloadDatabaseFromR2() {
+  try {
+    const command = new GetObjectCommand({
+      Bucket: DB_BUCKET_NAME,
+      Key: DB_KEY,
+    });
+
+    const response = await s3Client.send(command);
+    
+    // Convert stream to buffer
+    const chunks = [];
+    for await (const chunk of response.Body) {
+      chunks.push(chunk);
+    }
+    
+    const buffer = Buffer.concat(chunks);
+    console.log(`✓ Database downloaded from R2 (${buffer.length} bytes)`);
+    return buffer;
+  } catch (error) {
+    if (error.name === 'NoSuchKey') {
+      console.log('ℹ️  No existing database found in R2');
+      return null;
+    }
+    console.error('✗ Failed to download database from R2:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Upload database buffer directly to R2
+ */
+async function uploadDatabaseToR2(buffer) {
+  if (!DB_BUCKET_NAME) {
+    console.log('⚠️  R2 database bucket not configured');
+    return false;
+  }
+
+  try {
+    const command = new PutObjectCommand({
+      Bucket: DB_BUCKET_NAME,
+      Key: DB_KEY,
+      Body: buffer,
+      ContentType: 'application/octet-stream',
+      Metadata: {
+        'uploaded-at': new Date().toISOString(),
+        'size': buffer.length.toString(),
+      },
+    });
+
+    await s3Client.send(command);
+    lastSyncTime = new Date();
+    console.log(`✓ Database synced to R2 (${buffer.length} bytes)`);
+    return true;
+  } catch (error) {
+    console.error('✗ Failed to sync database to R2:', error.message);
+    return false;
+  }
+}
+
+/**
  * Get last sync time
  */
 function getLastSyncTime() {
@@ -253,4 +315,6 @@ module.exports = {
   getLastSyncTime,
   uploadMediaToR2,
   deleteMediaFromR2,
+  downloadDatabaseFromR2,
+  uploadDatabaseToR2,
 };

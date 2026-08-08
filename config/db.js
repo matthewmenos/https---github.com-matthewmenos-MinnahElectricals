@@ -17,22 +17,9 @@ if (isVercel) {
 const initSqlJs = require('sql.js');
 const r2Sync = require('./r2-sync');
 
-// Use /tmp on Vercel (read-only filesystem), use data/ locally
-const dataDir = isVercel ? '/tmp' : path.join(__dirname, '..', 'data');
-
-// Ensure data directory exists
-if (!fs.existsSync(dataDir)) {
-  try {
-    fs.mkdirSync(dataDir, { recursive: true });
-  } catch (err) {
-    console.warn('Could not create data directory:', err.message);
-  }
-}
-
-const dbPath = path.join(dataDir, 'electrical.db');
-
-// Log database path for debugging
-console.log(`📁 Database path: ${dbPath}`);
+// In-memory database (no file system dependency)
+// Database is stored in R2 and loaded into memory on cold start
+console.log('� Using in-memory database with R2 backup');
 console.log(`   Environment: ${isVercel ? 'Vercel (production)' : 'Local'}`);
 let db = null;
 
@@ -53,22 +40,26 @@ async function initializeDatabase() {
   
   const SQL = await initSqlJs(sqlJsConfig);
 
-  // If there is no local database yet, try restoring from R2 first.
-  // This prevents a redeploy from creating a blank database and overwriting
-  // the last known backup in cloud storage.
-  if (!fs.existsSync(dbPath)) {
-    try {
-      await r2Sync.initialize();
-    } catch (error) {
-      console.warn('R2 initialization warning:', error.message);
-    }
+  // Try to download database from R2 first
+  console.log('🔄 Loading database from R2...');
+  try {
+    await r2Sync.initialize();
+  } catch (error) {
+    console.warn('R2 initialization warning:', error.message);
   }
   
-  // Load existing database or create new one
-  if (fs.existsSync(dbPath)) {
-    const fileBuffer = fs.readFileSync(dbPath);
-    db = new SQL.Database(fileBuffer);
-  } else {
+  // Load existing database from R2 or create new one
+  try {
+    const dbBuffer = await r2Sync.downloadDatabaseFromR2();
+    if (dbBuffer) {
+      db = new SQL.Database(dbBuffer);
+      console.log('✓ Database loaded from R2 into memory');
+    } else {
+      db = new SQL.Database();
+      console.log('✓ New database created in memory (no R2 backup found)');
+    }
+  } catch (error) {
+    console.warn('Could not load from R2, creating new database:', error.message);
     db = new SQL.Database();
   }
 
@@ -407,18 +398,20 @@ async function initializeDatabase() {
   return db;
 }
 
-// Save database to file and sync to R2
-function saveDatabase() {
+// Save database to R2 (in-memory, no file system)
+async function saveDatabase() {
   if (db) {
     const data = db.export();
     const buffer = Buffer.from(data);
-    fs.writeFileSync(dbPath, buffer);
     
-    // Sync to R2 (non-blocking)
+    // Upload directly to R2 (no local file)
     if (r2Sync && r2Sync.isConfigured()) {
-      r2Sync.sync().catch(err => {
-        console.error('R2 sync error:', err.message);
-      });
+      try {
+        await r2Sync.uploadDatabaseToR2(buffer);
+        console.log('✓ Database saved to R2');
+      } catch (err) {
+        console.error('✗ Failed to save database to R2:', err.message);
+      }
     }
   }
 }
