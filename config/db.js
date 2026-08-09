@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 // PostgreSQL connection pool for serverless environments
