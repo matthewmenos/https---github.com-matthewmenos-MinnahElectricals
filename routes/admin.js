@@ -570,6 +570,161 @@ router.get('/stats', authMiddleware, async (req, res) => {
 });
 
 /**
+ * GET /api/admin/portfolio
+ * Get all portfolio items (protected route)
+ */
+router.get('/portfolio', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM portfolio ORDER BY display_order ASC, created_at DESC'
+    );
+    
+    const portfolio = result.rows.map(row => ({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      image_url: row.image_url,
+      category: row.category,
+      client_name: row.client_name,
+      project_date: row.project_date,
+      featured: row.featured,
+      display_order: row.display_order,
+      created_at: row.created_at
+    }));
+
+    return res.status(200).json({
+      success: true,
+      count: portfolio.length,
+      portfolio: portfolio,
+    });
+
+  } catch (error) {
+    console.error('✗ Error fetching portfolio:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching portfolio.',
+    });
+  }
+});
+
+/**
+ * POST /api/admin/portfolio
+ * Create a new portfolio item (protected route)
+ */
+router.post('/portfolio', authMiddleware, async (req, res) => {
+  try {
+    const { title, description, image_url, category, client_name, project_date, featured, display_order } = req.body;
+
+    if (!title || !image_url) {
+      return res.status(400).json({
+        success: false,
+        message: 'Title and image are required',
+      });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO portfolio (title, description, image_url, category, client_name, project_date, featured, display_order) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+       RETURNING id, created_at`,
+      [
+        title,
+        description || null,
+        image_url,
+        category || null,
+        client_name || null,
+        project_date || null,
+        featured || false,
+        display_order || 0
+      ]
+    );
+
+    const portfolioId = result.rows[0].id;
+    const created_at = result.rows[0].created_at;
+
+    const newItem = {
+      id: portfolioId,
+      title,
+      description,
+      image_url,
+      category,
+      client_name,
+      project_date,
+      featured: featured || false,
+      display_order: display_order || 0,
+      created_at: created_at
+    };
+
+    console.log(`✓ Portfolio item created: #${portfolioId} - ${title}`);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Portfolio item created successfully',
+      portfolio: newItem,
+    });
+
+  } catch (error) {
+    console.error('✗ Error creating portfolio item:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while creating the portfolio item.',
+    });
+  }
+});
+
+/**
+ * PUT /api/admin/portfolio/:id
+ * Update a portfolio item (protected route)
+ */
+router.put('/portfolio/:id', authMiddleware, async (req, res) => {
+  try {
+    const portfolioId = parseInt(req.params.id);
+    const { title, description, image_url, category, client_name, project_date, featured, display_order } = req.body;
+
+    // Check if portfolio item exists
+    const checkResult = await pool.query('SELECT * FROM portfolio WHERE id = $1', [portfolioId]);
+    if (!checkResult.rows[0]) {
+      return res.status(404).json({
+        success: false,
+        message: 'Portfolio item not found',
+      });
+    }
+
+    // Update portfolio item
+    await pool.query(
+      `UPDATE portfolio 
+       SET title = $1, description = $2, image_url = $3, category = $4, client_name = $5, 
+           project_date = $6, featured = $7, display_order = $8 
+       WHERE id = $9`,
+      [
+        title,
+        description || null,
+        image_url,
+        category || null,
+        client_name || null,
+        project_date || null,
+        featured || false,
+        display_order || 0,
+        portfolioId
+      ]
+    );
+
+    console.log(`✓ Portfolio item updated: #${portfolioId}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Portfolio item updated successfully',
+    });
+
+  } catch (error) {
+    console.error('✗ Error updating portfolio item:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while updating the portfolio item.',
+    });
+  }
+});
+
+/**
  * DELETE /api/admin/portfolio/:id
  * Delete portfolio item (protected route)
  */
