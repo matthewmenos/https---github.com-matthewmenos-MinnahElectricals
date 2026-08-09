@@ -24,7 +24,7 @@
     "multer": "^2.2.0",
     "nodemailer": "^9.0.3",
     "pdfkit": "^0.19.1",
-    "sql.js": "^1.14.1"
+    "pg": "^8.11.3"
   },
   "optionalDependencies": {
     "@aws-sdk/client-s3": "^3.450.0"

@@ -4,7 +4,7 @@ const cors = require('cors');
 const multer = require('multer');
 require('dotenv').config();
 const r2Sync = require('./config/r2-sync');
-const { initializeDatabase } = require('./config/db');
+const { initDB } = require('./config/db');
 
 // Import routes
 const apiRoutes = require('./routes/api');
@@ -105,17 +105,17 @@ app.use((err, req, res, next) => {
 async function startServer() {
   try {
     // Initialize R2 sync FIRST (download database from R2 if exists)
-    console.log('🔄 Checking R2 for existing database...');
+    console.log('Checking R2 for existing database...');
     await r2Sync.initialize();
     
     // Initialize database AFTER R2 download (will load downloaded DB or create fresh)
-    await initializeDatabase();
+    await initDB();
     console.log('✓ Database initialized');
 
     // Start Express server
     app.listen(PORT, () => {
       console.log('='.repeat(60));
-      console.log('⚡ Electrical Company Website Server');
+      console.log('Electrical Company Website Server');
       console.log('='.repeat(60));
       console.log(`✓ Server running on http://localhost:${PORT}`);
       console.log(`✓ Environment: ${process.env.NODE_ENV || 'development'}`);

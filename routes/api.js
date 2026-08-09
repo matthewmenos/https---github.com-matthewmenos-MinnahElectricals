@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getDb, saveDatabase } = require('../config/db');
+const { pool } = require('../config/db');
 const r2Sync = require('../config/r2-sync');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -152,28 +152,22 @@ router.post('/leads', async (req, res) => {
     };
 
     // Insert lead into database
-    const dbInstance = getDb();
-    dbInstance.run(
-      `INSERT INTO leads (full_name, phone, email, service_needed, urgency, message) VALUES (?, ?, ?, ?, ?, ?)`,
+    const result = await pool.query(
+      `INSERT INTO leads (full_name, phone, email, service_needed, urgency, message) 
+       VALUES ($1, $2, $3, $4, $5, $6) 
+       RETURNING id, created_at`,
       [sanitizedData.full_name, sanitizedData.phone, sanitizedData.email, sanitizedData.service_needed, sanitizedData.urgency, sanitizedData.message]
     );
     
-    const result = dbInstance.exec('SELECT last_insert_rowid() as id');
-    const leadId = result[0].values[0][0];
-    
-    await saveDatabase();
+    const leadId = result.rows[0].id;
+    const created_at = result.rows[0].created_at;
 
     const newLead = {
       id: leadId,
       ...sanitizedData,
       status: 'New',
-      created_at: new Date().toISOString(),
+      created_at: created_at,
     };
-
-    // Trigger R2 sync (non-blocking)
-    r2Sync.sync().catch(err => {
-      console.error('R2 sync error:', err.message);
-    });
 
     // Send email notification (non-blocking)
     sendLeadNotification(newLead).catch(err => {
@@ -211,32 +205,33 @@ router.post('/leads', async (req, res) => {
  * GET /api/products
  * Get all products (public route)
  */
-router.get('/products', (req, res) => {
+router.get('/products', async (req, res) => {
   try {
-    const dbInstance = getDb();
-    const result = dbInstance.exec('SELECT * FROM products WHERE in_stock = 1 ORDER BY created_at DESC');
+    const result = await pool.query(
+      'SELECT * FROM products WHERE in_stock = true ORDER BY created_at DESC'
+    );
     
-    const products = result[0] ? result[0].values.map(row => {
+    const products = result.rows.map(row => {
       // Return image_url as-is from database (R2 URLs are already complete)
-      const imageUrl = row[4];
+      const imageUrl = row.image_url;
       
       // Debug logging
       if (process.env.NODE_ENV === 'production') {
-        console.log(`Product ${row[0]} (${row[1]}): image_url = ${imageUrl || 'NULL/EMPTY'}`);
+        console.log(`Product ${row.id} (${row.name}): image_url = ${imageUrl || 'NULL/EMPTY'}`);
       }
       
       return {
-        id: row[0],
-        name: row[1],
-        description: row[2],
-        price: row[3],
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        price: parseFloat(row.price),
         image_url: imageUrl, // R2 public URL from database
-        category: row[5],
-        in_stock: row[6],
-        created_at: row[7],
-        updated_at: row[8]
+        category: row.category,
+        in_stock: row.in_stock,
+        created_at: row.created_at,
+        updated_at: row.updated_at
       };
-    }) : [];
+    });
 
     console.log(`✓ Fetched ${products.length} products from database`);
     
@@ -260,35 +255,38 @@ router.get('/products', (req, res) => {
  * GET /api/products/:id
  * Get single product (public route)
  */
-router.get('/products/:id', (req, res) => {
+router.get('/products/:id', async (req, res) => {
   try {
     const productId = parseInt(req.params.id);
-    const dbInstance = getDb();
-    const result = dbInstance.exec('SELECT * FROM products WHERE id = ? AND in_stock = 1', [productId]);
+    const result = await pool.query(
+      'SELECT * FROM products WHERE id = $1 AND in_stock = true',
+      [productId]
+    );
     
-    if (!result[0] || !result[0].values[0]) {
+    if (!result.rows[0]) {
       return res.status(404).json({
         success: false,
         message: 'Product not found',
       });
     }
 
-    let imageUrl = result[0].values[0][4];
+    const row = result.rows[0];
+    let imageUrl = row.image_url;
     if (imageUrl && !imageUrl.startsWith('http')) {
       const cleanPath = imageUrl.startsWith('/') ? imageUrl.substring(1) : imageUrl;
       imageUrl = `${req.protocol}://${req.get('host')}/${cleanPath}`;
     }
     
     const product = {
-      id: result[0].values[0][0],
-      name: result[0].values[0][1],
-      description: result[0].values[0][2],
-      price: result[0].values[0][3],
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      price: parseFloat(row.price),
       image_url: imageUrl,
-      category: result[0].values[0][5],
-      in_stock: result[0].values[0][6],
-      created_at: result[0].values[0][7],
-      updated_at: result[0].values[0][8]
+      category: row.category,
+      in_stock: row.in_stock,
+      created_at: row.created_at,
+      updated_at: row.updated_at
     };
 
     return res.status(200).json({
@@ -322,31 +320,30 @@ router.post('/orders', async (req, res) => {
     }
 
     // Validate product exists and is in stock
-    const dbInstance = getDb();
-    const productResult = dbInstance.exec('SELECT * FROM products WHERE id = ? AND in_stock = 1', [product_id]);
+    const productResult = await pool.query(
+      'SELECT * FROM products WHERE id = $1 AND in_stock = true',
+      [product_id]
+    );
     
-    if (!productResult[0] || !productResult[0].values[0]) {
+    if (!productResult.rows[0]) {
       return res.status(404).json({
         success: false,
         message: 'Product not found or out of stock',
       });
     }
 
-    const product = {
-      id: productResult[0].values[0][0],
-      name: productResult[0].values[0][1],
-      price: productResult[0].values[0][3]
-    };
+    const product = productResult.rows[0];
 
     // Insert order into database
-    dbInstance.run(
-      `INSERT INTO orders (customer_name, customer_phone, customer_email, product_id, quantity, notes) VALUES (?, ?, ?, ?, ?, ?)`,
-      [customer_name, customer_phone, customer_email || null, product_id, quantity || 1, notes || null]
+    const orderResult = await pool.query(
+      `INSERT INTO orders (customer_name, customer_phone, customer_email, product_id, product_name, product_price, quantity, notes, status) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+       RETURNING id, created_at`,
+      [customer_name, customer_phone, customer_email || null, product_id, product.name, product.price, quantity || 1, notes || null, 'Pending']
     );
     
-    const result = dbInstance.exec('SELECT last_insert_rowid() as id');
-    const orderId = result[0].values[0][0];
-    await saveDatabase();
+    const orderId = orderResult.rows[0].id;
+    const created_at = orderResult.rows[0].created_at;
 
     const newOrder = {
       id: orderId,
@@ -355,17 +352,12 @@ router.post('/orders', async (req, res) => {
       customer_email,
       product_id,
       product_name: product.name,
-      product_price: product.price,
+      product_price: parseFloat(product.price),
       quantity: quantity || 1,
       notes,
       status: 'Pending',
-      created_at: new Date().toISOString(),
+      created_at: created_at,
     };
-
-    // Trigger R2 sync (non-blocking)
-    r2Sync.sync().catch(err => {
-      console.error('R2 sync error:', err.message);
-    });
 
     console.log(`✓ New order created: #${newOrder.id} - ${customer_name}`);
 
@@ -532,23 +524,24 @@ router.delete('/upload/:filename', async (req, res) => {
  * GET /api/portfolio
  * Get all portfolio items (public route)
  */
-router.get('/portfolio', (req, res) => {
+router.get('/portfolio', async (req, res) => {
   try {
-    const dbInstance = getDb();
-    const result = dbInstance.exec('SELECT * FROM portfolio ORDER BY display_order ASC, created_at DESC');
+    const result = await pool.query(
+      'SELECT * FROM portfolio ORDER BY display_order ASC, created_at DESC'
+    );
     
-    const portfolio = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      title: row[1],
-      description: row[2],
-      image_url: row[3],
-      category: row[4],
-      client_name: row[5],
-      project_date: row[6],
-      featured: row[7],
-      display_order: row[8],
-      created_at: row[9]
-    })) : [];
+    const portfolio = result.rows.map(row => ({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      image_url: row.image_url,
+      category: row.category,
+      client_name: row.client_name,
+      project_date: row.project_date,
+      featured: row.featured,
+      display_order: row.display_order,
+      created_at: row.created_at
+    }));
 
     return res.status(200).json({
       success: true,
@@ -569,23 +562,24 @@ router.get('/portfolio', (req, res) => {
  * GET /api/portfolio/featured
  * Get featured portfolio items (public route)
  */
-router.get('/portfolio/featured', (req, res) => {
+router.get('/portfolio/featured', async (req, res) => {
   try {
-    const dbInstance = getDb();
-    const result = dbInstance.exec('SELECT * FROM portfolio WHERE featured = 1 ORDER BY display_order ASC, created_at DESC');
+    const result = await pool.query(
+      'SELECT * FROM portfolio WHERE featured = true ORDER BY display_order ASC, created_at DESC'
+    );
     
-    const portfolio = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      title: row[1],
-      description: row[2],
-      image_url: row[3],
-      category: row[4],
-      client_name: row[5],
-      project_date: row[6],
-      featured: row[7],
-      display_order: row[8],
-      created_at: row[9]
-    })) : [];
+    const portfolio = result.rows.map(row => ({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      image_url: row.image_url,
+      category: row.category,
+      client_name: row.client_name,
+      project_date: row.project_date,
+      featured: row.featured,
+      display_order: row.display_order,
+      created_at: row.created_at
+    }));
 
     return res.status(200).json({
       success: true,
@@ -606,20 +600,21 @@ router.get('/portfolio/featured', (req, res) => {
  * GET /api/gallery
  * Get all gallery items (public route)
  */
-router.get('/gallery', (req, res) => {
+router.get('/gallery', async (req, res) => {
   try {
-    const dbInstance = getDb();
-    const result = dbInstance.exec('SELECT * FROM gallery ORDER BY display_order ASC, created_at DESC');
+    const result = await pool.query(
+      'SELECT * FROM gallery ORDER BY display_order ASC, created_at DESC'
+    );
     
-    const gallery = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      title: row[1],
-      image_url: row[2],
-      category: row[3],
-      description: row[4],
-      display_order: row[5],
-      created_at: row[6]
-    })) : [];
+    const gallery = result.rows.map(row => ({
+      id: row.id,
+      title: row.title,
+      image_url: row.image_url,
+      category: row.category,
+      description: row.description,
+      display_order: row.display_order,
+      created_at: row.created_at
+    }));
 
     return res.status(200).json({
       success: true,
@@ -640,17 +635,14 @@ router.get('/gallery', (req, res) => {
  * GET /api/settings
  * Get all settings (public route)
  */
-router.get('/settings', (req, res) => {
+router.get('/settings', async (req, res) => {
   try {
-    const dbInstance = getDb();
-    const result = dbInstance.exec('SELECT key, value FROM settings');
+    const result = await pool.query('SELECT key, value FROM settings');
     
     const settings = {};
-    if (result[0]) {
-      result[0].values.forEach(row => {
-        settings[row[0]] = row[1];
-      });
-    }
+    result.rows.forEach(row => {
+      settings[row.key] = row.value;
+    });
 
     // Ensure defaults exist if settings table is empty
     if (!settings.phone) settings.phone = process.env.COMPANY_PHONE || '(555) 123-4567';
@@ -676,7 +668,7 @@ router.get('/settings', (req, res) => {
  * GET /api/orders/track
  * Track orders by phone number (public route)
  */
-router.get('/orders/track', (req, res) => {
+router.get('/orders/track', async (req, res) => {
   try {
     const { phone, orderId } = req.query;
     
@@ -687,34 +679,33 @@ router.get('/orders/track', (req, res) => {
       });
     }
 
-    const dbInstance = getDb();
-    let query = 'SELECT * FROM orders WHERE customer_phone = ?';
+    let query = 'SELECT * FROM orders WHERE customer_phone = $1';
     const params = [phone];
 
     // If orderId is provided, filter by it too
     if (orderId) {
-      query += ' AND id = ?';
+      query += ' AND id = $2';
       params.push(parseInt(orderId));
     }
 
     query += ' ORDER BY created_at DESC';
 
-    const result = dbInstance.exec(query, params);
+    const result = await pool.query(query, params);
     
-    const orders = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      customer_name: row[1],
-      customer_phone: row[2],
-      customer_email: row[3],
-      product_id: row[4],
-      product_name: row[5],
-      product_price: row[6],
-      quantity: row[7],
-      notes: row[8],
-      order_source: row[9],
-      status: row[10],
-      created_at: row[11]
-    })) : [];
+    const orders = result.rows.map(row => ({
+      id: row.id,
+      customer_name: row.customer_name,
+      customer_phone: row.customer_phone,
+      customer_email: row.customer_email,
+      product_id: row.product_id,
+      product_name: row.product_name,
+      product_price: parseFloat(row.product_price),
+      quantity: row.quantity,
+      notes: row.notes,
+      order_source: row.order_source,
+      status: row.status,
+      created_at: row.created_at
+    }));
 
     return res.status(200).json({
       success: true,
@@ -735,25 +726,24 @@ router.get('/orders/track', (req, res) => {
  * GET /api/products/:id/reviews
  * Get approved reviews for a product (public route)
  */
-router.get('/products/:id/reviews', (req, res) => {
+router.get('/products/:id/reviews', async (req, res) => {
   try {
     const productId = parseInt(req.params.id);
-    const dbInstance = getDb();
-    const result = dbInstance.exec(
-      'SELECT * FROM reviews WHERE product_id = ? AND status = ? ORDER BY created_at DESC',
+    const result = await pool.query(
+      'SELECT * FROM reviews WHERE product_id = $1 AND status = $2 ORDER BY created_at DESC',
       [productId, 'approved']
     );
     
-    const reviews = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      product_id: row[1],
-      customer_name: row[2],
-      customer_email: row[3],
-      rating: row[4],
-      review_text: row[5],
-      status: row[6],
-      created_at: row[7]
-    })) : [];
+    const reviews = result.rows.map(row => ({
+      id: row.id,
+      product_id: row.product_id,
+      customer_name: row.customer_name,
+      customer_email: row.customer_email,
+      rating: row.rating,
+      review_text: row.review_text,
+      status: row.status,
+      created_at: row.created_at
+    }));
 
     // Calculate average rating
     const avgRating = reviews.length > 0 
@@ -802,9 +792,11 @@ router.post('/products/:id/reviews', async (req, res) => {
     }
 
     // Verify product exists
-    const dbInstance = getDb();
-    const productResult = dbInstance.exec('SELECT id FROM products WHERE id = ?', [productId]);
-    if (!productResult[0] || !productResult[0].values[0]) {
+    const productResult = await pool.query(
+      'SELECT id FROM products WHERE id = $1',
+      [productId]
+    );
+    if (!productResult.rows[0]) {
       return res.status(404).json({
         success: false,
         message: 'Product not found',
@@ -812,14 +804,14 @@ router.post('/products/:id/reviews', async (req, res) => {
     }
 
     // Insert review
-    dbInstance.run(
-      `INSERT INTO reviews (product_id, customer_name, customer_email, rating, review_text) VALUES (?, ?, ?, ?, ?)`,
+    const result = await pool.query(
+      `INSERT INTO reviews (product_id, customer_name, customer_email, rating, review_text) 
+       VALUES ($1, $2, $3, $4, $5) 
+       RETURNING id`,
       [productId, customer_name.trim(), customer_email?.trim() || null, rating, review_text?.trim() || null]
     );
 
-    const result = dbInstance.exec('SELECT last_insert_rowid() as id');
-    const reviewId = result[0].values[0][0];
-    await saveDatabase();
+    const reviewId = result.rows[0].id;
 
     console.log(`✓ Review created: #${reviewId} for product #${productId}`);
 
@@ -842,29 +834,28 @@ router.post('/products/:id/reviews', async (req, res) => {
  * GET /api/wishlist/:session_id
  * Get wishlist items for a session (public route)
  */
-router.get('/wishlist/:session_id', (req, res) => {
+router.get('/wishlist/:session_id', async (req, res) => {
   try {
     const sessionId = req.params.session_id;
-    const dbInstance = getDb();
     
-    const result = dbInstance.exec(`
+    const result = await pool.query(`
       SELECT w.*, p.name, p.price, p.image_url, p.category 
       FROM wishlist w 
       LEFT JOIN products p ON w.product_id = p.id 
-      WHERE w.session_id = ? 
+      WHERE w.session_id = $1 
       ORDER BY w.created_at DESC
     `, [sessionId]);
 
-    const wishlistItems = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      product_id: row[1],
-      session_id: row[2],
-      created_at: row[3],
-      name: row[4],
-      price: row[5],
-      image_url: row[6],
-      category: row[7]
-    })) : [];
+    const wishlistItems = result.rows.map(row => ({
+      id: row.id,
+      product_id: row.product_id,
+      session_id: row.session_id,
+      created_at: row.created_at,
+      name: row.name,
+      price: parseFloat(row.price),
+      image_url: row.image_url,
+      category: row.category
+    }));
 
     return res.status(200).json({
       success: true,
@@ -897,11 +888,12 @@ router.post('/wishlist/:session_id/add', async (req, res) => {
       });
     }
 
-    const dbInstance = getDb();
-    
     // Verify product exists
-    const productResult = dbInstance.exec('SELECT id FROM products WHERE id = ?', [product_id]);
-    if (!productResult[0] || !productResult[0].values[0]) {
+    const productResult = await pool.query(
+      'SELECT id FROM products WHERE id = $1',
+      [product_id]
+    );
+    if (!productResult.rows[0]) {
       return res.status(404).json({
         success: false,
         message: 'Product not found',
@@ -910,11 +902,10 @@ router.post('/wishlist/:session_id/add', async (req, res) => {
 
     // Add to wishlist (ignore if already exists due to UNIQUE constraint)
     try {
-      dbInstance.run(
-        'INSERT INTO wishlist (product_id, session_id) VALUES (?, ?)',
+      await pool.query(
+        'INSERT INTO wishlist (product_id, session_id) VALUES ($1, $2)',
         [product_id, sessionId]
       );
-      await saveDatabase();
     } catch (err) {
       // Item already in wishlist
       return res.status(200).json({
@@ -949,12 +940,10 @@ router.delete('/wishlist/:session_id/remove/:product_id', async (req, res) => {
     const sessionId = req.params.session_id;
     const productId = parseInt(req.params.product_id);
 
-    const dbInstance = getDb();
-    dbInstance.run(
-      'DELETE FROM wishlist WHERE session_id = ? AND product_id = ?',
+    await pool.query(
+      'DELETE FROM wishlist WHERE session_id = $1 AND product_id = $2',
       [sessionId, productId]
     );
-    await saveDatabase();
 
     console.log(`✓ Item removed from wishlist: product #${productId}`);
 
@@ -976,26 +965,26 @@ router.delete('/wishlist/:session_id/remove/:product_id', async (req, res) => {
  * GET /api/customer-info/:session_id
  * Get saved customer info for quick checkout (public route)
  */
-router.get('/customer-info/:session_id', (req, res) => {
+router.get('/customer-info/:session_id', async (req, res) => {
   try {
     const sessionId = req.params.session_id;
-    const dbInstance = getDb();
     
-    const result = dbInstance.exec(
-      'SELECT * FROM customer_info WHERE session_id = ?',
+    const result = await pool.query(
+      'SELECT * FROM customer_info WHERE session_id = $1',
       [sessionId]
     );
 
     let customerInfo = null;
-    if (result[0] && result[0].values[0]) {
+    if (result.rows[0]) {
+      const row = result.rows[0];
       customerInfo = {
-        id: result[0].values[0][0],
-        session_id: result[0].values[0][1],
-        customer_name: result[0].values[0][2],
-        customer_phone: result[0].values[0][3],
-        customer_email: result[0].values[0][4],
-        created_at: result[0].values[0][5],
-        updated_at: result[0].values[0][6]
+        id: row.id,
+        session_id: row.session_id,
+        customer_name: row.customer_name,
+        customer_phone: row.customer_phone,
+        customer_email: row.customer_email,
+        created_at: row.created_at,
+        updated_at: row.updated_at
       };
     }
 
@@ -1021,33 +1010,29 @@ router.post('/customer-info/:session_id', async (req, res) => {
   try {
     const sessionId = req.params.session_id;
     const { customer_name, customer_phone, customer_email } = req.body;
-
-    const dbInstance = getDb();
     
     // Check if record exists
-    const existingResult = dbInstance.exec(
-      'SELECT id FROM customer_info WHERE session_id = ?',
+    const existingResult = await pool.query(
+      'SELECT id FROM customer_info WHERE session_id = $1',
       [sessionId]
     );
 
-    if (existingResult[0] && existingResult[0].values[0]) {
+    if (existingResult.rows[0]) {
       // Update existing record
-      dbInstance.run(
+      await pool.query(
         `UPDATE customer_info 
-         SET customer_name = ?, customer_phone = ?, customer_email = ?, updated_at = CURRENT_TIMESTAMP 
-         WHERE session_id = ?`,
+         SET customer_name = $1, customer_phone = $2, customer_email = $3, updated_at = CURRENT_TIMESTAMP 
+         WHERE session_id = $4`,
         [customer_name?.trim() || null, customer_phone?.trim() || null, customer_email?.trim() || null, sessionId]
       );
     } else {
       // Insert new record
-      dbInstance.run(
+      await pool.query(
         `INSERT INTO customer_info (session_id, customer_name, customer_phone, customer_email) 
-         VALUES (?, ?, ?, ?)`,
+         VALUES ($1, $2, $3, $4)`,
         [sessionId, customer_name?.trim() || null, customer_phone?.trim() || null, customer_email?.trim() || null]
       );
     }
-
-    await saveDatabase();
 
     console.log(`✓ Customer info saved for session: ${sessionId}`);
 
@@ -1088,41 +1073,25 @@ router.get('/orders/:id/invoice', async (req, res) => {
     const PDFDocument = require('pdfkit');
     const orderId = parseInt(req.params.id);
 
-    const dbInstance = getDb();
-    const result = dbInstance.exec('SELECT * FROM orders WHERE id = ?', [orderId]);
+    const result = await pool.query('SELECT * FROM orders WHERE id = $1', [orderId]);
 
-    if (!result[0] || !result[0].values[0]) {
+    if (!result.rows[0]) {
       return res.status(404).json({
         success: false,
         message: 'Order not found',
       });
     }
 
-    const order = {
-      id: result[0].values[0][0],
-      customer_name: result[0].values[0][1],
-      customer_phone: result[0].values[0][2],
-      customer_email: result[0].values[0][3],
-      product_id: result[0].values[0][4],
-      product_name: result[0].values[0][5],
-      product_price: result[0].values[0][6],
-      quantity: result[0].values[0][7],
-      notes: result[0].values[0][8],
-      order_source: result[0].values[0][9],
-      status: result[0].values[0][10],
-      created_at: result[0].values[0][11]
-    };
+    const order = result.rows[0];
 
     // Get settings
-    const settingsResult = dbInstance.exec('SELECT key, value FROM settings');
+    const settingsResult = await pool.query('SELECT key, value FROM settings');
     const settings = {};
-    if (settingsResult[0]) {
-      settingsResult[0].values.forEach(row => {
-        settings[row[0]] = row[1];
-      });
-    }
+    settingsResult.rows.forEach(row => {
+      settings[row.key] = row.value;
+    });
 
-    const total = order.product_price * order.quantity;
+    const total = parseFloat(order.product_price) * order.quantity;
 
     // Create PDF
     const doc = new PDFDocument({ margin: 50 });
@@ -1245,12 +1214,13 @@ router.post('/push/subscribe', async (req, res) => {
       });
     }
 
-    const dbInstance = getDb();
-    dbInstance.run(
-      'INSERT OR IGNORE INTO push_subscriptions (session_id, endpoint, keys) VALUES (?, ?, ?)',
+    // Use INSERT ... ON CONFLICT for PostgreSQL (equivalent to INSERT OR IGNORE)
+    await pool.query(
+      `INSERT INTO push_subscriptions (session_id, endpoint, keys) 
+       VALUES ($1, $2, $3) 
+       ON CONFLICT (session_id, endpoint) DO NOTHING`,
       [session_id, endpoint, keys || '{}']
     );
-    await saveDatabase();
 
     console.log(`✓ Push subscription saved for session: ${session_id}`);
 

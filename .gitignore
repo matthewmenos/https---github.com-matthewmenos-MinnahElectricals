@@ -44,6 +44,7 @@ temp/
 *.tmp
 *.temp
 VERCEL_DEPLOYMENT.md
+POSTGRESQL_MIGRATION_SUMMARY.md
 
 # Uploads (if any)
 uploads/

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getDb, saveDatabase } = require('../config/db');
+const { pool } = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
@@ -27,7 +27,7 @@ const upload = multer({
  * POST /api/admin/login
  * Authenticate admin user and return JWT token
  */
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
 
@@ -40,14 +40,8 @@ router.post('/login', (req, res) => {
     }
 
     // Find user in database
-    const dbInstance = getDb();
-    const result = dbInstance.exec('SELECT * FROM users WHERE username = ?', [username]);
-    const user = result[0] && result[0].values[0] ? {
-      id: result[0].values[0][0],
-      username: result[0].values[0][1],
-      password_hash: result[0].values[0][2],
-      created_at: result[0].values[0][3]
-    } : null;
+    const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+    const user = result.rows[0] || null;
 
     if (!user) {
       return res.status(401).json({
@@ -101,7 +95,7 @@ router.post('/login', (req, res) => {
  * GET /api/admin/leads
  * Get all leads (protected route)
  */
-router.get('/leads', authMiddleware, (req, res) => {
+router.get('/leads', authMiddleware, async (req, res) => {
   try {
     const { status, urgency } = req.query;
     
@@ -111,13 +105,13 @@ router.get('/leads', authMiddleware, (req, res) => {
 
     // Filter by status if provided
     if (status && status !== 'all') {
-      conditions.push('status = ?');
+      conditions.push(`status = $${params.length + 1}`);
       params.push(status);
     }
 
     // Filter by urgency if provided
     if (urgency && urgency !== 'all') {
-      conditions.push('urgency = ?');
+      conditions.push(`urgency = $${params.length + 1}`);
       params.push(urgency);
     }
 
@@ -129,19 +123,18 @@ router.get('/leads', authMiddleware, (req, res) => {
     // Order by most recent first
     query += ' ORDER BY created_at DESC';
 
-    const dbInstance = getDb();
-    const result = dbInstance.exec(query, params);
-    const leads = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      full_name: row[1],
-      phone: row[2],
-      email: row[3],
-      service_needed: row[4],
-      urgency: row[5],
-      message: row[6],
-      status: row[7],
-      created_at: row[8]
-    })) : [];
+    const result = await pool.query(query, params);
+    const leads = result.rows.map(row => ({
+      id: row.id,
+      full_name: row.full_name,
+      phone: row.phone,
+      email: row.email,
+      service_needed: row.service_needed,
+      urgency: row.urgency,
+      message: row.message,
+      status: row.status,
+      created_at: row.created_at
+    }));
 
     // Format dates for display
     const formattedLeads = leads.map(lead => ({
@@ -185,19 +178,8 @@ router.patch('/leads/:id', authMiddleware, async (req, res) => {
     }
 
     // Check if lead exists
-    const dbInstance = getDb();
-    const checkResult = dbInstance.exec('SELECT * FROM leads WHERE id = ?', [leadId]);
-    const existingLead = checkResult[0] && checkResult[0].values[0] ? {
-      id: checkResult[0].values[0][0],
-      full_name: checkResult[0].values[0][1],
-      phone: checkResult[0].values[0][2],
-      email: checkResult[0].values[0][3],
-      service_needed: checkResult[0].values[0][4],
-      urgency: checkResult[0].values[0][5],
-      message: checkResult[0].values[0][6],
-      status: checkResult[0].values[0][7],
-      created_at: checkResult[0].values[0][8]
-    } : null;
+    const checkResult = await pool.query('SELECT * FROM leads WHERE id = $1', [leadId]);
+    const existingLead = checkResult.rows[0] || null;
 
     if (!existingLead) {
       return res.status(404).json({
@@ -207,8 +189,7 @@ router.patch('/leads/:id', authMiddleware, async (req, res) => {
     }
 
     // Update lead status
-    dbInstance.run('UPDATE leads SET status = ? WHERE id = ?', [status, leadId]);
-    await saveDatabase();
+    await pool.query('UPDATE leads SET status = $1 WHERE id = $2', [status, leadId]);
 
     console.log(`✓ Lead #${leadId} status updated to: ${status}`);
 
@@ -239,19 +220,8 @@ router.delete('/leads/:id', authMiddleware, async (req, res) => {
     const leadId = parseInt(req.params.id);
 
     // Check if lead exists
-    const dbInstance = getDb();
-    const checkResult = dbInstance.exec('SELECT * FROM leads WHERE id = ?', [leadId]);
-    const existingLead = checkResult[0] && checkResult[0].values[0] ? {
-      id: checkResult[0].values[0][0],
-      full_name: checkResult[0].values[0][1],
-      phone: checkResult[0].values[0][2],
-      email: checkResult[0].values[0][3],
-      service_needed: checkResult[0].values[0][4],
-      urgency: checkResult[0].values[0][5],
-      message: checkResult[0].values[0][6],
-      status: checkResult[0].values[0][7],
-      created_at: checkResult[0].values[0][8]
-    } : null;
+    const checkResult = await pool.query('SELECT * FROM leads WHERE id = $1', [leadId]);
+    const existingLead = checkResult.rows[0] || null;
 
     if (!existingLead) {
       return res.status(404).json({
@@ -261,8 +231,7 @@ router.delete('/leads/:id', authMiddleware, async (req, res) => {
     }
 
     // Delete lead
-    dbInstance.run('DELETE FROM leads WHERE id = ?', [leadId]);
-    await saveDatabase();
+    await pool.query('DELETE FROM leads WHERE id = $1', [leadId]);
 
     console.log(`✓ Lead #${leadId} deleted`);
 
@@ -284,40 +253,38 @@ router.delete('/leads/:id', authMiddleware, async (req, res) => {
  * GET /api/admin/stats
  * Get dashboard statistics (protected route)
  */
-router.get('/stats', authMiddleware, (req, res) => {
+router.get('/stats', authMiddleware, async (req, res) => {
   try {
-    const dbInstance = getDb();
-    
     // Total leads
-    const totalResult = dbInstance.exec('SELECT COUNT(*) as count FROM leads');
-    const totalLeads = totalResult[0] && totalResult[0].values[0] ? totalResult[0].values[0][0] : 0;
+    const totalResult = await pool.query('SELECT COUNT(*) as count FROM leads');
+    const totalLeads = parseInt(totalResult.rows[0].count) || 0;
 
     // Leads by status
-    const statusResult = dbInstance.exec(`
+    const statusResult = await pool.query(`
       SELECT status, COUNT(*) as count 
       FROM leads 
       GROUP BY status
     `);
-    const leadsByStatus = statusResult[0] ? statusResult[0].values.map(row => ({
-      status: row[0],
-      count: row[1]
-    })) : [];
+    const leadsByStatus = statusResult.rows.map(row => ({
+      status: row.status,
+      count: parseInt(row.count)
+    }));
 
     // Recent leads (last 7 days)
-    const recentResult = dbInstance.exec(`
+    const recentResult = await pool.query(`
       SELECT COUNT(*) as count 
       FROM leads 
-      WHERE created_at >= datetime('now', '-7 days')
+      WHERE created_at >= NOW() - INTERVAL '7 days'
     `);
-    const recentLeads = recentResult[0] && recentResult[0].values[0] ? recentResult[0].values[0][0] : 0;
+    const recentLeads = parseInt(recentResult.rows[0].count) || 0;
 
     // Emergency leads
-    const emergencyResult = dbInstance.exec(`
+    const emergencyResult = await pool.query(`
       SELECT COUNT(*) as count 
       FROM leads 
       WHERE urgency = 'Emergency' AND status = 'New'
     `);
-    const emergencyLeads = emergencyResult[0] && emergencyResult[0].values[0] ? emergencyResult[0].values[0][0] : 0;
+    const emergencyLeads = parseInt(emergencyResult.rows[0].count) || 0;
 
     return res.status(200).json({
       success: true,
@@ -346,18 +313,16 @@ router.delete('/portfolio/:id', authMiddleware, async (req, res) => {
   try {
     const portfolioId = parseInt(req.params.id);
 
-    const dbInstance = getDb();
-    const checkResult = dbInstance.exec('SELECT * FROM portfolio WHERE id = ?', [portfolioId]);
+    const checkResult = await pool.query('SELECT * FROM portfolio WHERE id = $1', [portfolioId]);
     
-    if (!checkResult[0] || !checkResult[0].values[0]) {
+    if (!checkResult.rows[0]) {
       return res.status(404).json({
         success: false,
         message: 'Portfolio item not found',
       });
     }
 
-    dbInstance.run('DELETE FROM portfolio WHERE id = ?', [portfolioId]);
-    await saveDatabase();
+    await pool.query('DELETE FROM portfolio WHERE id = $1', [portfolioId]);
 
     console.log(`✓ Portfolio item deleted: #${portfolioId}`);
 
@@ -379,20 +344,19 @@ router.delete('/portfolio/:id', authMiddleware, async (req, res) => {
  * GET /api/admin/gallery
  * Get all gallery items (protected route)
  */
-router.get('/gallery', authMiddleware, (req, res) => {
+router.get('/gallery', authMiddleware, async (req, res) => {
   try {
-    const dbInstance = getDb();
-    const result = dbInstance.exec('SELECT * FROM gallery ORDER BY display_order ASC, created_at DESC');
+    const result = await pool.query('SELECT * FROM gallery ORDER BY display_order ASC, created_at DESC');
     
-    const gallery = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      title: row[1],
-      image_url: row[2],
-      category: row[3],
-      description: row[4],
-      display_order: row[5],
-      created_at: row[6]
-    })) : [];
+    const gallery = result.rows.map(row => ({
+      id: row.id,
+      title: row.title,
+      image_url: row.image_url,
+      category: row.category,
+      description: row.description,
+      display_order: row.display_order,
+      created_at: row.created_at
+    }));
 
     return res.status(200).json({
       success: true,
@@ -424,15 +388,14 @@ router.post('/gallery', authMiddleware, async (req, res) => {
       });
     }
 
-    const dbInstance = getDb();
-    dbInstance.run(
-      `INSERT INTO gallery (title, image_url, category, description, display_order) VALUES (?, ?, ?, ?, ?)`,
+    const result = await pool.query(
+      `INSERT INTO gallery (title, image_url, category, description, display_order) 
+       VALUES ($1, $2, $3, $4, $5) 
+       RETURNING id`,
       [title || '', image_url, category || '', description || '', display_order || 0]
     );
     
-    const result = dbInstance.exec('SELECT last_insert_rowid() as id');
-    const galleryId = result[0].values[0][0];
-    await saveDatabase();
+    const galleryId = result.rows[0].id;
 
     console.log(`✓ Gallery item created: #${galleryId}`);
 
@@ -460,21 +423,19 @@ router.put('/gallery/:id', authMiddleware, async (req, res) => {
     const galleryId = parseInt(req.params.id);
     const { title, image_url, category, description, display_order } = req.body;
 
-    const dbInstance = getDb();
-    const checkResult = dbInstance.exec('SELECT * FROM gallery WHERE id = ?', [galleryId]);
+    const checkResult = await pool.query('SELECT * FROM gallery WHERE id = $1', [galleryId]);
     
-    if (!checkResult[0] || !checkResult[0].values[0]) {
+    if (!checkResult.rows[0]) {
       return res.status(404).json({
         success: false,
         message: 'Gallery item not found',
       });
     }
 
-    dbInstance.run(
-      `UPDATE gallery SET title = ?, image_url = ?, category = ?, description = ?, display_order = ? WHERE id = ?`,
+    await pool.query(
+      `UPDATE gallery SET title = $1, image_url = $2, category = $3, description = $4, display_order = $5 WHERE id = $6`,
       [title || '', image_url, category || '', description || '', display_order || 0, galleryId]
     );
-    await saveDatabase();
 
     console.log(`✓ Gallery item updated: #${galleryId}`);
 
@@ -500,18 +461,16 @@ router.delete('/gallery/:id', authMiddleware, async (req, res) => {
   try {
     const galleryId = parseInt(req.params.id);
 
-    const dbInstance = getDb();
-    const checkResult = dbInstance.exec('SELECT * FROM gallery WHERE id = ?', [galleryId]);
+    const checkResult = await pool.query('SELECT * FROM gallery WHERE id = $1', [galleryId]);
     
-    if (!checkResult[0] || !checkResult[0].values[0]) {
+    if (!checkResult.rows[0]) {
       return res.status(404).json({
         success: false,
         message: 'Gallery item not found',
       });
     }
 
-    dbInstance.run('DELETE FROM gallery WHERE id = ?', [galleryId]);
-    await saveDatabase();
+    await pool.query('DELETE FROM gallery WHERE id = $1', [galleryId]);
 
     console.log(`✓ Gallery item deleted: #${galleryId}`);
 
@@ -534,86 +493,85 @@ router.delete('/gallery/:id', authMiddleware, async (req, res) => {
  * GET /api/admin/analytics
  * Get advanced analytics (protected route)
  */
-router.get('/analytics', authMiddleware, (req, res) => {
+router.get('/analytics', authMiddleware, async (req, res) => {
   try {
-    const dbInstance = getDb();
     const { period = '30' } = req.query; // days, default 30
     const days = parseInt(period);
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
     // Total revenue
-    const revenueResult = dbInstance.exec(`
-      SELECT SUM(product_price * quantity) as total_revenue 
+    const revenueResult = await pool.query(`
+      SELECT COALESCE(SUM(product_price * quantity), 0) as total_revenue 
       FROM orders 
-      WHERE status = 'Completed' AND created_at >= ?
+      WHERE status = 'Completed' AND created_at >= $1
     `, [startDate.toISOString()]);
-    const totalRevenue = revenueResult[0] && revenueResult[0].values[0] ? revenueResult[0].values[0][0] || 0 : 0;
+    const totalRevenue = parseFloat(revenueResult.rows[0].total_revenue) || 0;
 
     // Total orders
-    const ordersResult = dbInstance.exec(`
+    const ordersResult = await pool.query(`
       SELECT COUNT(*) as count, 
              SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed,
              SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending,
              SUM(CASE WHEN status = 'Confirmed' THEN 1 ELSE 0 END) as confirmed
       FROM orders 
-      WHERE created_at >= ?
+      WHERE created_at >= $1
     `, [startDate.toISOString()]);
-    const ordersStats = ordersResult[0] && ordersResult[0].values[0] ? {
-      total: ordersResult[0].values[0][0] || 0,
-      completed: ordersResult[0].values[0][1] || 0,
-      pending: ordersResult[0].values[0][2] || 0,
-      confirmed: ordersResult[0].values[0][3] || 0
+    const ordersStats = ordersResult.rows[0] ? {
+      total: parseInt(ordersResult.rows[0].count) || 0,
+      completed: parseInt(ordersResult.rows[0].completed) || 0,
+      pending: parseInt(ordersResult.rows[0].pending) || 0,
+      confirmed: parseInt(ordersResult.rows[0].confirmed) || 0
     } : { total: 0, completed: 0, pending: 0, confirmed: 0 };
 
     // Top selling products
-    const topProductsResult = dbInstance.exec(`
+    const topProductsResult = await pool.query(`
       SELECT product_id, product_name, SUM(quantity) as total_qty, SUM(product_price * quantity) as total_sales
       FROM orders
-      WHERE created_at >= ?
-      GROUP BY product_id
+      WHERE created_at >= $1
+      GROUP BY product_id, product_name
       ORDER BY total_qty DESC
       LIMIT 10
     `, [startDate.toISOString()]);
-    const topProducts = topProductsResult[0] ? topProductsResult[0].values.map(row => ({
-      product_id: row[0],
-      product_name: row[1],
-      total_quantity: row[2],
-      total_sales: row[3]
-    })) : [];
+    const topProducts = topProductsResult.rows.map(row => ({
+      product_id: row.product_id,
+      product_name: row.product_name,
+      total_quantity: parseInt(row.total_qty),
+      total_sales: parseFloat(row.total_sales)
+    }));
 
     // Daily sales for chart
-    const dailySalesResult = dbInstance.exec(`
-      SELECT DATE(created_at) as date, SUM(product_price * quantity) as daily_total
+    const dailySalesResult = await pool.query(`
+      SELECT DATE(created_at) as date, COALESCE(SUM(product_price * quantity), 0) as daily_total
       FROM orders
-      WHERE created_at >= ? AND status = 'Completed'
+      WHERE created_at >= $1 AND status = 'Completed'
       GROUP BY DATE(created_at)
       ORDER BY date ASC
     `, [startDate.toISOString()]);
-    const dailySales = dailySalesResult[0] ? dailySalesResult[0].values.map(row => ({
-      date: row[0],
-      total: row[1] || 0
-    })) : [];
+    const dailySales = dailySalesResult.rows.map(row => ({
+      date: row.date,
+      total: parseFloat(row.daily_total) || 0
+    }));
 
     // Customer statistics
-    const customerStatsResult = dbInstance.exec(`
+    const customerStatsResult = await pool.query(`
       SELECT 
         COUNT(DISTINCT customer_phone) as unique_customers,
         COUNT(DISTINCT CASE WHEN customer_email != '' THEN customer_email END) as with_email,
         SUM(CASE WHEN customer_email != '' THEN 1 ELSE 0 END) as email_subscribers
       FROM orders
-      WHERE created_at >= ?
+      WHERE created_at >= $1
     `, [startDate.toISOString()]);
-    const customerStats = customerStatsResult[0] && customerStatsResult[0].values[0] ? {
-      unique_customers: customerStatsResult[0].values[0][0] || 0,
-      with_email: customerStatsResult[0].values[0][1] || 0,
-      email_subscribers: customerStatsResult[0].values[0][2] || 0
+    const customerStats = customerStatsResult.rows[0] ? {
+      unique_customers: parseInt(customerStatsResult.rows[0].unique_customers) || 0,
+      with_email: parseInt(customerStatsResult.rows[0].with_email) || 0,
+      email_subscribers: parseInt(customerStatsResult.rows[0].email_subscribers) || 0
     } : { unique_customers: 0, with_email: 0, email_subscribers: 0 };
 
     // Appointment statistics (gracefully handle missing table)
     let appointmentStats = { total: 0, confirmed: 0, pending: 0, completed: 0, cancelled: 0 };
     try {
-      const appointmentStatsResult = dbInstance.exec(`
+      const appointmentStatsResult = await pool.query(`
         SELECT 
           COUNT(*) as total_appointments,
           SUM(CASE WHEN status = 'Confirmed' THEN 1 ELSE 0 END) as confirmed,
@@ -621,15 +579,15 @@ router.get('/analytics', authMiddleware, (req, res) => {
           SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed,
           SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) as cancelled
         FROM appointments
-        WHERE created_at >= ?
+        WHERE created_at >= $1
       `, [startDate.toISOString()]);
-      if (appointmentStatsResult[0] && appointmentStatsResult[0].values[0]) {
+      if (appointmentStatsResult.rows[0]) {
         appointmentStats = {
-          total: appointmentStatsResult[0].values[0][0] || 0,
-          confirmed: appointmentStatsResult[0].values[0][1] || 0,
-          pending: appointmentStatsResult[0].values[0][2] || 0,
-          completed: appointmentStatsResult[0].values[0][3] || 0,
-          cancelled: appointmentStatsResult[0].values[0][4] || 0
+          total: parseInt(appointmentStatsResult.rows[0].total_appointments) || 0,
+          confirmed: parseInt(appointmentStatsResult.rows[0].confirmed) || 0,
+          pending: parseInt(appointmentStatsResult.rows[0].pending) || 0,
+          completed: parseInt(appointmentStatsResult.rows[0].completed) || 0,
+          cancelled: parseInt(appointmentStatsResult.rows[0].cancelled) || 0
         };
       }
     } catch (e) {
@@ -639,7 +597,7 @@ router.get('/analytics', authMiddleware, (req, res) => {
     // Service request statistics (gracefully handle missing table)
     let serviceRequestStats = { total: 0, open: 0, in_progress: 0, completed: 0, urgent: 0 };
     try {
-      const serviceRequestStatsResult = dbInstance.exec(`
+      const serviceRequestStatsResult = await pool.query(`
         SELECT 
           COUNT(*) as total_requests,
           SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) as open,
@@ -647,15 +605,15 @@ router.get('/analytics', authMiddleware, (req, res) => {
           SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
           SUM(CASE WHEN priority = 'urgent' THEN 1 ELSE 0 END) as urgent
         FROM service_requests
-        WHERE created_at >= ?
+        WHERE created_at >= $1
       `, [startDate.toISOString()]);
-      if (serviceRequestStatsResult[0] && serviceRequestStatsResult[0].values[0]) {
+      if (serviceRequestStatsResult.rows[0]) {
         serviceRequestStats = {
-          total: serviceRequestStatsResult[0].values[0][0] || 0,
-          open: serviceRequestStatsResult[0].values[0][1] || 0,
-          in_progress: serviceRequestStatsResult[0].values[0][2] || 0,
-          completed: serviceRequestStatsResult[0].values[0][3] || 0,
-          urgent: serviceRequestStatsResult[0].values[0][4] || 0
+          total: parseInt(serviceRequestStatsResult.rows[0].total_requests) || 0,
+          open: parseInt(serviceRequestStatsResult.rows[0].open) || 0,
+          in_progress: parseInt(serviceRequestStatsResult.rows[0].in_progress) || 0,
+          completed: parseInt(serviceRequestStatsResult.rows[0].completed) || 0,
+          urgent: parseInt(serviceRequestStatsResult.rows[0].urgent) || 0
         };
       }
     } catch (e) {
@@ -663,36 +621,36 @@ router.get('/analytics', authMiddleware, (req, res) => {
     }
 
     // Loyalty program statistics
-    const loyaltyStatsResult = dbInstance.exec(`
+    const loyaltyStatsResult = await pool.query(`
       SELECT 
         COUNT(*) as total_members,
-        SUM(points) as total_points_issued,
-        SUM(total_spent) as total_loyalty_spent,
-        SUM(total_orders) as total_loyalty_orders,
-        AVG(points) as avg_points_per_member
+        COALESCE(SUM(points), 0) as total_points_issued,
+        COALESCE(SUM(total_spent), 0) as total_loyalty_spent,
+        COALESCE(SUM(total_orders), 0) as total_loyalty_orders,
+        COALESCE(AVG(points), 0) as avg_points_per_member
       FROM loyalty_program
     `);
-    const loyaltyStats = loyaltyStatsResult[0] && loyaltyStatsResult[0].values[0] ? {
-      total_members: loyaltyStatsResult[0].values[0][0] || 0,
-      total_points_issued: loyaltyStatsResult[0].values[0][1] || 0,
-      total_loyalty_spent: loyaltyStatsResult[0].values[0][2] || 0,
-      total_loyalty_orders: loyaltyStatsResult[0].values[0][3] || 0,
-      avg_points_per_member: loyaltyStatsResult[0].values[0][4] || 0
+    const loyaltyStats = loyaltyStatsResult.rows[0] ? {
+      total_members: parseInt(loyaltyStatsResult.rows[0].total_members) || 0,
+      total_points_issued: parseInt(loyaltyStatsResult.rows[0].total_points_issued) || 0,
+      total_loyalty_spent: parseFloat(loyaltyStatsResult.rows[0].total_loyalty_spent) || 0,
+      total_loyalty_orders: parseInt(loyaltyStatsResult.rows[0].total_loyalty_orders) || 0,
+      avg_points_per_member: parseFloat(loyaltyStatsResult.rows[0].avg_points_per_member) || 0
     } : { total_members: 0, total_points_issued: 0, total_loyalty_spent: 0, total_loyalty_orders: 0, avg_points_per_member: 0 };
 
     // Newsletter statistics (gracefully handle missing table)
     let newsletterStats = { total_subscribers: 0, active_subscribers: 0 };
     try {
-      const newsletterStatsResult = dbInstance.exec(`
+      const newsletterStatsResult = await pool.query(`
         SELECT 
           COUNT(*) as total_subscribers,
           SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_subscribers
         FROM newsletter_subscribers
       `);
-      if (newsletterStatsResult[0] && newsletterStatsResult[0].values[0]) {
+      if (newsletterStatsResult.rows[0]) {
         newsletterStats = {
-          total_subscribers: newsletterStatsResult[0].values[0][0] || 0,
-          active_subscribers: newsletterStatsResult[0].values[0][1] || 0
+          total_subscribers: parseInt(newsletterStatsResult.rows[0].total_subscribers) || 0,
+          active_subscribers: parseInt(newsletterStatsResult.rows[0].active_subscribers) || 0
         };
       }
     } catch (e) {
@@ -700,20 +658,20 @@ router.get('/analytics', authMiddleware, (req, res) => {
     }
 
     // Lead statistics
-    const leadStatsResult = dbInstance.exec(`
+    const leadStatsResult = await pool.query(`
       SELECT 
         COUNT(*) as total_leads,
         SUM(CASE WHEN urgency = 'Emergency' THEN 1 ELSE 0 END) as emergency_leads,
         SUM(CASE WHEN status = 'New' THEN 1 ELSE 0 END) as new_leads,
         SUM(CASE WHEN status = 'Contacted' THEN 1 ELSE 0 END) as contacted_leads
       FROM leads
-      WHERE created_at >= ?
+      WHERE created_at >= $1
     `, [startDate.toISOString()]);
-    const leadStats = leadStatsResult[0] && leadStatsResult[0].values[0] ? {
-      total: leadStatsResult[0].values[0][0] || 0,
-      emergency: leadStatsResult[0].values[0][1] || 0,
-      new: leadStatsResult[0].values[0][2] || 0,
-      contacted: leadStatsResult[0].values[0][3] || 0
+    const leadStats = leadStatsResult.rows[0] ? {
+      total: parseInt(leadStatsResult.rows[0].total_leads) || 0,
+      emergency: parseInt(leadStatsResult.rows[0].emergency_leads) || 0,
+      new: parseInt(leadStatsResult.rows[0].new_leads) || 0,
+      contacted: parseInt(leadStatsResult.rows[0].contacted_leads) || 0
     } : { total: 0, emergency: 0, new: 0, contacted: 0 };
 
     return res.status(200).json({
@@ -748,9 +706,8 @@ router.get('/analytics', authMiddleware, (req, res) => {
  * GET /api/admin/customers
  * Get all customers with order history (protected route)
  */
-router.get('/customers', authMiddleware, (req, res) => {
+router.get('/customers', authMiddleware, async (req, res) => {
   try {
-    const dbInstance = getDb();
     const { search = '' } = req.query;
 
     let query = `
@@ -759,7 +716,7 @@ router.get('/customers', authMiddleware, (req, res) => {
         customer_phone,
         customer_email,
         COUNT(*) as order_count,
-        SUM(product_price * quantity) as total_spent,
+        COALESCE(SUM(product_price * quantity), 0) as total_spent,
         MAX(created_at) as last_order_date,
         MIN(created_at) as first_order_date
       FROM orders
@@ -767,22 +724,22 @@ router.get('/customers', authMiddleware, (req, res) => {
     const params = [];
 
     if (search) {
-      query += ` WHERE customer_name LIKE ? OR customer_phone LIKE ? OR customer_email LIKE ?`;
-      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      query += ` WHERE customer_name ILIKE $1 OR customer_phone ILIKE $1 OR customer_email ILIKE $1`;
+      params.push(`%${search}%`);
     }
 
     query += ` GROUP BY customer_phone ORDER BY last_order_date DESC`;
 
-    const result = dbInstance.exec(query, params);
-    const customers = result[0] ? result[0].values.map(row => ({
-      customer_name: row[0],
-      customer_phone: row[1],
-      customer_email: row[2],
-      order_count: row[3],
-      total_spent: row[4] || 0,
-      last_order_date: row[5],
-      first_order_date: row[6]
-    })) : [];
+    const result = await pool.query(query, params);
+    const customers = result.rows.map(row => ({
+      customer_name: row.customer_name,
+      customer_phone: row.customer_phone,
+      customer_email: row.customer_email,
+      order_count: parseInt(row.order_count),
+      total_spent: parseFloat(row.total_spent) || 0,
+      last_order_date: row.last_order_date,
+      first_order_date: row.first_order_date
+    }));
 
     return res.status(200).json({
       success: true,
@@ -803,48 +760,48 @@ router.get('/customers', authMiddleware, (req, res) => {
  * GET /api/admin/inventory
  * Get inventory status (protected route)
  */
-router.get('/inventory', authMiddleware, (req, res) => {
+router.get('/inventory', authMiddleware, async (req, res) => {
   try {
-    const dbInstance = getDb();
     const { low_stock = 'false' } = req.query;
 
     let query = 'SELECT * FROM products';
     if (low_stock === 'true') {
-      query += ' WHERE in_stock = 0';
+      query += ' WHERE in_stock = false';
     }
     query += ' ORDER BY created_at DESC';
 
-    const result = dbInstance.exec(query);
-    const products = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      name: row[1],
-      description: row[2],
-      price: row[3],
-      image_url: row[4],
-      category: row[5],
-      in_stock: row[6],
-      created_at: row[7],
-      updated_at: row[8]
-    })) : [];
+    const result = await pool.query(query);
+    const products = result.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      price: parseFloat(row.price),
+      image_url: row.image_url,
+      category: row.category,
+      in_stock: row.in_stock,
+      created_at: row.created_at,
+      updated_at: row.updated_at
+    }));
 
     // Get order counts for each product
-    const productsWithStats = products.map(product => {
-      const orderStats = dbInstance.exec(`
-        SELECT COUNT(*) as order_count, SUM(quantity) as total_ordered
+    const productsWithStats = [];
+    for (const product of products) {
+      const orderStats = await pool.query(`
+        SELECT COUNT(*) as order_count, COALESCE(SUM(quantity), 0) as total_ordered
         FROM orders
-        WHERE product_id = ?
+        WHERE product_id = $1
       `, [product.id]);
       
-      const stats = orderStats[0] && orderStats[0].values[0] ? {
-        order_count: orderStats[0].values[0][0] || 0,
-        total_ordered: orderStats[0].values[0][1] || 0
+      const stats = orderStats.rows[0] ? {
+        order_count: parseInt(orderStats.rows[0].order_count) || 0,
+        total_ordered: parseInt(orderStats.rows[0].total_ordered) || 0
       } : { order_count: 0, total_ordered: 0 };
 
-      return {
+      productsWithStats.push({
         ...product,
         ...stats
-      };
-    });
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -891,13 +848,11 @@ router.patch('/orders/bulk-status', authMiddleware, async (req, res) => {
       });
     }
 
-    const dbInstance = getDb();
-    const placeholders = order_ids.map(() => '?').join(',');
-    dbInstance.run(
-      `UPDATE orders SET status = ? WHERE id IN (${placeholders})`,
+    const placeholders = order_ids.map((_, i) => `$${i + 2}`).join(',');
+    await pool.query(
+      `UPDATE orders SET status = $1 WHERE id IN (${placeholders})`,
       [status, ...order_ids]
     );
-    await saveDatabase();
 
     console.log(`✓ Bulk updated ${order_ids.length} orders to status: ${status}`);
 
@@ -920,16 +875,13 @@ router.patch('/orders/bulk-status', authMiddleware, async (req, res) => {
  * GET /api/admin/settings
  * Get all settings (protected route)
  */
-router.get('/settings', authMiddleware, (req, res) => {
+router.get('/settings', authMiddleware, async (req, res) => {
   try {
-    const dbInstance = getDb();
-    const result = dbInstance.exec('SELECT key, value FROM settings');
+    const result = await pool.query('SELECT key, value FROM settings');
     const settings = {};
-    if (result[0]) {
-      result[0].values.forEach(row => {
-        settings[row[0]] = row[1];
-      });
-    }
+    result.rows.forEach(row => {
+      settings[row.key] = row.value;
+    });
     return res.status(200).json({ success: true, settings: settings });
   } catch (error) {
     console.error('Error fetching settings:', error);
@@ -944,25 +896,23 @@ router.get('/settings', authMiddleware, (req, res) => {
 router.put('/settings', authMiddleware, async (req, res) => {
   try {
     const { phone, email, location, whatsapp } = req.body;
-    const dbInstance = getDb();
-    const existingCount = dbInstance.exec('SELECT COUNT(*) as count FROM settings')[0];
-    if (existingCount && existingCount.values[0][0] === 0) {
+    const existingCount = await pool.query('SELECT COUNT(*) as count FROM settings');
+    if (parseInt(existingCount.rows[0].count) === 0) {
       const defaults = [
         ['phone', phone || process.env.COMPANY_PHONE || '(555) 123-4567'],
         ['email', email || process.env.COMPANY_EMAIL || 'info@minnahelectricals.com'],
         ['location', location || process.env.COMPANY_LOCATION || 'Serving the Local Area'],
         ['whatsapp', whatsapp || ''],
       ];
-      defaults.forEach(([key, value]) => {
-        dbInstance.run('INSERT INTO settings (key, value) VALUES (?, ?)', [key, value]);
-      });
+      for (const [key, value] of defaults) {
+        await pool.query('INSERT INTO settings (key, value) VALUES ($1, $2)', [key, value]);
+      }
     } else {
-      if (phone !== undefined) dbInstance.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['phone', phone]);
-      if (email !== undefined) dbInstance.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['email', email]);
-      if (location !== undefined) dbInstance.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['location', location]);
-      if (whatsapp !== undefined) dbInstance.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['whatsapp', whatsapp]);
+      if (phone !== undefined) await pool.query('INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2', ['phone', phone]);
+      if (email !== undefined) await pool.query('INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2', ['email', email]);
+      if (location !== undefined) await pool.query('INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2', ['location', location]);
+      if (whatsapp !== undefined) await pool.query('INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2', ['whatsapp', whatsapp]);
     }
-    await saveDatabase();
     console.log('Settings updated');
     return res.status(200).json({ success: true, message: 'Settings updated successfully' });
   } catch (error) {
@@ -975,31 +925,30 @@ router.put('/settings', authMiddleware, async (req, res) => {
  * GET /api/admin/templates
  * Get all communication templates
  */
-router.get('/templates', authMiddleware, (req, res) => {
+router.get('/templates', authMiddleware, async (req, res) => {
   try {
     const { type } = req.query;
     let query = 'SELECT * FROM templates';
     const params = [];
 
     if (type) {
-      query += ' WHERE type = ?';
+      query += ' WHERE type = $1';
       params.push(type);
     }
 
     query += ' ORDER BY name, created_at DESC';
 
-    const dbInstance = getDb();
-    const result = dbInstance.exec(query, params);
+    const result = await pool.query(query, params);
 
-    const templates = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      name: row[1],
-      type: row[2],
-      subject: row[3],
-      content: row[4],
-      created_at: row[5],
-      updated_at: row[6]
-    })) : [];
+    const templates = result.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      type: row.type,
+      subject: row.subject,
+      content: row.content,
+      created_at: row.created_at,
+      updated_at: row.updated_at
+    }));
 
     return res.status(200).json({
       success: true,
@@ -1038,15 +987,12 @@ router.post('/templates', authMiddleware, async (req, res) => {
       });
     }
 
-    const dbInstance = getDb();
-    dbInstance.run(
-      'INSERT INTO templates (name, type, subject, content) VALUES (?, ?, ?, ?)',
+    const result = await pool.query(
+      'INSERT INTO templates (name, type, subject, content) VALUES ($1, $2, $3, $4) RETURNING id',
       [name, type, subject || null, content]
     );
 
-    const result = dbInstance.exec('SELECT last_insert_rowid() as id');
-    const templateId = result[0].values[0][0];
-    await saveDatabase();
+    const templateId = result.rows[0].id;
 
     console.log(`✓ Template created: #${templateId} - ${name}`);
 
@@ -1073,21 +1019,19 @@ router.put('/templates/:id', authMiddleware, async (req, res) => {
     const templateId = parseInt(req.params.id);
     const { name, type, subject, content } = req.body;
 
-    const dbInstance = getDb();
-    const checkResult = dbInstance.exec('SELECT id FROM templates WHERE id = ?', [templateId]);
+    const checkResult = await pool.query('SELECT id FROM templates WHERE id = $1', [templateId]);
 
-    if (!checkResult[0] || !checkResult[0].values[0]) {
+    if (!checkResult.rows[0]) {
       return res.status(404).json({
         success: false,
         message: 'Template not found',
       });
     }
 
-    dbInstance.run(
-      'UPDATE templates SET name = ?, type = ?, subject = ?, content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+    await pool.query(
+      'UPDATE templates SET name = $1, type = $2, subject = $3, content = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5',
       [name, type, subject || null, content, templateId]
     );
-    await saveDatabase();
 
     console.log(`✓ Template updated: #${templateId}`);
 
@@ -1112,18 +1056,16 @@ router.delete('/templates/:id', authMiddleware, async (req, res) => {
   try {
     const templateId = parseInt(req.params.id);
 
-    const dbInstance = getDb();
-    const checkResult = dbInstance.exec('SELECT id FROM templates WHERE id = ?', [templateId]);
+    const checkResult = await pool.query('SELECT id FROM templates WHERE id = $1', [templateId]);
 
-    if (!checkResult[0] || !checkResult[0].values[0]) {
+    if (!checkResult.rows[0]) {
       return res.status(404).json({
         success: false,
         message: 'Template not found',
       });
     }
 
-    dbInstance.run('DELETE FROM templates WHERE id = ?', [templateId]);
-    await saveDatabase();
+    await pool.query('DELETE FROM templates WHERE id = $1', [templateId]);
 
     console.log(`✓ Template deleted: #${templateId}`);
 
@@ -1144,19 +1086,18 @@ router.delete('/templates/:id', authMiddleware, async (req, res) => {
  * GET /api/admin/sms-logs
  * Get SMS delivery logs
  */
-router.get('/sms-logs', authMiddleware, (req, res) => {
+router.get('/sms-logs', authMiddleware, async (req, res) => {
   try {
-    const dbInstance = getDb();
-    const result = dbInstance.exec('SELECT * FROM sms_logs ORDER BY created_at DESC LIMIT 100');
+    const result = await pool.query('SELECT * FROM sms_logs ORDER BY created_at DESC LIMIT 100');
 
-    const logs = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      phone: row[1],
-      message: row[2],
-      status: row[3],
-      error_message: row[4],
-      created_at: row[5]
-    })) : [];
+    const logs = result.rows.map(row => ({
+      id: row.id,
+      phone: row.phone,
+      message: row.message,
+      status: row.status,
+      error_message: row.error_message,
+      created_at: row.created_at
+    }));
 
     return res.status(200).json({
       success: true,
@@ -1173,33 +1114,32 @@ router.get('/sms-logs', authMiddleware, (req, res) => {
 });
 
 /**
- * GET /api/admin/sms-logs
- * Get SMS delivery logs
+ * GET /api/admin/newsletter/subscribers
+ * Get newsletter subscribers
  */
-router.get('/newsletter/subscribers', authMiddleware, (req, res) => {
+router.get('/newsletter/subscribers', authMiddleware, async (req, res) => {
   try {
-    const dbInstance = getDb();
     const { status = 'active' } = req.query;
 
     let query = 'SELECT * FROM newsletter_subscribers';
     const params = [];
 
     if (status !== 'all') {
-      query += ' WHERE status = ?';
+      query += ' WHERE status = $1';
       params.push(status);
     }
 
     query += ' ORDER BY subscribed_at DESC';
 
-    const result = dbInstance.exec(query, params);
-    const subscribers = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      email: row[1],
-      name: row[2],
-      status: row[3],
-      subscribed_at: row[4],
-      unsubscribed_at: row[5]
-    })) : [];
+    const result = await pool.query(query, params);
+    const subscribers = result.rows.map(row => ({
+      id: row.id,
+      email: row.email,
+      name: row.name,
+      status: row.status,
+      subscribed_at: row.subscribed_at,
+      unsubscribed_at: row.unsubscribed_at
+    }));
 
     return res.status(200).json({
       success: true,
@@ -1220,23 +1160,22 @@ router.get('/newsletter/subscribers', authMiddleware, (req, res) => {
  * GET /api/admin/newsletter/campaigns
  * Get all newsletter campaigns (protected route)
  */
-router.get('/newsletter/campaigns', authMiddleware, (req, res) => {
+router.get('/newsletter/campaigns', authMiddleware, async (req, res) => {
   try {
-    const dbInstance = getDb();
-    const result = dbInstance.exec('SELECT * FROM newsletter_campaigns ORDER BY created_at DESC');
+    const result = await pool.query('SELECT * FROM newsletter_campaigns ORDER BY created_at DESC');
 
-    const campaigns = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      subject: row[1],
-      content: row[2],
-      recipient_filter: row[3],
-      sent_count: row[4],
-      opened_count: row[5],
-      clicked_count: row[6],
-      status: row[7],
-      sent_at: row[8],
-      created_at: row[9]
-    })) : [];
+    const campaigns = result.rows.map(row => ({
+      id: row.id,
+      subject: row.subject,
+      content: row.content,
+      recipient_filter: row.recipient_filter,
+      sent_count: row.sent_count,
+      opened_count: row.opened_count,
+      clicked_count: row.clicked_count,
+      status: row.status,
+      sent_at: row.sent_at,
+      created_at: row.created_at
+    }));
 
     return res.status(200).json({
       success: true,
@@ -1268,15 +1207,12 @@ router.post('/newsletter/campaigns', authMiddleware, async (req, res) => {
       });
     }
 
-    const dbInstance = getDb();
-    dbInstance.run(
-      'INSERT INTO newsletter_campaigns (subject, content, recipient_filter, status) VALUES (?, ?, ?, ?)',
+    const result = await pool.query(
+      'INSERT INTO newsletter_campaigns (subject, content, recipient_filter, status) VALUES ($1, $2, $3, $4) RETURNING id',
       [subject, content, recipient_filter || 'all', 'draft']
     );
 
-    const result = dbInstance.exec('SELECT last_insert_rowid() as id');
-    const campaignId = result[0].values[0][0];
-    await saveDatabase();
+    const campaignId = result.rows[0].id;
 
     console.log(`✓ Newsletter campaign created: #${campaignId}`);
 
@@ -1302,12 +1238,11 @@ router.post('/newsletter/campaigns', authMiddleware, async (req, res) => {
 router.post('/newsletter/campaigns/:id/send', authMiddleware, async (req, res) => {
   try {
     const campaignId = parseInt(req.params.id);
-    const dbInstance = getDb();
 
     // Get campaign details
-    const campaignResult = dbInstance.exec('SELECT * FROM newsletter_campaigns WHERE id = ?', [campaignId]);
+    const campaignResult = await pool.query('SELECT * FROM newsletter_campaigns WHERE id = $1', [campaignId]);
 
-    if (!campaignResult[0] || !campaignResult[0].values[0]) {
+    if (!campaignResult.rows[0]) {
       return res.status(404).json({
         success: false,
         message: 'Campaign not found',
@@ -1315,11 +1250,11 @@ router.post('/newsletter/campaigns/:id/send', authMiddleware, async (req, res) =
     }
 
     const campaign = {
-      id: campaignResult[0].values[0][0],
-      subject: campaignResult[0].values[0][1],
-      content: campaignResult[0].values[0][2],
-      recipient_filter: campaignResult[0].values[0][3],
-      status: campaignResult[0].values[0][7]
+      id: campaignResult.rows[0].id,
+      subject: campaignResult.rows[0].subject,
+      content: campaignResult.rows[0].content,
+      recipient_filter: campaignResult.rows[0].recipient_filter,
+      status: campaignResult.rows[0].status
     };
 
     if (campaign.status === 'sent') {
@@ -1330,15 +1265,15 @@ router.post('/newsletter/campaigns/:id/send', authMiddleware, async (req, res) =
     }
 
     // Get subscribers based on filter
-    let subscriberQuery = 'SELECT email, name FROM newsletter_subscribers WHERE status = ?';
+    let subscriberQuery = 'SELECT email, name FROM newsletter_subscribers WHERE status = $1';
     const subscriberParams = ['active'];
 
     if (campaign.recipient_filter !== 'all') {
       // Add more filters as needed
     }
 
-    const subscriberResult = dbInstance.exec(subscriberQuery, subscriberParams);
-    const subscribers = subscriberResult[0] ? subscriberResult[0].values : [];
+    const subscriberResult = await pool.query(subscriberQuery, subscriberParams);
+    const subscribers = subscriberResult.rows;
 
     if (subscribers.length === 0) {
       return res.status(400).json({
@@ -1348,8 +1283,8 @@ router.post('/newsletter/campaigns/:id/send', authMiddleware, async (req, res) =
     }
 
     // Update campaign status to sending
-    dbInstance.run(
-      'UPDATE newsletter_campaigns SET status = ? WHERE id = ?',
+    await pool.query(
+      'UPDATE newsletter_campaigns SET status = $1 WHERE id = $2',
       ['sending', campaignId]
     );
 
@@ -1359,7 +1294,8 @@ router.post('/newsletter/campaigns/:id/send', authMiddleware, async (req, res) =
 
     for (const subscriber of subscribers) {
       try {
-        const [email, name] = subscriber;
+        const email = subscriber.email;
+        const name = subscriber.name;
         
         // Replace placeholders in content
         let personalizedContent = campaign.content.replace(/\{\{name\}\}/g, name || 'Subscriber');
@@ -1374,20 +1310,18 @@ router.post('/newsletter/campaigns/:id/send', authMiddleware, async (req, res) =
 
         sentCount++;
       } catch (error) {
-        console.error(`✗ Failed to send to ${subscriber[0]}:`, error.message);
+        console.error(`✗ Failed to send to ${subscriber.email}:`, error.message);
         failedCount++;
       }
     }
 
     // Update campaign with results
-    dbInstance.run(
+    await pool.query(
       `UPDATE newsletter_campaigns 
-       SET status = ?, sent_count = ?, sent_at = CURRENT_TIMESTAMP 
-       WHERE id = ?`,
+       SET status = $1, sent_count = $2, sent_at = CURRENT_TIMESTAMP 
+       WHERE id = $3`,
       ['sent', sentCount, campaignId]
     );
-
-    saveDatabase();
 
     console.log(`✓ Newsletter campaign #${campaignId} sent to ${sentCount} subscribers (${failedCount} failed)`);
 
@@ -1411,37 +1345,36 @@ router.post('/newsletter/campaigns/:id/send', authMiddleware, async (req, res) =
  * GET /api/admin/loyalty/members
  * Get all loyalty program members (protected route)
  */
-router.get('/loyalty/members', authMiddleware, (req, res) => {
+router.get('/loyalty/members', authMiddleware, async (req, res) => {
   try {
-    const dbInstance = getDb();
     const { tier, search = '' } = req.query;
 
     let query = 'SELECT * FROM loyalty_program';
     const params = [];
 
     if (tier && tier !== 'all') {
-      query += ' WHERE tier = ?';
+      query += ' WHERE tier = $1';
       params.push(tier);
     } else if (search) {
-      query += ' WHERE customer_name LIKE ? OR customer_phone LIKE ? OR customer_email LIKE ?';
-      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      query += ' WHERE customer_name ILIKE $1 OR customer_phone ILIKE $1 OR customer_email ILIKE $1';
+      params.push(`%${search}%`);
     }
 
     query += ' ORDER BY points DESC, total_spent DESC';
 
-    const result = dbInstance.exec(query, params);
-    const members = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      customer_phone: row[1],
-      customer_name: row[2],
-      customer_email: row[3],
-      points: row[4],
-      tier: row[5],
-      total_spent: row[6],
-      total_orders: row[7],
-      created_at: row[8],
-      updated_at: row[9]
-    })) : [];
+    const result = await pool.query(query, params);
+    const members = result.rows.map(row => ({
+      id: row.id,
+      customer_phone: row.customer_phone,
+      customer_name: row.customer_name,
+      customer_email: row.customer_email,
+      points: row.points,
+      tier: row.tier,
+      total_spent: parseFloat(row.total_spent),
+      total_orders: row.total_orders,
+      created_at: row.created_at,
+      updated_at: row.updated_at
+    }));
 
     return res.status(200).json({
       success: true,
@@ -1472,50 +1405,50 @@ router.post('/loyalty/members', authMiddleware, async (req, res) => {
         message: 'Customer phone and name are required',
       });
     }
-
-    const dbInstance = getDb();
     
     // Check if member exists
-    const existingResult = dbInstance.exec('SELECT id FROM loyalty_program WHERE customer_phone = ?', [customer_phone]);
+    const existingResult = await pool.query('SELECT id FROM loyalty_program WHERE customer_phone = $1', [customer_phone]);
 
-    if (existingResult[0] && existingResult[0].values[0]) {
+    if (existingResult.rows[0]) {
       // Update existing member
       const updates = [];
       const params = [];
+      let paramIndex = 1;
 
       if (customer_email !== undefined) {
-        updates.push('customer_email = ?');
+        updates.push(`customer_email = $${paramIndex}`);
         params.push(customer_email);
+        paramIndex++;
       }
 
       if (points !== undefined) {
-        updates.push('points = ?');
+        updates.push(`points = $${paramIndex}`);
         params.push(points);
+        paramIndex++;
       }
 
       if (tier) {
-        updates.push('tier = ?');
+        updates.push(`tier = $${paramIndex}`);
         params.push(tier);
+        paramIndex++;
       }
 
-      updates.push('updated_at = CURRENT_TIMESTAMP');
+      updates.push(`updated_at = CURRENT_TIMESTAMP`);
       params.push(customer_phone);
 
-    dbInstance.run(
-      `UPDATE loyalty_program SET ${updates.join(', ')} WHERE customer_phone = ?`,
-      params
-    );
-  } else {
-    // Create new member
-    dbInstance.run(
-      `INSERT INTO loyalty_program (customer_phone, customer_name, customer_email, points, tier) VALUES (?, ?, ?, ?, ?)`,
-      [customer_phone, customer_name, customer_email || null, points || 0, tier || 'bronze']
-    );
-  }
+      await pool.query(
+        `UPDATE loyalty_program SET ${updates.join(', ')} WHERE customer_phone = $${paramIndex}`,
+        params
+      );
+    } else {
+      // Create new member
+      await pool.query(
+        `INSERT INTO loyalty_program (customer_phone, customer_name, customer_email, points, tier) VALUES ($1, $2, $3, $4, $5)`,
+        [customer_phone, customer_name, customer_email || null, points || 0, tier || 'bronze']
+      );
+    }
 
-  await saveDatabase();
-
-  console.log(`✓ Loyalty member saved: ${customer_phone}`);
+    console.log(`✓ Loyalty member saved: ${customer_phone}`);
 
     return res.status(200).json({
       success: true,
@@ -1554,20 +1487,17 @@ router.post('/loyalty/transactions', authMiddleware, async (req, res) => {
       });
     }
 
-    const dbInstance = getDb();
-
     // Verify customer exists in loyalty program
-    const memberResult = dbInstance.exec('SELECT id, points FROM loyalty_program WHERE customer_phone = ?', [customer_phone]);
+    const memberResult = await pool.query('SELECT id, points FROM loyalty_program WHERE customer_phone = $1', [customer_phone]);
 
-    if (!memberResult[0] || !memberResult[0].values[0]) {
+    if (!memberResult.rows[0]) {
       return res.status(404).json({
         success: false,
         message: 'Customer not found in loyalty program',
       });
     }
 
-    const memberId = memberResult[0].values[0][0];
-    const currentPoints = memberResult[0].values[0][1];
+    const currentPoints = memberResult.rows[0].points;
 
     // Calculate new points
     let newPoints = currentPoints;
@@ -1578,19 +1508,17 @@ router.post('/loyalty/transactions', authMiddleware, async (req, res) => {
     }
 
     // Update member points
-    dbInstance.run(
-      'UPDATE loyalty_program SET points = ?, updated_at = CURRENT_TIMESTAMP WHERE customer_phone = ?',
+    await pool.query(
+      'UPDATE loyalty_program SET points = $1, updated_at = CURRENT_TIMESTAMP WHERE customer_phone = $2',
       [newPoints, customer_phone]
     );
 
     // Record transaction
-    dbInstance.run(
+    await pool.query(
       `INSERT INTO loyalty_transactions (customer_phone, points, transaction_type, description, order_id) 
-       VALUES (?, ?, ?, ?, ?)`,
+       VALUES ($1, $2, $3, $4, $5)`,
       [customer_phone, points, transaction_type, description || null, order_id || null]
     );
-
-    await saveDatabase();
 
     console.log(`✓ Loyalty transaction recorded: ${customer_phone} - ${transaction_type} ${points} points`);
 
@@ -1613,9 +1541,8 @@ router.post('/loyalty/transactions', authMiddleware, async (req, res) => {
  * GET /api/admin/service-requests
  * Get all service requests (protected route)
  */
-router.get('/service-requests', authMiddleware, (req, res) => {
+router.get('/service-requests', authMiddleware, async (req, res) => {
   try {
-    const dbInstance = getDb();
     const { status, priority, assigned_to } = req.query;
 
     let query = 'SELECT * FROM service_requests';
@@ -1623,17 +1550,17 @@ router.get('/service-requests', authMiddleware, (req, res) => {
     const params = [];
 
     if (status && status !== 'all') {
-      conditions.push('status = ?');
+      conditions.push(`status = $${params.length + 1}`);
       params.push(status);
     }
 
     if (priority && priority !== 'all') {
-      conditions.push('priority = ?');
+      conditions.push(`priority = $${params.length + 1}`);
       params.push(priority);
     }
 
     if (assigned_to) {
-      conditions.push('assigned_to = ?');
+      conditions.push(`assigned_to = $${params.length + 1}`);
       params.push(assigned_to);
     }
 
@@ -1643,24 +1570,24 @@ router.get('/service-requests', authMiddleware, (req, res) => {
 
     query += ' ORDER BY created_at DESC';
 
-    const result = dbInstance.exec(query, params);
-    const serviceRequests = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      customer_name: row[1],
-      customer_phone: row[2],
-      customer_email: row[3],
-      service_type: row[4],
-      description: row[5],
-      priority: row[6],
-      status: row[7],
-      assigned_to: row[8],
-      scheduled_date: row[9],
-      scheduled_time: row[10],
-      completed_at: row[11],
-      notes: row[12],
-      created_at: row[13],
-      updated_at: row[14]
-    })) : [];
+    const result = await pool.query(query, params);
+    const serviceRequests = result.rows.map(row => ({
+      id: row.id,
+      customer_name: row.customer_name,
+      customer_phone: row.customer_phone,
+      customer_email: row.customer_email,
+      service_type: row.service_type,
+      description: row.description,
+      priority: row.priority,
+      status: row.status,
+      assigned_to: row.assigned_to,
+      scheduled_date: row.scheduled_date,
+      scheduled_time: row.scheduled_time,
+      completed_at: row.completed_at,
+      notes: row.notes,
+      created_at: row.created_at,
+      updated_at: row.updated_at
+    }));
 
     return res.status(200).json({
       success: true,
@@ -1686,10 +1613,9 @@ router.patch('/service-requests/:id', authMiddleware, async (req, res) => {
     const requestId = parseInt(req.params.id);
     const { status, priority, assigned_to, scheduled_date, scheduled_time, notes } = req.body;
 
-    const dbInstance = getDb();
-    const checkResult = dbInstance.exec('SELECT * FROM service_requests WHERE id = ?', [requestId]);
+    const checkResult = await pool.query('SELECT * FROM service_requests WHERE id = $1', [requestId]);
 
-    if (!checkResult[0] || !checkResult[0].values[0]) {
+    if (!checkResult.rows[0]) {
       return res.status(404).json({
         success: false,
         message: 'Service request not found',
@@ -1698,6 +1624,7 @@ router.patch('/service-requests/:id', authMiddleware, async (req, res) => {
 
     const updates = [];
     const params = [];
+    let paramIndex = 1;
 
     if (status) {
       const validStatuses = ['open', 'in_progress', 'on_hold', 'completed', 'cancelled'];
@@ -1707,8 +1634,9 @@ router.patch('/service-requests/:id', authMiddleware, async (req, res) => {
           message: 'Invalid status',
         });
       }
-      updates.push('status = ?');
+      updates.push(`status = $${paramIndex}`);
       params.push(status);
+      paramIndex++;
 
       if (status === 'completed') {
         updates.push('completed_at = CURRENT_TIMESTAMP');
@@ -1716,39 +1644,42 @@ router.patch('/service-requests/:id', authMiddleware, async (req, res) => {
     }
 
     if (priority) {
-      updates.push('priority = ?');
+      updates.push(`priority = $${paramIndex}`);
       params.push(priority);
+      paramIndex++;
     }
 
     if (assigned_to !== undefined) {
-      updates.push('assigned_to = ?');
+      updates.push(`assigned_to = $${paramIndex}`);
       params.push(assigned_to);
+      paramIndex++;
     }
 
     if (scheduled_date) {
-      updates.push('scheduled_date = ?');
+      updates.push(`scheduled_date = $${paramIndex}`);
       params.push(scheduled_date);
+      paramIndex++;
     }
 
     if (scheduled_time) {
-      updates.push('scheduled_time = ?');
+      updates.push(`scheduled_time = $${paramIndex}`);
       params.push(scheduled_time);
+      paramIndex++;
     }
 
     if (notes !== undefined) {
-      updates.push('notes = ?');
+      updates.push(`notes = $${paramIndex}`);
       params.push(notes);
+      paramIndex++;
     }
 
     updates.push('updated_at = CURRENT_TIMESTAMP');
     params.push(requestId);
 
-    dbInstance.run(
-      `UPDATE service_requests SET ${updates.join(', ')} WHERE id = ?`,
+    await pool.query(
+      `UPDATE service_requests SET ${updates.join(', ')} WHERE id = $${paramIndex}`,
       params
     );
-
-    await saveDatabase();
 
     console.log(`✓ Service request #${requestId} updated`);
 
@@ -1770,24 +1701,23 @@ router.patch('/service-requests/:id', authMiddleware, async (req, res) => {
  * GET /api/admin/products/:id/specifications
  * Get product specifications (protected route)
  */
-router.get('/products/:id/specifications', authMiddleware, (req, res) => {
+router.get('/products/:id/specifications', authMiddleware, async (req, res) => {
   try {
     const productId = parseInt(req.params.id);
-    const dbInstance = getDb();
 
-    const result = dbInstance.exec(
-      'SELECT * FROM product_specifications WHERE product_id = ? ORDER BY display_order ASC',
+    const result = await pool.query(
+      'SELECT * FROM product_specifications WHERE product_id = $1 ORDER BY display_order ASC',
       [productId]
     );
 
-    const specifications = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      product_id: row[1],
-      spec_name: row[2],
-      spec_value: row[3],
-      display_order: row[4],
-      created_at: row[5]
-    })) : [];
+    const specifications = result.rows.map(row => ({
+      id: row.id,
+      product_id: row.product_id,
+      spec_name: row.spec_name,
+      spec_value: row.spec_value,
+      display_order: row.display_order,
+      created_at: row.created_at
+    }));
 
     return res.status(200).json({
       success: true,
@@ -1820,25 +1750,21 @@ router.post('/products/:id/specifications', authMiddleware, async (req, res) => 
       });
     }
 
-    const dbInstance = getDb();
-
     // Verify product exists
-    const productResult = dbInstance.exec('SELECT id FROM products WHERE id = ?', [productId]);
-    if (!productResult[0] || !productResult[0].values[0]) {
+    const productResult = await pool.query('SELECT id FROM products WHERE id = $1', [productId]);
+    if (!productResult.rows[0]) {
       return res.status(404).json({
         success: false,
         message: 'Product not found',
       });
     }
 
-    dbInstance.run(
-      'INSERT INTO product_specifications (product_id, spec_name, spec_value, display_order) VALUES (?, ?, ?, ?)',
+    const result = await pool.query(
+      'INSERT INTO product_specifications (product_id, spec_name, spec_value, display_order) VALUES ($1, $2, $3, $4) RETURNING id',
       [productId, spec_name, spec_value, display_order || 0]
     );
 
-    const result = dbInstance.exec('SELECT last_insert_rowid() as id');
-    const specId = result[0].values[0][0];
-    await saveDatabase();
+    const specId = result.rows[0].id;
 
     console.log(`✓ Product specification created: #${specId} for product #${productId}`);
 
@@ -1861,25 +1787,24 @@ router.post('/products/:id/specifications', authMiddleware, async (req, res) => 
  * GET /api/admin/products/:id/variants
  * Get product variants (protected route)
  */
-router.get('/products/:id/variants', authMiddleware, (req, res) => {
+router.get('/products/:id/variants', authMiddleware, async (req, res) => {
   try {
     const productId = parseInt(req.params.id);
-    const dbInstance = getDb();
 
-    const result = dbInstance.exec(
-      'SELECT * FROM product_variants WHERE product_id = ? ORDER BY id ASC',
+    const result = await pool.query(
+      'SELECT * FROM product_variants WHERE product_id = $1 ORDER BY id ASC',
       [productId]
     );
 
-    const variants = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      product_id: row[1],
-      variant_name: row[2],
-      variant_value: row[3],
-      price_adjustment: row[4],
-      stock: row[5],
-      created_at: row[6]
-    })) : [];
+    const variants = result.rows.map(row => ({
+      id: row.id,
+      product_id: row.product_id,
+      variant_name: row.variant_name,
+      variant_value: row.variant_value,
+      price_adjustment: parseFloat(row.price_adjustment),
+      stock: row.stock,
+      created_at: row.created_at
+    }));
 
     return res.status(200).json({
       success: true,
@@ -1912,25 +1837,21 @@ router.post('/products/:id/variants', authMiddleware, async (req, res) => {
       });
     }
 
-    const dbInstance = getDb();
-
     // Verify product exists
-    const productResult = dbInstance.exec('SELECT id FROM products WHERE id = ?', [productId]);
-    if (!productResult[0] || !productResult[0].values[0]) {
+    const productResult = await pool.query('SELECT id FROM products WHERE id = $1', [productId]);
+    if (!productResult.rows[0]) {
       return res.status(404).json({
         success: false,
         message: 'Product not found',
       });
     }
 
-    dbInstance.run(
-      'INSERT INTO product_variants (product_id, variant_name, variant_value, price_adjustment, stock) VALUES (?, ?, ?, ?, ?)',
+    const result = await pool.query(
+      'INSERT INTO product_variants (product_id, variant_name, variant_value, price_adjustment, stock) VALUES ($1, $2, $3, $4, $5) RETURNING id',
       [productId, variant_name, variant_value, price_adjustment || 0, stock || 0]
     );
 
-    const result = dbInstance.exec('SELECT last_insert_rowid() as id');
-    const variantId = result[0].values[0][0];
-    await saveDatabase();
+    const variantId = result.rows[0].id;
 
     console.log(`✓ Product variant created: #${variantId} for product #${productId}`);
 
@@ -1953,18 +1874,17 @@ router.post('/products/:id/variants', authMiddleware, async (req, res) => {
  * GET /api/admin/push-subscriptions
  * Get all push notification subscriptions
  */
-router.get('/push-subscriptions', authMiddleware, (req, res) => {
+router.get('/push-subscriptions', authMiddleware, async (req, res) => {
   try {
-    const dbInstance = getDb();
-    const result = dbInstance.exec('SELECT * FROM push_subscriptions ORDER BY created_at DESC');
+    const result = await pool.query('SELECT * FROM push_subscriptions ORDER BY created_at DESC');
 
-    const subscriptions = result[0] ? result[0].values.map(row => ({
-      id: row[0],
-      session_id: row[1],
-      endpoint: row[2],
-      keys: row[3],
-      created_at: row[4]
-    })) : [];
+    const subscriptions = result.rows.map(row => ({
+      id: row.id,
+      session_id: row.session_id,
+      endpoint: row.endpoint,
+      keys: row.keys,
+      created_at: row.created_at
+    }));
 
     return res.status(200).json({
       success: true,
