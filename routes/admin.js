@@ -92,6 +92,270 @@ router.post('/login', async (req, res) => {
 });
 
 /**
+ * POST /api/admin/upload
+ * Upload image to R2 media bucket (protected route)
+ */
+router.post('/upload', authMiddleware, upload.single('image'), async (req, res) => {
+  try {
+    // Check if file was uploaded
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image file provided',
+      });
+    }
+
+    const image = req.file;
+    
+    // Validate file type (already validated by multer, but double-check)
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(image.mimetype)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.',
+      });
+    }
+
+    // Generate unique filename
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 15);
+    const extension = image.originalname.split('.').pop();
+    const fileName = `product_${timestamp}_${randomString}.${extension}`;
+
+    // Upload to R2
+    const mediaUrl = await r2Sync.uploadMediaToR2(image.buffer, fileName, image.mimetype);
+
+    if (!mediaUrl) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to upload image to cloud storage',
+      });
+    }
+
+    console.log(`✓ Image uploaded successfully: ${fileName}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Image uploaded successfully',
+      url: mediaUrl,
+      fileName: fileName,
+    });
+
+  } catch (error) {
+    console.error('✗ Error uploading image:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while uploading the image.',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/products
+ * Get all products (protected route)
+ */
+router.get('/products', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM products ORDER BY created_at DESC'
+    );
+    
+    const products = result.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      price: parseFloat(row.price),
+      image_url: row.image_url,
+      category: row.category,
+      in_stock: row.in_stock,
+      created_at: row.created_at,
+      updated_at: row.updated_at
+    }));
+
+    console.log(`✓ Fetched ${products.length} products`);
+
+    return res.status(200).json({
+      success: true,
+      count: products.length,
+      products: products,
+    });
+
+  } catch (error) {
+    console.error('✗ Error fetching products:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching products.',
+    });
+  }
+});
+
+/**
+ * POST /api/admin/products
+ * Create a new product (protected route)
+ */
+router.post('/products', authMiddleware, async (req, res) => {
+  try {
+    const { name, description, price, category, image_url, in_stock } = req.body;
+
+    // Validate required fields
+    if (!name || !price || !category) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: name, price, and category are required',
+      });
+    }
+
+    // Insert product into database
+    const result = await pool.query(
+      `INSERT INTO products (name, description, price, category, image_url, in_stock) 
+       VALUES ($1, $2, $3, $4, $5, $6) 
+       RETURNING id, created_at`,
+      [
+        name,
+        description || null,
+        price,
+        category,
+        image_url || null,
+        in_stock !== undefined ? in_stock : true
+      ]
+    );
+
+    const productId = result.rows[0].id;
+    const created_at = result.rows[0].created_at;
+
+    const newProduct = {
+      id: productId,
+      name,
+      description,
+      price: parseFloat(price),
+      category,
+      image_url: image_url,
+      in_stock: in_stock !== undefined ? in_stock : true,
+      created_at: created_at,
+      updated_at: created_at
+    };
+
+    console.log(`✓ New product created: #${newProduct.id} - ${name}`);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Product created successfully',
+      product: newProduct,
+    });
+
+  } catch (error) {
+    console.error('✗ Error creating product:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while creating the product.',
+    });
+  }
+});
+
+/**
+ * PUT /api/admin/products/:id
+ * Update a product (protected route)
+ */
+router.put('/products/:id', authMiddleware, async (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+    const { name, description, price, category, image_url, in_stock } = req.body;
+
+    // Validate required fields
+    if (!name || !price || !category) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: name, price, and category are required',
+      });
+    }
+
+    // Check if product exists
+    const checkResult = await pool.query('SELECT * FROM products WHERE id = $1', [productId]);
+    if (!checkResult.rows[0]) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found',
+      });
+    }
+
+    // Update product
+    await pool.query(
+      `UPDATE products 
+       SET name = $1, description = $2, price = $3, category = $4, image_url = $5, in_stock = $6, updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $7`,
+      [
+        name,
+        description || null,
+        price,
+        category,
+        image_url || null,
+        in_stock !== undefined ? in_stock : true,
+        productId
+      ]
+    );
+
+    console.log(`✓ Product updated: #${productId}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Product updated successfully',
+      product: {
+        id: productId,
+        name,
+        description,
+        price: parseFloat(price),
+        category,
+        image_url: image_url,
+        in_stock: in_stock !== undefined ? in_stock : true,
+      }
+    });
+
+  } catch (error) {
+    console.error('✗ Error updating product:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while updating the product.',
+    });
+  }
+});
+
+/**
+ * DELETE /api/admin/products/:id
+ * Delete a product (protected route)
+ */
+router.delete('/products/:id', authMiddleware, async (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+
+    // Check if product exists
+    const checkResult = await pool.query('SELECT * FROM products WHERE id = $1', [productId]);
+    if (!checkResult.rows[0]) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found',
+      });
+    }
+
+    // Delete product
+    await pool.query('DELETE FROM products WHERE id = $1', [productId]);
+
+    console.log(`✓ Product deleted: #${productId}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Product deleted successfully',
+    });
+
+  } catch (error) {
+    console.error('✗ Error deleting product:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while deleting the product.',
+    });
+  }
+});
+
+/**
  * GET /api/admin/leads
  * Get all leads (protected route)
  */
@@ -306,8 +570,8 @@ router.get('/stats', authMiddleware, async (req, res) => {
 });
 
 /**
- * GET /api/admin/products/:id/specifications
- * Get product specifications (protected route)
+ * DELETE /api/admin/portfolio/:id
+ * Delete portfolio item (protected route)
  */
 router.delete('/portfolio/:id', authMiddleware, async (req, res) => {
   try {

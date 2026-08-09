@@ -1,40 +1,50 @@
 const nodemailer = require('nodemailer');
-const { getDb } = require('./db');
+const { pool } = require('./db');
 require('dotenv').config();
 
 // Create reusable transport object using SMTP
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: process.env.SMTP_PORT || 587,
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: {
-    user: process.env.SMTP_USER || 'your-email@gmail.com',
-    pass: process.env.SMTP_PASS || 'your-app-password'
+let transporter = null;
+
+function initializeEmail() {
+  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT) || 587,
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+    console.log('✓ Email service initialized');
+  } else {
+    console.log('⚠️  Email service not configured (SMTP credentials missing)');
   }
-});
+}
+
+initializeEmail();
 
 /**
  * Get a template from the database
  * @param {string} name - Template name
  * @returns {object|null} - Template object or null
  */
-function getTemplate(name) {
+async function getTemplate(name) {
   try {
-    const dbInstance = getDb();
-    const result = dbInstance.exec(
-      'SELECT * FROM templates WHERE name = ? ORDER BY created_at DESC LIMIT 1',
+    const result = await pool.query(
+      'SELECT * FROM templates WHERE name = $1 ORDER BY created_at DESC LIMIT 1',
       [name]
     );
-    if (result[0] && result[0].values[0]) {
-      const row = result[0].values[0];
+    if (result.rows[0]) {
+      const row = result.rows[0];
       return {
-        id: row[0],
-        name: row[1],
-        type: row[2],
-        subject: row[3],
-        content: row[4],
-        created_at: row[5],
-        updated_at: row[6]
+        id: row.id,
+        name: row.name,
+        type: row.type,
+        subject: row.subject,
+        content: row.content,
+        created_at: row.created_at,
+        updated_at: row.updated_at
       };
     }
     return null;

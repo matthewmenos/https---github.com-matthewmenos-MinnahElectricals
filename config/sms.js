@@ -1,4 +1,4 @@
-const { getDb, saveDatabase } = require('../config/db');
+const { pool } = require('../config/db');
 require('dotenv').config();
 
 // SMS Service Module
@@ -108,14 +108,12 @@ async function sendSms(phone, message) {
 /**
  * Log SMS to database
  */
-function logSms(phone, message, status, errorMessage = null) {
+async function logSms(phone, message, status, errorMessage = null) {
   try {
-    const dbInstance = getDb();
-    dbInstance.run(
-      'INSERT INTO sms_logs (phone, message, status, error_message) VALUES (?, ?, ?, ?)',
+    await pool.query(
+      'INSERT INTO sms_logs (phone, message, status, error_message) VALUES ($1, $2, $3, $4)',
       [phone, message, status, errorMessage]
     );
-    saveDatabase();
   } catch (error) {
     console.error('✗ Failed to log SMS:', error.message);
   }
@@ -124,16 +122,13 @@ function logSms(phone, message, status, errorMessage = null) {
 /**
  * Get SMS settings from database
  */
-function getSmsSettings() {
+async function getSmsSettings() {
   try {
-    const dbInstance = getDb();
-    const result = dbInstance.exec('SELECT key, value FROM settings WHERE key LIKE "sms_%"');
+    const result = await pool.query('SELECT key, value FROM settings WHERE key LIKE $1', ['sms_%']);
     const settings = {};
-    if (result[0]) {
-      result[0].values.forEach(row => {
-        settings[row[0]] = row[1];
-      });
-    }
+    result.rows.forEach(row => {
+      settings[row.key] = row.value;
+    });
     return settings;
   } catch (error) {
     console.error('✗ Failed to get SMS settings:', error.message);
@@ -144,8 +139,8 @@ function getSmsSettings() {
 /**
  * Check if SMS notifications are enabled for a specific event
  */
-function isSmsEnabled(event) {
-  const settings = getSmsSettings();
+async function isSmsEnabled(event) {
+  const settings = await getSmsSettings();
   return settings[`sms_notify_${event}`] === 'true' || settings[`sms_notify_${event}`] === true;
 }
 
@@ -153,9 +148,9 @@ function isSmsEnabled(event) {
  * Send SMS notification for new lead
  */
 async function sendLeadSms(lead) {
-  if (!isSmsEnabled('leads')) return false;
+  if (!await isSmsEnabled('leads')) return false;
 
-  const settings = getSmsSettings();
+  const settings = await getSmsSettings();
   const adminPhone = settings.sms_admin_phone || process.env.SMS_ADMIN_PHONE;
   if (!adminPhone) return false;
 
@@ -167,7 +162,7 @@ async function sendLeadSms(lead) {
  * Send SMS notification for order status change
  */
 async function sendOrderStatusSms(order, newStatus) {
-  if (!isSmsEnabled('orders')) return false;
+  if (!await isSmsEnabled('orders')) return false;
 
   const message = `Order #${order.id} status updated to: ${newStatus}. Thank you for your business!`;
   return await sendSms(order.customer_phone, message);

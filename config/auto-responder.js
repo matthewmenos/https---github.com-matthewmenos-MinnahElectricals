@@ -1,4 +1,4 @@
-const { getDb, saveDatabase } = require('../config/db');
+const { pool } = require('../config/db');
 const { sendSms } = require('./sms');
 require('dotenv').config();
 
@@ -19,27 +19,33 @@ function isWithinBusinessHours() {
   const hour = now.getHours();
   const day = now.getDay(); // 0 = Sunday, 6 = Saturday
 
-  // Check if weekend
-  if (settings.weekends_enabled === 'true' && (day === 0 || day === 6)) {
+  // Check if weekend (0 = Sunday, 6 = Saturday)
+  const isWeekend = day === 0 || day === 6;
+  
+  // If weekends are NOT enabled, return false (closed) on weekends
+  if (isWeekend && settings.weekends_enabled !== 'true') {
     return false;
   }
+  
+  // If weekends ARE enabled but it's a weekend, check if within hours
+  if (isWeekend && settings.weekends_enabled === 'true') {
+    return hour >= openHour && hour < closeHour;
+  }
 
+  // Weekday - check if within business hours
   return hour >= openHour && hour < closeHour;
 }
 
 /**
  * Get auto-responder settings from database
  */
-function getAutoResponderSettings() {
+async function getAutoResponderSettings() {
   try {
-    const dbInstance = getDb();
-    const result = dbInstance.exec('SELECT key, value FROM settings WHERE key LIKE "auto_%"');
+    const result = await pool.query('SELECT key, value FROM settings WHERE key LIKE $1', ['auto_%']);
     const settings = {};
-    if (result[0]) {
-      result[0].values.forEach(row => {
-        settings[row[0].replace('auto_', '')] = row[1];
-      });
-    }
+    result.rows.forEach(row => {
+      settings[row.key.replace('auto_', '')] = row.value;
+    });
     return settings;
   } catch (error) {
     console.error('✗ Failed to get auto-responder settings:', error.message);
@@ -52,18 +58,17 @@ function getAutoResponderSettings() {
  * @param {string} phone - Customer phone number
  * @returns {boolean} - true if already contacted today
  */
-function wasContactedToday(phone) {
+async function wasContactedToday(phone) {
   try {
-    const dbInstance = getDb();
     const cleanPhone = phone.replace(/\D/g, '');
     const today = new Date().toISOString().split('T')[0];
 
-    const result = dbInstance.exec(
-      'SELECT COUNT(*) as count FROM sms_logs WHERE phone = ? AND status = "sent" AND date(created_at) = ?',
-      [cleanPhone, today]
+    const result = await pool.query(
+      'SELECT COUNT(*) as count FROM sms_logs WHERE phone = $1 AND status = $2 AND DATE(created_at) = $3',
+      [cleanPhone, 'sent', today]
     );
 
-    return result[0] && result[0].values[0][0] > 0;
+    return result.rows[0] && parseInt(result.rows[0].count) > 0;
   } catch (error) {
     console.error('✗ Failed to check contact history:', error.message);
     return false;
@@ -73,20 +78,22 @@ function wasContactedToday(phone) {
 /**
  * Get template by name
  */
-function getTemplate(name) {
+async function getTemplate(name) {
   try {
-    const dbInstance = getDb();
-    const result = dbInstance.exec('SELECT * FROM templates WHERE name = ? ORDER BY created_at DESC LIMIT 1', [name]);
-    if (result[0] && result[0].values[0]) {
-      const row = result[0].values[0];
+    const result = await pool.query(
+      'SELECT * FROM templates WHERE name = $1 ORDER BY created_at DESC LIMIT 1',
+      [name]
+    );
+    if (result.rows[0]) {
+      const row = result.rows[0];
       return {
-        id: row[0],
-        name: row[1],
-        type: row[2],
-        subject: row[3],
-        content: row[4],
-        created_at: row[5],
-        updated_at: row[6]
+        id: row.id,
+        name: row.name,
+        type: row.type,
+        subject: row.subject,
+        content: row.content,
+        created_at: row.created_at,
+        updated_at: row.updated_at
       };
     }
     return null;
@@ -113,7 +120,7 @@ function renderTemplate(content, variables) {
  */
 async function sendAutoResponder(lead) {
   // Check if auto-responder is enabled
-  const settings = getAutoResponderSettings();
+  const settings = await getAutoResponderSettings();
   if (settings.enabled !== 'true') {
     return false;
   }
@@ -124,12 +131,12 @@ async function sendAutoResponder(lead) {
   }
 
   // Check if already contacted today
-  if (wasContactedToday(lead.phone)) {
+  if (await wasContactedToday(lead.phone)) {
     return false; // Don't spam the same customer
   }
 
   // Get template
-  const template = getTemplate('auto_responder') || getTemplate('after_hours');
+  const template = await getTemplate('auto_responder') || await getTemplate('after_hours');
   if (!template) {
     // Use default message
     const defaultMessage = `Thank you for contacting Minnah Electricals! We are currently closed. Our business hours are ${settings.open_hour || '8'}AM - ${settings.close_hour || '18'}PM. We will contact you during business hours.`;

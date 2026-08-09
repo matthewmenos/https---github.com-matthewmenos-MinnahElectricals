@@ -108,8 +108,8 @@ async function startServer() {
     console.log('Checking R2 for existing database...');
     await r2Sync.initialize();
     
-    // Initialize database AFTER R2 download (will load downloaded DB or create fresh)
-    await initDB();
+    // Note: Database is already initialized in config/db.js on load
+    // No need to call initDB() again here
     console.log('✓ Database initialized');
 
     // Start Express server
