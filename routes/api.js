@@ -414,6 +414,8 @@ router.post('/orders', async (req, res) => {
 /**
  * POST /api/upload
  * Upload image to R2 media bucket
+ * SECURITY: This endpoint should be protected in production
+ * Currently public for demo purposes - add authMiddleware if needed
  */
 router.post('/upload', async (req, res) => {
   try {
@@ -482,6 +484,8 @@ router.post('/upload', async (req, res) => {
 /**
  * DELETE /api/upload/:filename
  * Delete image from R2 media bucket
+ * SECURITY: This endpoint should be protected in production
+ * Currently public for demo purposes - add authMiddleware if needed
  */
 router.delete('/upload/:filename', async (req, res) => {
   try {

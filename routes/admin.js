@@ -1083,6 +1083,203 @@ router.get('/inventory', authMiddleware, async (req, res) => {
 });
 
 /**
+ * GET /api/admin/orders
+ * Get all orders (protected route)
+ */
+router.get('/orders', authMiddleware, async (req, res) => {
+  try {
+    const { status, source, start_date, end_date } = req.query;
+    
+    let query = 'SELECT * FROM orders';
+    const conditions = [];
+    const params = [];
+
+    if (status && status !== 'all') {
+      conditions.push(`status = $${params.length + 1}`);
+      params.push(status);
+    }
+
+    if (source && source !== 'all') {
+      conditions.push(`order_source = $${params.length + 1}`);
+      params.push(source);
+    }
+
+    if (start_date) {
+      conditions.push(`created_at >= $${params.length + 1}`);
+      params.push(start_date);
+    }
+
+    if (end_date) {
+      conditions.push(`created_at <= $${params.length + 1}`);
+      params.push(end_date);
+    }
+
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    query += ' ORDER BY created_at DESC';
+
+    const result = await pool.query(query, params);
+    const orders = result.rows.map(row => ({
+      id: row.id,
+      customer_name: row.customer_name,
+      customer_phone: row.customer_phone,
+      customer_email: row.customer_email,
+      product_id: row.product_id,
+      product_name: row.product_name,
+      product_price: parseFloat(row.product_price),
+      quantity: row.quantity,
+      notes: row.notes,
+      order_source: row.order_source,
+      status: row.status,
+      created_at: row.created_at
+    }));
+
+    console.log(`✓ Fetched ${orders.length} orders`);
+
+    return res.status(200).json({
+      success: true,
+      count: orders.length,
+      orders: orders,
+    });
+
+  } catch (error) {
+    console.error('✗ Error fetching orders:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching orders.',
+    });
+  }
+});
+
+/**
+ * PATCH /api/admin/orders/:id
+ * Update order status (protected route)
+ */
+router.patch('/orders/:id', authMiddleware, async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id);
+    const { status } = req.body;
+
+    // Validate status
+    const validStatuses = ['Pending', 'Confirmed', 'Completed', 'Cancelled'];
+    if (!status || !validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status. Must be one of: ' + validStatuses.join(', '),
+      });
+    }
+
+    // Check if order exists
+    const checkResult = await pool.query('SELECT * FROM orders WHERE id = $1', [orderId]);
+    if (!checkResult.rows[0]) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found',
+      });
+    }
+
+    // Update order status
+    await pool.query('UPDATE orders SET status = $1 WHERE id = $2', [status, orderId]);
+
+    console.log(`✓ Order #${orderId} status updated to: ${status}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Order status updated successfully',
+    });
+
+  } catch (error) {
+    console.error('✗ Error updating order:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while updating the order.',
+    });
+  }
+});
+
+/**
+ * POST /api/admin/orders/manual
+ * Create a manual order (protected route)
+ */
+router.post('/orders/manual', authMiddleware, async (req, res) => {
+  try {
+    const { customer_name, customer_phone, customer_email, notes, order_source, products } = req.body;
+
+    if (!customer_name || !customer_phone || !products || !Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Customer name, phone, and at least one product are required',
+      });
+    }
+
+    if (!order_source || !['manual', 'website'].includes(order_source)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid order source is required (manual or website)',
+      });
+    }
+
+    // Create orders for each product
+    const createdOrders = [];
+    for (const product of products) {
+      const productId = product.product_id;
+      const quantity = parseInt(product.quantity) || 1;
+
+      // Get product details
+      const productResult = await pool.query('SELECT * FROM products WHERE id = $1', [productId]);
+      if (!productResult.rows[0]) {
+        return res.status(404).json({
+          success: false,
+          message: `Product #${productId} not found`,
+        });
+      }
+
+      const productData = productResult.rows[0];
+
+      const orderResult = await pool.query(
+        `INSERT INTO orders (customer_name, customer_phone, customer_email, product_id, product_name, product_price, quantity, notes, order_source, status) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+         RETURNING id, created_at`,
+        [customer_name, customer_phone, customer_email || null, productId, productData.name, productData.price, quantity, notes || null, order_source, 'Pending']
+      );
+
+      const orderId = orderResult.rows[0].id;
+      createdOrders.push({
+        id: orderId,
+        customer_name,
+        customer_phone,
+        customer_email,
+        product_id: productId,
+        product_name: productData.name,
+        product_price: parseFloat(productData.price),
+        quantity,
+        notes,
+        order_source,
+        status: 'Pending',
+        created_at: orderResult.rows[0].created_at
+      });
+    }
+
+    console.log(`✓ Created ${createdOrders.length} manual order(s) for ${customer_name}`);
+
+    return res.status(201).json({
+      success: true,
+      message: `Successfully created ${createdOrders.length} order(s)`,
+      orders: createdOrders,
+    });
+
+  } catch (error) {
+    console.error('✗ Error creating manual order:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while creating the order.',
+    });
+  }
+});
+
+/**
  * PATCH /api/admin/orders/bulk-status
  * Update multiple orders status at once (protected route)
  */
