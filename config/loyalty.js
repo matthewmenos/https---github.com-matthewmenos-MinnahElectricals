@@ -157,22 +157,14 @@ async function awardPointsForCompletedOrder(order) {
 }
 
 /**
- * Process loyalty points for a new order (auto-enroll + award)
+ * Process loyalty for a new order (auto-enroll only, no points awarded yet)
+ * Points are only awarded when the order is marked as Completed
  * Used by both public and admin order creation flows
  */
-async function processLoyaltyForNewOrder(customer_phone, customer_name, customer_email, orderTotal, orderId) {
+async function processLoyaltyForNewOrder(customer_phone, customer_name, customer_email) {
   try {
-    // Auto-enroll if not a member
-    const member = await autoEnrollCustomer(customer_phone, customer_name, customer_email);
-    if (!member) return null;
-
-    // Award points
-    return await awardLoyaltyPoints(
-      customer_phone,
-      orderTotal,
-      orderId,
-      `Points earned from order #${orderId}`
-    );
+    // Auto-enroll if not a member (no points awarded until order is completed)
+    return await autoEnrollCustomer(customer_phone, customer_name, customer_email);
   } catch (error) {
     console.error('✗ Error processing loyalty for new order:', error.message);
     return null;

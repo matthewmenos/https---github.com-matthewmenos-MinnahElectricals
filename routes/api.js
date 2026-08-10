@@ -346,9 +346,8 @@ router.post('/orders', async (req, res) => {
     const orderId = orderResult.rows[0].id;
     const created_at = orderResult.rows[0].created_at;
 
-    // Auto-award loyalty points (auto-enrolls customer if not a member)
-    const orderTotal = parseFloat(product.price) * (quantity || 1);
-    processLoyaltyForNewOrder(customer_phone, customer_name, customer_email, orderTotal, orderId)
+    // Auto-enroll customer in loyalty program (points awarded when order is Completed)
+    processLoyaltyForNewOrder(customer_phone, customer_name, customer_email)
       .catch(err => console.error('Loyalty processing error:', err.message));
 
     const newOrder = {
