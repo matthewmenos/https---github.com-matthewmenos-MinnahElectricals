@@ -223,16 +223,26 @@
     // Load portfolio data
     async function loadPortfolio() {
       try {
+        console.log('Loading portfolio...');
         const response = await fetch('/api/portfolio');
-        const data = await response.json();
+        console.log('Portfolio API response status:', response.status);
         
-        if (data.success && data.portfolio.length > 0) {
-          const featuredContainer = document.getElementById('featuredPortfolio');
-          const allContainer = document.getElementById('allPortfolio');
-          const emptyState = document.getElementById('portfolioEmpty');
-          
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Portfolio data:', data);
+        
+        const featuredContainer = document.getElementById('featuredPortfolio');
+        const allContainer = document.getElementById('allPortfolio');
+        const emptyState = document.getElementById('portfolioEmpty');
+        
+        if (data.success && data.portfolio && data.portfolio.length > 0) {
           const featured = data.portfolio.filter(item => item.featured == 1);
           const all = data.portfolio;
+          
+          console.log(`Found ${featured.length} featured and ${all.length} total portfolio items`);
           
           // Hide empty state
           emptyState.classList.add('hidden');
@@ -248,10 +258,12 @@
           // Render all projects
           allContainer.innerHTML = all.map(item => createPortfolioCard(item)).join('');
         } else {
-          document.getElementById('portfolioEmpty').classList.remove('hidden');
+          console.log('No portfolio items found');
+          emptyState.classList.remove('hidden');
         }
       } catch (error) {
         console.error('Error loading portfolio:', error);
+        document.getElementById('portfolioEmpty').classList.remove('hidden');
       }
     }
 
@@ -271,7 +283,10 @@
     }
 
     // Load portfolio on page load
-    document.addEventListener('DOMContentLoaded', loadPortfolio);
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('Portfolio page loaded, fetching data...');
+      loadPortfolio();
+    });
 
     // Mobile menu toggle
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');

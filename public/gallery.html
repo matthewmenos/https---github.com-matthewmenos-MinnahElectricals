@@ -217,17 +217,28 @@
     // Load gallery data
     async function loadGallery() {
       try {
+        console.log('Loading gallery...');
         const response = await fetch('/api/gallery');
-        const data = await response.json();
+        console.log('Gallery API response status:', response.status);
         
-        if (data.success && data.gallery.length > 0) {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Gallery data:', data);
+        
+        if (data.success && data.gallery && data.gallery.length > 0) {
           allGalleryItems = data.gallery;
+          console.log(`Found ${allGalleryItems.length} gallery items`);
           renderGallery(allGalleryItems);
         } else {
+          console.log('No gallery items found');
           document.getElementById('galleryEmpty').classList.remove('hidden');
         }
       } catch (error) {
         console.error('Error loading gallery:', error);
+        document.getElementById('galleryEmpty').classList.remove('hidden');
       }
     }
 
@@ -277,7 +288,10 @@
     }
 
     // Load gallery on page load
-    document.addEventListener('DOMContentLoaded', loadGallery);
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('Gallery page loaded, fetching data...');
+      loadGallery();
+    });
 
     // Mobile menu toggle
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
