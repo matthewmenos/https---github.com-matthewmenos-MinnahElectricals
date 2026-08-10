@@ -53,6 +53,7 @@
         <a href="/admin/customers.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Customers</a>
         <a href="/admin/inventory.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Inventory</a>
         <a href="/admin/settings.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Settings</a>
+        <a href="/admin/templates.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Templates</a>
       </div>
     </div>
   </nav>
@@ -121,10 +122,10 @@
         const data = await response.json();
         if (!data.success) return;
         const a = data.analytics;
-        document.getElementById('analyticsRevenue').textContent = '₵' + parseFloat(a.total_revenue).toFixed(2);
-        document.getElementById('analyticsOrders').textContent = a.orders.total;
+        document.getElementById('analyticsRevenue').textContent = '₵' + parseFloat(a.revenue.total_revenue).toFixed(2);
+        document.getElementById('analyticsOrders').textContent = a.revenue.orders.total;
         document.getElementById('analyticsCustomers').textContent = a.customers.unique_customers;
-        const avg = a.orders.total > 0 ? a.total_revenue / a.orders.total : 0;
+        const avg = a.revenue.orders.total > 0 ? a.revenue.total_revenue / a.revenue.orders.total : 0;
         document.getElementById('analyticsAvgOrder').textContent = '₵' + avg.toFixed(2);
 
         const top = document.getElementById('topProductsList');

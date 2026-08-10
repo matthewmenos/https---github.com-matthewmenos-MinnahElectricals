@@ -3,80 +3,88 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Loyalty Program - Admin Dashboard</title>
-  <link rel="stylesheet" href="/css/admin.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <title>Loyalty Program | Minnah Electricals</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any">
+  <link rel="icon" type="image/jpeg" href="/assets/logo.jpg" sizes="32x32">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { navy: '#0F172A', amber: '#F59E0B', 'amber-dark': '#D97706' }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
 </head>
-<body>
-  <div class="admin-container">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <h2><i class="fas fa-bolt"></i> Admin Panel</h2>
+<body class="bg-gray-50">
+  <header class="bg-navy text-white shadow-lg">
+    <div class="container mx-auto px-4">
+      <div class="flex items-center justify-between py-4">
+        <a href="/admin/index.html" class="flex items-center space-x-3">
+          <img src="/assets/logo.jpg" alt="Logo" class="h-12 w-12 rounded-full object-cover border-2 border-amber">
+          <div>
+            <h1 class="text-xl font-bold">Minnah Electricals</h1>
+            <p class="text-xs text-gray-300">Admin - Loyalty Program</p>
+          </div>
+        </a>
+        <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-semibold transition">Log Out</button>
       </div>
-      <nav class="sidebar-nav">
-        <a href="/admin"><i class="fas fa-dashboard"></i> Dashboard</a>
-        <a href="/admin/leads"><i class="fas fa-users"></i> Leads</a>
-        <a href="/admin/orders"><i class="fas fa-shopping-cart"></i> Orders</a>
-        <a href="/admin/products"><i class="fas fa-box"></i> Products</a>
-        <a href="/admin/appointments"><i class="fas fa-calendar"></i> Appointments</a>
-        <a href="/admin/service-requests"><i class="fas fa-tools"></i> Service Requests</a>
-        <a href="/admin/customers"><i class="fas fa-user-friends"></i> Customers</a>
-        <a href="/admin/loyalty" class="active"><i class="fas fa-star"></i> Loyalty Program</a>
-        <a href="/admin/newsletter"><i class="fas fa-envelope"></i> Newsletter</a>
-        <a href="/admin/analytics"><i class="fas fa-chart-line"></i> Analytics</a>
-        <a href="/admin/settings"><i class="fas fa-cog"></i> Settings</a>
-      </nav>
-    </aside>
+    </div>
+  </header>
 
-    <!-- Main Content -->
-    <main class="main-content">
-      <header class="top-bar">
-        <h1>Customer Loyalty Program</h1>
-        <div class="user-info">
-          <span id="usernameDisplay"></span>
-          <button onclick="logout()" class="btn-logout">Logout</button>
-        </div>
-      </header>
+  <nav class="bg-white shadow-sm border-b border-gray-200">
+    <div class="container mx-auto px-4">
+      <div class="flex space-x-6 overflow-x-auto">
+        <a href="/admin/index.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Dashboard</a>
+        <a href="/admin/leads.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Leads</a>
+        <a href="/admin/products.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Products</a>
+        <a href="/admin/orders.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Orders</a>
+        <a href="/admin/portfolio.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Portfolio</a>
+        <a href="/admin/gallery.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Gallery</a>
+        <a href="/admin/analytics.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Analytics</a>
+        <a href="/admin/loyalty.html" class="py-4 px-1 border-b-2 border-amber text-amber font-semibold text-sm">Loyalty</a>
+        <a href="/admin/customers.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Customers</a>
+        <a href="/admin/inventory.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Inventory</a>
+        <a href="/admin/settings.html" class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-semibold text-sm">Settings</a>
+      </div>
+    </div>
+  </nav>
 
-      <div class="content">
-        <!-- Stats Cards -->
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon"><i class="fas fa-users"></i></div>
-            <div class="stat-info">
-              <h3 id="totalMembers">0</h3>
-              <p>Total Members</p>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon"><i class="fas fa-coins"></i></div>
-            <div class="stat-info">
-              <h3 id="totalPoints">0</h3>
-              <p>Points Issued</p>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon"><i class="fas fa-shopping-bag"></i></div>
-            <div class="stat-info">
-              <h3 id="totalLoyaltyOrders">0</h3>
-              <p>Loyalty Orders</p>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
-            <div class="stat-info">
-              <h3 id="totalLoyaltySpent">₵0</h3>
-              <p>Total Spent</p>
-            </div>
-          </div>
-        </div>
+  <main class="container mx-auto px-4 py-8">
+    <!-- Stats Cards -->
+    <div class="grid md:grid-cols-4 gap-6 mb-8">
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm font-semibold mb-2">Total Members</div>
+        <div id="totalMembers" class="text-3xl font-bold text-navy">0</div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm font-semibold mb-2">Points Issued</div>
+        <div id="totalPoints" class="text-3xl font-bold text-amber">0</div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm font-semibold mb-2">Loyalty Orders</div>
+        <div id="totalLoyaltyOrders" class="text-3xl font-bold text-blue-600">0</div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm font-semibold mb-2">Total Spent</div>
+        <div id="totalLoyaltySpent" class="text-3xl font-bold text-green-600">₵0</div>
+      </div>
+    </div>
 
-        <!-- Filters -->
-        <div class="filters">
+    <!-- Filters -->
+    <div class="bg-white rounded-lg shadow p-4 mb-6">
+      <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div class="flex flex-wrap gap-2">
           <div class="filter-group">
-            <label>Tier:</label>
-            <select id="tierFilter" onchange="loadMembers()">
+            <label class="text-gray-700 font-semibold mr-2">Tier:</label>
+            <select id="tierFilter" onchange="loadMembers()" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
               <option value="all">All Tiers</option>
               <option value="bronze">Bronze</option>
               <option value="silver">Silver</option>
@@ -85,38 +93,42 @@
             </select>
           </div>
           <div class="filter-group">
-            <label>Search:</label>
-            <input type="text" id="searchInput" placeholder="Name or phone..." oninput="loadMembers()">
+            <label class="text-gray-700 font-semibold mr-2">Search:</label>
+            <input type="text" id="searchInput" placeholder="Name or phone..." oninput="loadMembers()" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
           </div>
-          <button onclick="openAddModal()" class="btn-primary"><i class="fas fa-plus"></i> Add Member</button>
         </div>
-
-        <!-- Members Table -->
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Customer</th>
-                <th>Phone</th>
-                <th>Email</th>
-                <th>Points</th>
-                <th>Tier</th>
-                <th>Total Spent</th>
-                <th>Orders</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="membersTable">
-              <tr>
-                <td colspan="9" class="loading">Loading loyalty members...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <button onclick="openAddModal()" class="bg-amber hover:bg-amber-dark text-navy px-4 py-2 rounded-lg font-semibold transition">
+          <i class="fas fa-plus mr-2"></i>Add Member
+        </button>
       </div>
-    </main>
-  </div>
+    </div>
+
+    <!-- Members Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-navy text-white">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">ID</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Customer</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Phone</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Email</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Points</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Tier</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Total Spent</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Orders</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="membersTable" class="bg-white divide-y divide-gray-200">
+            <tr>
+              <td colspan="9" class="px-6 py-4 text-center text-gray-500">Loading loyalty members...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
 
   <!-- Add/Edit Modal -->
   <div id="memberModal" class="modal">
@@ -129,24 +141,24 @@
         <form id="memberForm">
           <input type="hidden" id="memberId">
           <div class="form-group">
-            <label>Customer Name *</label>
-            <input type="text" id="memberName" required>
+            <label class="block text-gray-700 font-semibold mb-2">Customer Name *</label>
+            <input type="text" id="memberName" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
           </div>
           <div class="form-group">
-            <label>Phone Number *</label>
-            <input type="tel" id="memberPhone" required>
+            <label class="block text-gray-700 font-semibold mb-2">Phone Number *</label>
+            <input type="tel" id="memberPhone" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
           </div>
           <div class="form-group">
-            <label>Email</label>
-            <input type="email" id="memberEmail">
+            <label class="block text-gray-700 font-semibold mb-2">Email</label>
+            <input type="email" id="memberEmail" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
           </div>
           <div class="form-group">
-            <label>Points</label>
-            <input type="number" id="memberPoints" value="0" min="0">
+            <label class="block text-gray-700 font-semibold mb-2">Points</label>
+            <input type="number" id="memberPoints" value="0" min="0" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
           </div>
           <div class="form-group">
-            <label>Tier</label>
-            <select id="memberTier">
+            <label class="block text-gray-700 font-semibold mb-2">Tier</label>
+            <select id="memberTier" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
               <option value="bronze">Bronze</option>
               <option value="silver">Silver</option>
               <option value="gold">Gold</option>
@@ -154,8 +166,8 @@
             </select>
           </div>
           <div class="form-actions">
-            <button type="submit" class="btn-primary">Save Member</button>
-            <button type="button" onclick="closeModal()" class="btn-secondary">Cancel</button>
+            <button type="submit" class="bg-amber hover:bg-amber-dark text-navy px-4 py-2 rounded-lg font-semibold transition">Save Member</button>
+            <button type="button" onclick="closeModal()" class="bg-gray-200 hover:bg-gray-300 text-navy px-4 py-2 rounded-lg font-semibold transition">Cancel</button>
           </div>
         </form>
       </div>
@@ -173,8 +185,8 @@
         <form id="transactionForm">
           <input type="hidden" id="transactionCustomerPhone">
           <div class="form-group">
-            <label>Transaction Type *</label>
-            <select id="transactionType" required>
+            <label class="block text-gray-700 font-semibold mb-2">Transaction Type *</label>
+            <select id="transactionType" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
               <option value="earned">Earned</option>
               <option value="redeemed">Redeemed</option>
               <option value="bonus">Bonus</option>
@@ -182,20 +194,20 @@
             </select>
           </div>
           <div class="form-group">
-            <label>Points *</label>
-            <input type="number" id="transactionPoints" required min="1">
+            <label class="block text-gray-700 font-semibold mb-2">Points *</label>
+            <input type="number" id="transactionPoints" required min="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
           </div>
           <div class="form-group">
-            <label>Description</label>
-            <textarea id="transactionDescription" rows="3"></textarea>
+            <label class="block text-gray-700 font-semibold mb-2">Description</label>
+            <textarea id="transactionDescription" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent"></textarea>
           </div>
           <div class="form-group">
-            <label>Order ID (optional)</label>
-            <input type="number" id="transactionOrderId">
+            <label class="block text-gray-700 font-semibold mb-2">Order ID (optional)</label>
+            <input type="number" id="transactionOrderId" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
           </div>
           <div class="form-actions">
-            <button type="submit" class="btn-primary">Add Transaction</button>
-            <button type="button" onclick="closeTransactionModal()" class="btn-secondary">Cancel</button>
+            <button type="submit" class="bg-amber hover:bg-amber-dark text-navy px-4 py-2 rounded-lg font-semibold transition">Add Transaction</button>
+            <button type="button" onclick="closeTransactionModal()" class="bg-gray-200 hover:bg-gray-300 text-navy px-4 py-2 rounded-lg font-semibold transition">Cancel</button>
           </div>
         </form>
       </div>
@@ -203,15 +215,13 @@
   </div>
 
   <script>
-    let authToken = localStorage.getItem('authToken');
-    let currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    const token = localStorage.getItem('adminToken');
+    if (!token) { window.location.href = '/admin/login.html'; }
 
-    // Check authentication
-    if (!authToken || !currentUser.username) {
-      window.location.href = '/admin/login';
-    } else {
-      document.getElementById('usernameDisplay').textContent = currentUser.username;
-    }
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('adminToken');
+      window.location.href = '/admin/login.html';
+    });
 
     // Load members on page load
     document.addEventListener('DOMContentLoaded', () => {
@@ -222,7 +232,7 @@
     async function loadStats() {
       try {
         const response = await fetch('/api/admin/analytics', {
-          headers: { 'Authorization': `Bearer ${authToken}` }
+          headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
 
@@ -231,7 +241,7 @@
           document.getElementById('totalMembers').textContent = loyalty.total_members || 0;
           document.getElementById('totalPoints').textContent = loyalty.total_points_issued || 0;
           document.getElementById('totalLoyaltyOrders').textContent = loyalty.total_loyalty_orders || 0;
-          document.getElementById('totalLoyaltySpent').textContent = `₵${(loyalty.total_loyalty_spent || 0).toFixed(2)}`;
+          document.getElementById('totalLoyaltySpent').textContent = '₵' + (loyalty.total_loyalty_spent || 0).toFixed(2);
         }
       } catch (error) {
         console.error('Error loading stats:', error);
@@ -247,7 +257,7 @@
 
       try {
         const response = await fetch(url, {
-          headers: { 'Authorization': `Bearer ${authToken}` }
+          headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
 
@@ -264,23 +274,29 @@
       const tbody = document.getElementById('membersTable');
 
       if (members.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="no-data">No loyalty members found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="px-6 py-4 text-center text-gray-500">No loyalty members found</td></tr>';
         return;
       }
 
       tbody.innerHTML = members.map(member => `
-        <tr>
-          <td>#${member.id}</td>
-          <td>${member.customer_name}</td>
-          <td>${member.customer_phone}</td>
-          <td>${member.customer_email || '-'}</td>
-          <td><strong>${member.points}</strong></td>
-          <td><span class="tier-badge tier-${member.tier}">${member.tier.toUpperCase()}</span></td>
-          <td>₵${(member.total_spent || 0).toFixed(2)}</td>
-          <td>${member.total_orders || 0}</td>
-          <td>
-            <button onclick="addTransaction('${member.customer_phone}')" class="btn-primary" title="Add Points"><i class="fas fa-plus-circle"></i></button>
-            <button onclick="editMember(${member.id})" class="btn-edit" title="Edit"><i class="fas fa-edit"></i></button>
+        <tr class="hover:bg-gray-50">
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">#${member.id}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-navy">${member.customer_name}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${member.customer_phone}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${member.customer_email || '-'}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm"><strong>${member.points}</strong></td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm">
+            <span class="px-2 py-1 text-xs font-semibold rounded-full tier-${member.tier}">${member.tier.toUpperCase()}</span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">₵${(member.total_spent || 0).toFixed(2)}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${member.total_orders || 0}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm">
+            <button onclick="addTransaction('${member.customer_phone}')" class="bg-amber hover:bg-amber-dark text-navy px-3 py-1 rounded-lg font-semibold transition mr-2" title="Add Points">
+              <i class="fas fa-plus-circle"></i>
+            </button>
+            <button onclick="editMember(${member.id})" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-semibold transition" title="Edit">
+              <i class="fas fa-edit"></i>
+            </button>
           </td>
         </tr>
       `).join('');
@@ -296,7 +312,7 @@
     async function editMember(id) {
       try {
         const response = await fetch(`/api/admin/loyalty/members`, {
-          headers: { 'Authorization': `Bearer ${authToken}` }
+          headers: { 'Authorization': `Bearer ${token}` }
         });
 
         const data = await response.json();
@@ -336,7 +352,7 @@
         const response = await fetch(url, {
           method: method,
           headers: {
-            'Authorization': `Bearer ${authToken}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({ customer_name, customer_phone, customer_email, points, tier })
@@ -377,7 +393,7 @@
         const response = await fetch('/api/admin/loyalty/transactions', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${authToken}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({ customer_phone, transaction_type, points, description, order_id })
@@ -407,15 +423,9 @@
       document.getElementById('transactionModal').style.display = 'none';
     }
 
-    function logout() {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('currentUser');
-      window.location.href = '/admin/login';
-    }
-
     function showNotification(message, type) {
       const notification = document.createElement('div');
-      notification.className = `notification notification-${type}`;
+      notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
       notification.textContent = message;
       document.body.appendChild(notification);
       setTimeout(() => notification.remove(), 3000);
