@@ -90,6 +90,19 @@
   </header>
 
   <main class="container mx-auto px-4 py-8 flex-grow">
+    <!-- 3D Background Container -->
+    <div id="loyalty-3d-container" class="relative mb-8 rounded-2xl overflow-hidden" style="min-height: 200px;">
+      <div class="absolute inset-0 opacity-40 md:opacity-60" aria-hidden="true">
+        <noscript>
+          <div class="absolute inset-0 bg-gradient-to-br from-navy to-gray-800"></div>
+        </noscript>
+      </div>
+      <div class="relative z-10 py-12 px-8 text-center text-white">
+        <h1 class="text-4xl md:text-5xl font-bold mb-4">Loyalty Program</h1>
+        <p class="text-xl text-gray-300">Check your loyalty points, tier status, and rewards</p>
+      </div>
+    </div>
+
     <!-- Phone Lookup Section -->
     <div id="lookupSection" class="fade-in">
       <div class="max-w-xl mx-auto bg-white rounded-2xl shadow-lg p-8">
@@ -237,6 +250,30 @@
     </div>
   </footer>
 
+  <!-- 3D Loyalty Header Scene -->
+  <script type="module">
+    import { createMinimalScene } from '/js/webgl/scene-factory.js';
+    
+    const init = () => {
+      if (typeof WebGLScene === 'undefined') {
+        setTimeout(init, 100);
+        return;
+      }
+
+      const container = document.getElementById('loyalty-3d-container');
+      if (!container) return;
+
+      const scene = new WebGLScene(container, {
+        objectFactory: createMinimalScene,
+        pixelRatio: Math.min(window.devicePixelRatio, 2)
+      });
+
+      window.loyalty3DScene = scene;
+    };
+
+    init();
+  </script>
+  
   <script>
     const lookupForm = document.getElementById('lookupForm');
     const lookupSection = document.getElementById('lookupSection');

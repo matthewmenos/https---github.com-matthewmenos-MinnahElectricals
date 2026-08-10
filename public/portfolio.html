@@ -98,9 +98,16 @@
     </div>
   </header>
 
-  <!-- Page Header -->
-  <section class="bg-navy text-white py-16">
-    <div class="container mx-auto px-4 text-center">
+  <!-- Page Header with 3D Background -->
+  <section class="bg-navy text-white py-16 relative overflow-hidden">
+    <!-- 3D Canvas Container -->
+    <div id="portfolio-3d-container" class="absolute inset-0 w-full h-full z-0 opacity-40 md:opacity-60" aria-hidden="true">
+      <noscript>
+        <div class="absolute inset-0 bg-gradient-to-br from-navy to-gray-800"></div>
+      </noscript>
+    </div>
+
+    <div class="container mx-auto px-4 text-center relative z-10">
       <h1 class="text-4xl md:text-5xl font-bold mb-4">Our Portfolio</h1>
       <p class="text-xl text-gray-300">Showcasing our best electrical work</p>
     </div>
@@ -216,6 +223,31 @@
   </footer>
 
   <script src="/js/main.js"></script>
+  
+  <!-- 3D Portfolio Header Scene -->
+  <script type="module">
+    import { createMinimalScene } from '/js/webgl/scene-factory.js';
+    
+    const init = () => {
+      if (typeof WebGLScene === 'undefined') {
+        setTimeout(init, 100);
+        return;
+      }
+
+      const container = document.getElementById('portfolio-3d-container');
+      if (!container) return;
+
+      const scene = new WebGLScene(container, {
+        objectFactory: createMinimalScene,
+        pixelRatio: Math.min(window.devicePixelRatio, 2)
+      });
+
+      window.portfolio3DScene = scene;
+    };
+
+    init();
+  </script>
+  
   <script>
     // Set current year dynamically
     document.getElementById('currentYear').textContent = new Date().getFullYear();

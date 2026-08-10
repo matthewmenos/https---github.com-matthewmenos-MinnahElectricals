@@ -98,9 +98,16 @@
     </div>
   </header>
 
-  <!-- Page Header -->
-  <section class="bg-navy text-white py-16">
-    <div class="container mx-auto px-4 text-center">
+  <!-- Page Header with 3D Background -->
+  <section class="bg-navy text-white py-16 relative overflow-hidden">
+    <!-- 3D Canvas Container -->
+    <div id="shop-3d-container" class="absolute inset-0 w-full h-full z-0 opacity-40 md:opacity-60" aria-hidden="true">
+      <noscript>
+        <div class="absolute inset-0 bg-gradient-to-br from-navy to-gray-800"></div>
+      </noscript>
+    </div>
+
+    <div class="container mx-auto px-4 text-center relative z-10">
       <h1 class="text-4xl md:text-5xl font-bold mb-4">Our Shop</h1>
       <p class="text-xl text-gray-300 mb-6">Quality electrical products and supplies</p>
       
@@ -330,6 +337,31 @@
   </footer>
 
   <script src="/js/main.js"></script>
+  
+  <!-- 3D Shop Header Scene -->
+  <script type="module">
+    import { createMinimalScene } from '/js/webgl/scene-factory.js';
+    
+    const init = () => {
+      if (typeof WebGLScene === 'undefined') {
+        setTimeout(init, 100);
+        return;
+      }
+
+      const container = document.getElementById('shop-3d-container');
+      if (!container) return;
+
+      const scene = new WebGLScene(container, {
+        objectFactory: createMinimalScene,
+        pixelRatio: Math.min(window.devicePixelRatio, 2)
+      });
+
+      window.shop3DScene = scene;
+    };
+
+    init();
+  </script>
+  
   <script>
     // Generate or retrieve session ID
     let sessionId = localStorage.getItem('sessionId');
@@ -402,6 +434,9 @@
       if (!product) return;
 
       const productImages = product.images && product.images.length > 0 ? product.images : (product.image_url ? [{image_url: product.image_url}] : []);
+      
+      // Stop any existing auto-slideshows
+      Object.keys(slideshowStates).forEach(key => stopAutoSlideshow(parseInt(key)));
 
       productDetailContent.innerHTML = `
         <div class="grid md:grid-cols-2 gap-6 md:gap-8">
@@ -471,9 +506,19 @@
       `;
 
       productDetailModal.classList.remove('hidden');
+      
+      // Start auto-slideshow for this product
+      if (productImages.length > 1) {
+        startAutoSlideshow(product.id);
+      }
     }
 
     function closeProductDetailAndOpenOrder(productId) {
+      // Stop auto-slideshow when closing
+      if (slideshowStates[productId]?.interval) {
+        clearInterval(slideshowStates[productId].interval);
+        slideshowStates[productId].interval = null;
+      }
       productDetailModal.classList.add('hidden');
       setTimeout(() => {
         openOrderModal(productId);
@@ -582,6 +627,14 @@
           </div>
         </div>
       `}).join('');
+
+      // Start auto-slideshow for all products with multiple images
+      products.forEach(product => {
+        const productImages = product.images && product.images.length > 0 ? product.images : (product.image_url ? [{image_url: product.image_url}] : []);
+        if (productImages.length > 1) {
+          startAutoSlideshow(product.id);
+        }
+      });
     }
 
     function openOrderModal(productId) {
@@ -940,6 +993,7 @@
       if (!slideshowStates[productId]) slideshowStates[productId] = { current: 0 };
       slideshowStates[productId].current = (slideshowStates[productId].current - 1 + totalSlides) % totalSlides;
       updateSlideshow(container, slides, dots, slideshowStates[productId].current);
+      resetAutoSlideshow(productId);
     }
     
     function nextSlide(productId) {
@@ -951,6 +1005,7 @@
       if (!slideshowStates[productId]) slideshowStates[productId] = { current: 0 };
       slideshowStates[productId].current = (slideshowStates[productId].current + 1) % totalSlides;
       updateSlideshow(container, slides, dots, slideshowStates[productId].current);
+      resetAutoSlideshow(productId);
     }
     
     function goToSlide(productId, slideIndex) {
@@ -961,6 +1016,7 @@
       if (!slideshowStates[productId]) slideshowStates[productId] = { current: 0 };
       slideshowStates[productId].current = slideIndex;
       updateSlideshow(container, slides, dots, slideIndex);
+      resetAutoSlideshow(productId);
     }
     
     function updateSlideshow(container, slides, dots, currentIndex) {
@@ -975,6 +1031,51 @@
           dot.classList.add('bg-white');
         }
       });
+    }
+
+    // Auto-slideshow functionality
+    function startAutoSlideshow(productId) {
+      // Clear any existing interval
+      if (slideshowStates[productId]?.interval) {
+        clearInterval(slideshowStates[productId].interval);
+      }
+      
+      if (!slideshowStates[productId]) {
+        slideshowStates[productId] = { current: 0 };
+      }
+      
+      // Start auto-advance every 3 seconds
+      slideshowStates[productId].interval = setInterval(() => {
+        const container = document.querySelector(`.slideshow-container[data-product-id="${productId}"]`);
+        if (!container) {
+          clearInterval(slideshowStates[productId].interval);
+          return;
+        }
+        
+        const slides = container.querySelector('.slideshow-slides');
+        const dots = container.querySelectorAll('.slideshow-dot');
+        const totalSlides = slides.children.length;
+        
+        if (totalSlides <= 1) return;
+        
+        slideshowStates[productId].current = (slideshowStates[productId].current + 1) % totalSlides;
+        updateSlideshow(container, slides, dots, slideshowStates[productId].current);
+      }, 3000);
+    }
+
+    function resetAutoSlideshow(productId) {
+      if (slideshowStates[productId]?.interval) {
+        clearInterval(slideshowStates[productId].interval);
+      }
+      // Restart auto-slideshow
+      startAutoSlideshow(productId);
+    }
+
+    function stopAutoSlideshow(productId) {
+      if (slideshowStates[productId]?.interval) {
+        clearInterval(slideshowStates[productId].interval);
+        slideshowStates[productId].interval = null;
+      }
     }
   </script>
 </body>
