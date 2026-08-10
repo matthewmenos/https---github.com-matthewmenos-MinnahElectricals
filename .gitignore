@@ -45,6 +45,7 @@ temp/
 *.temp
 VERCEL_DEPLOYMENT.md
 POSTGRESQL_MIGRATION_SUMMARY.md
+R2_CONFIGURATION_FIX.md
 
 # Uploads (if any)
 uploads/

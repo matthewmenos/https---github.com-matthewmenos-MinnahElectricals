@@ -191,12 +191,65 @@ router.get('/products', authMiddleware, async (req, res) => {
 });
 
 /**
+ * GET /api/admin/products/:id
+ * Get single product with images (protected route)
+ */
+router.get('/products/:id', authMiddleware, async (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+    
+    // Get product
+    const productResult = await pool.query('SELECT * FROM products WHERE id = $1', [productId]);
+    
+    if (!productResult.rows[0]) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found',
+      });
+    }
+    
+    const product = productResult.rows[0];
+    
+    // Get all images for this product
+    const imagesResult = await pool.query(
+      'SELECT * FROM product_images WHERE product_id = $1 ORDER BY display_order ASC, created_at ASC',
+      [productId]
+    );
+    
+    const productData = {
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      price: parseFloat(product.price),
+      image_url: product.image_url,
+      category: product.category,
+      in_stock: product.in_stock,
+      created_at: product.created_at,
+      updated_at: product.updated_at,
+      images: imagesResult.rows
+    };
+
+    return res.status(200).json({
+      success: true,
+      product: productData,
+    });
+
+  } catch (error) {
+    console.error('✗ Error fetching product:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while fetching the product.',
+    });
+  }
+});
+
+/**
  * POST /api/admin/products
  * Create a new product (protected route)
  */
 router.post('/products', authMiddleware, async (req, res) => {
   try {
-    const { name, description, price, category, image_url, in_stock } = req.body;
+    const { name, description, price, category, image_url, images, in_stock } = req.body;
 
     // Validate required fields
     if (!name || !price || !category) {
@@ -223,6 +276,16 @@ router.post('/products', authMiddleware, async (req, res) => {
 
     const productId = result.rows[0].id;
     const created_at = result.rows[0].created_at;
+
+    // Insert additional images if provided
+    if (images && Array.isArray(images) && images.length > 0) {
+      for (let i = 0; i < images.length; i++) {
+        await pool.query(
+          'INSERT INTO product_images (product_id, image_url, display_order) VALUES ($1, $2, $3)',
+          [productId, images[i], i + 1]
+        );
+      }
+    }
 
     const newProduct = {
       id: productId,
@@ -260,7 +323,7 @@ router.post('/products', authMiddleware, async (req, res) => {
 router.put('/products/:id', authMiddleware, async (req, res) => {
   try {
     const productId = parseInt(req.params.id);
-    const { name, description, price, category, image_url, in_stock } = req.body;
+    const { name, description, price, category, image_url, images, keep_existing_images, in_stock } = req.body;
 
     // Validate required fields
     if (!name || !price || !category) {
@@ -294,6 +357,19 @@ router.put('/products/:id', authMiddleware, async (req, res) => {
         productId
       ]
     );
+
+    // Handle images
+    if (!keep_existing_images && images && Array.isArray(images) && images.length > 0) {
+      // Delete old images and add new ones
+      await pool.query('DELETE FROM product_images WHERE product_id = $1', [productId]);
+      
+      for (let i = 0; i < images.length; i++) {
+        await pool.query(
+          'INSERT INTO product_images (product_id, image_url, display_order) VALUES ($1, $2, $3)',
+          [productId, images[i], i + 1]
+        );
+      }
+    }
 
     console.log(`✓ Product updated: #${productId}`);
 
@@ -337,6 +413,9 @@ router.delete('/products/:id', authMiddleware, async (req, res) => {
       });
     }
 
+    // Delete associated images first (cascade will handle this, but being explicit)
+    await pool.query('DELETE FROM product_images WHERE product_id = $1', [productId]);
+    
     // Delete product
     await pool.query('DELETE FROM products WHERE id = $1', [productId]);
 
@@ -352,6 +431,42 @@ router.delete('/products/:id', authMiddleware, async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'An error occurred while deleting the product.',
+    });
+  }
+});
+
+/**
+ * DELETE /api/admin/product-images/:id
+ * Delete a product image (protected route)
+ */
+router.delete('/product-images/:id', authMiddleware, async (req, res) => {
+  try {
+    const imageId = parseInt(req.params.id);
+
+    // Check if image exists
+    const checkResult = await pool.query('SELECT * FROM product_images WHERE id = $1', [imageId]);
+    if (!checkResult.rows[0]) {
+      return res.status(404).json({
+        success: false,
+        message: 'Image not found',
+      });
+    }
+
+    // Delete image
+    await pool.query('DELETE FROM product_images WHERE id = $1', [imageId]);
+
+    console.log(`✓ Product image deleted: #${imageId}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Image deleted successfully',
+    });
+
+  } catch (error) {
+    console.error('✗ Error deleting product image:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while deleting the image.',
     });
   }
 });

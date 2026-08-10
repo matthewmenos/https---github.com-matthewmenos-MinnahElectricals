@@ -212,13 +212,39 @@ router.get('/products', async (req, res) => {
       'SELECT * FROM products WHERE in_stock = true ORDER BY created_at DESC'
     );
     
+    // Fetch all images for all products in one query
+    const productIds = result.rows.map(row => row.id);
+    let imagesByProduct = {};
+    
+    if (productIds.length > 0) {
+      const imagesResult = await pool.query(
+        'SELECT * FROM product_images WHERE product_id = ANY($1) ORDER BY product_id, display_order ASC, created_at ASC',
+        [productIds]
+      );
+      
+      // Group images by product_id
+      imagesResult.rows.forEach(img => {
+        if (!imagesByProduct[img.product_id]) {
+          imagesByProduct[img.product_id] = [];
+        }
+        imagesByProduct[img.product_id].push({
+          id: img.id,
+          image_url: img.image_url,
+          display_order: img.display_order
+        });
+      });
+    }
+    
     const products = result.rows.map(row => {
       // Return image_url as-is from database (R2 URLs are already complete)
       const imageUrl = row.image_url;
       
+      // Get additional images for this product
+      const productImages = imagesByProduct[row.id] || [];
+      
       // Debug logging
       if (process.env.NODE_ENV === 'production') {
-        console.log(`Product ${row.id} (${row.name}): image_url = ${imageUrl || 'NULL/EMPTY'}`);
+        console.log(`Product ${row.id} (${row.name}): image_url = ${imageUrl || 'NULL/EMPTY'}, additional images = ${productImages.length}`);
       }
       
       return {
@@ -226,7 +252,8 @@ router.get('/products', async (req, res) => {
         name: row.name,
         description: row.description,
         price: parseFloat(row.price),
-        image_url: imageUrl, // R2 public URL from database
+        image_url: imageUrl, // R2 public URL from database (main image)
+        images: productImages, // Additional images
         category: row.category,
         in_stock: row.in_stock,
         created_at: row.created_at,
@@ -278,12 +305,25 @@ router.get('/products/:id', async (req, res) => {
       imageUrl = `${req.protocol}://${req.get('host')}/${cleanPath}`;
     }
     
+    // Get all images for this product
+    const imagesResult = await pool.query(
+      'SELECT * FROM product_images WHERE product_id = $1 ORDER BY display_order ASC, created_at ASC',
+      [productId]
+    );
+    
+    const productImages = imagesResult.rows.map(img => ({
+      id: img.id,
+      image_url: img.image_url,
+      display_order: img.display_order
+    }));
+    
     const product = {
       id: row.id,
       name: row.name,
       description: row.description,
       price: parseFloat(row.price),
       image_url: imageUrl,
+      images: productImages,
       category: row.category,
       in_stock: row.in_stock,
       created_at: row.created_at,

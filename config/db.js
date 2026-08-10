@@ -65,6 +65,17 @@ async function initDB() {
     `);
 
     await pool.query(`
+      CREATE TABLE IF NOT EXISTS product_images (
+        id SERIAL PRIMARY KEY,
+        product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+        image_url TEXT NOT NULL,
+        display_order INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(product_id, display_order)
+      )
+    `);
+
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS orders (
         id SERIAL PRIMARY KEY,
         customer_name VARCHAR(255) NOT NULL,
@@ -258,6 +269,16 @@ async function initDB() {
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_loyalty_transactions_customer ON loyalty_transactions(customer_phone)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_product_specs_product ON product_specifications(product_id)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_product_variants_product ON product_variants(product_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_product_images_product_id ON product_images(product_id)`);
+
+    // Migrate existing single images from products table to product_images table
+    await pool.query(`
+      INSERT INTO product_images (product_id, image_url, display_order)
+      SELECT id, image_url, 0
+      FROM products
+      WHERE image_url IS NOT NULL AND image_url != ''
+      ON CONFLICT DO NOTHING
+    `);
 
     console.log('✓ Database tables initialized');
 
