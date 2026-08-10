@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loyalty Program | Minnah Electricals</title>
+  <meta name="description" content="Check your loyalty points, tier status, and rewards at Minnah Electricals.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any">
+  <link rel="icon" type="image/jpeg" href="/assets/logo.jpg" sizes="32x32">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { navy: '#0F172A', amber: '#F59E0B', 'amber-dark': '#D97706' }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .fade-in { animation: fadeIn 0.5s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .tier-bronze { background: #CD7F32; color: #fff; }
+    .tier-silver { background: #C0C0C0; color: #1a1a1a; }
+    .tier-gold { background: #FFD700; color: #1a1a1a; }
+    .tier-platinum { background: #E5E4E2; color: #1a1a1a; border: 1px solid #B8860B; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="bg-navy text-white shadow-lg">
+    <div class="container mx-auto px-4">
+      <div class="flex items-center justify-between py-4">
+        <a href="/" class="flex items-center space-x-3">
+          <img src="/assets/logo.jpg" alt="Logo" class="h-12 w-12 rounded-full object-cover border-2 border-amber">
+          <div>
+            <h1 class="text-xl font-bold">Minnah Electricals</h1>
+            <p class="text-xs text-gray-300">Loyalty Program</p>
+          </div>
+        </a>
+        <a href="/" class="bg-amber hover:bg-amber-dark text-navy px-4 py-2 rounded-lg font-semibold transition">Back to Home</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-4 py-8 flex-grow">
+    <!-- Phone Lookup Section -->
+    <div id="lookupSection" class="fade-in">
+      <div class="max-w-xl mx-auto bg-white rounded-2xl shadow-lg p-8">
+        <div class="text-center mb-8">
+          <div class="w-20 h-20 mx-auto bg-amber rounded-full flex items-center justify-center mb-4">
+            <svg class="w-10 h-10 text-navy" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2l2.4 7.2H22l-6 4.5 2.4 7.3L12 16.5l-6.4 4.5L8 13.7l-6-4.5h7.6z"/>
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-navy">Check Your Loyalty Status</h2>
+          <p class="text-gray-600 mt-2">Enter your phone number to view your points, tier, and rewards</p>
+        </div>
+        <form id="lookupForm" class="space-y-4">
+          <div>
+            <label class="block text-gray-700 font-semibold mb-2">Phone Number *</label>
+            <input type="tel" id="phoneInput" required placeholder="e.g. (555) 123-4567" 
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
+          </div>
+          <button type="submit" class="w-full bg-amber hover:bg-amber-dark text-navy px-4 py-3 rounded-lg font-bold transition">
+            Check My Points
+          </button>
+          <p id="lookupError" class="text-red-600 text-sm text-center hidden"></p>
+        </form>
+      </div>
+    </div>
+
+    <!-- Loyalty Status Section (hidden initially) -->
+    <div id="statusSection" class="hidden">
+      <div class="max-w-4xl mx-auto">
+        <!-- Welcome + Tier Card -->
+        <div class="bg-navy text-white rounded-2xl shadow-xl p-8 mb-6 fade-in">
+          <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-4">
+              <div class="w-16 h-16 bg-amber rounded-full flex items-center justify-center">
+                <span class="text-2xl font-bold text-navy" id="memberInitials">?</span>
+              </div>
+              <div>
+                <h2 class="text-2xl font-bold" id="memberName">Member</h2>
+                <p class="text-gray-300" id="memberPhone"></p>
+              </div>
+            </div>
+            <div class="text-center">
+              <div class="text-5xl font-bold text-amber" id="memberPoints">0</div>
+              <div class="text-sm text-gray-300">Loyalty Points</div>
+            </div>
+            <div class="text-center">
+              <span id="memberTierBadge" class="px-4 py-2 rounded-full text-sm font-bold tier-bronze">BRONZE</span>
+              <p class="text-xs text-gray-300 mt-2">Current Tier</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="grid md:grid-cols-3 gap-6 mb-6">
+          <div class="bg-white rounded-xl shadow p-6 fade-in">
+            <div class="text-gray-500 text-sm font-semibold mb-2">Total Spent</div>
+            <div class="text-2xl font-bold text-navy" id="totalSpent">₵0.00</div>
+          </div>
+          <div class="bg-white rounded-xl shadow p-6 fade-in">
+            <div class="text-gray-500 text-sm font-semibold mb-2">Total Orders</div>
+            <div class="text-2xl font-bold text-blue-600" id="totalOrders">0</div>
+          </div>
+          <div class="bg-white rounded-xl shadow p-6 fade-in">
+            <div class="text-gray-500 text-sm font-semibold mb-2">Member Since</div>
+            <div class="text-2xl font-bold text-green-600" id="memberSince">-</div>
+          </div>
+        </div>
+
+        <!-- Tier Benefits -->
+        <div class="bg-white rounded-xl shadow p-6 mb-6 fade-in">
+          <h3 class="text-lg font-bold text-navy mb-4">Tier Benefits</h3>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="border-2 border-orange-200 rounded-lg p-4">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-bold">BRONZE</span>
+                <span class="text-xs text-gray-500">0+ points</span>
+              </div>
+              <ul class="text-sm text-gray-600 space-y-1">
+                <li>• 1 point per ₵1 spent</li>
+                <li>• Basic member benefits</li>
+              </ul>
+            </div>
+            <div class="border-2 border-gray-300 rounded-lg p-4">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="px-2 py-1 bg-gray-200 text-gray-800 rounded-full text-xs font-bold">SILVER</span>
+                <span class="text-xs text-gray-500">100+ points</span>
+              </div>
+              <ul class="text-sm text-gray-600 space-y-1">
+                <li>• 1 point per ₵1 spent</li>
+                <li>• 5% birthday discount</li>
+              </ul>
+            </div>
+            <div class="border-2 border-yellow-300 rounded-lg p-4">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-bold">GOLD</span>
+                <span class="text-xs text-gray-500">500+ points</span>
+              </div>
+              <ul class="text-sm text-gray-600 space-y-1">
+                <li>• 1.5 points per ₵1 spent</li>
+                <li>• 10% birthday discount</li>
+                <li>• Priority support</li>
+              </ul>
+            </div>
+            <div class="border-2 border-indigo-200 rounded-lg p-4">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-bold">PLATINUM</span>
+                <span class="text-xs text-gray-500">1000+ points</span>
+              </div>
+              <ul class="text-sm text-gray-600 space-y-1">
+                <li>• 2 points per ₵1 spent</li>
+                <li>• 15% birthday discount</li>
+                <li>• Priority support</li>
+                <li>• Exclusive offers</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="bg-white rounded-xl shadow overflow-hidden fade-in">
+          <div class="px-6 py-4 bg-navy text-white">
+            <h3 class="font-bold">Recent Activity</h3>
+          </div>
+          <div id="transactionsList" class="divide-y divide-gray-200">
+            <div class="px-6 py-4 text-center text-gray-500">Loading transactions...</div>
+          </div>
+        </div>
+
+        <div class="text-center mt-6">
+          <button onclick="resetLookup()" class="inline-flex items-center gap-2 text-navy hover:text-amber font-semibold transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            Check Another Phone Number
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-navy text-white py-8 mt-auto">
+    <div class="container mx-auto px-4 text-center">
+      <p class="text-sm text-gray-300">© 2026 Minnah Electricals. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    const lookupForm = document.getElementById('lookupForm');
+    const lookupSection = document.getElementById('lookupSection');
+    const statusSection = document.getElementById('statusSection');
+    const lookupError = document.getElementById('lookupError');
+
+    lookupForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const phone = document.getElementById('phoneInput').value.trim();
+      lookupError.classList.add('hidden');
+
+      if (!phone) {
+        lookupError.textContent = 'Please enter your phone number';
+        lookupError.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/loyalty/check?phone=${encodeURIComponent(phone)}`);
+        const data = await response.json();
+
+        if (data.success) {
+          displayMemberStatus(data.member, data.recent_transactions);
+        } else {
+          lookupError.textContent = data.message || 'No loyalty membership found for this phone number. Visit our shop to join!';
+          lookupError.classList.remove('hidden');
+        }
+      } catch (error) {
+        console.error('Error checking loyalty:', error);
+        lookupError.textContent = 'An error occurred. Please try again.';
+        lookupError.classList.remove('hidden');
+      }
+    });
+
+    function displayMemberStatus(member, transactions) {
+      // Set member info
+      document.getElementById('memberName').textContent = member.customer_name;
+      document.getElementById('memberPhone').textContent = member.customer_phone;
+      document.getElementById('memberPoints').textContent = member.points;
+
+      // Set initials
+      const initials = member.customer_name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+      document.getElementById('memberInitials').textContent = initials || '?';
+
+      // Set tier
+      const tierBadge = document.getElementById('memberTierBadge');
+      tierBadge.textContent = member.tier.toUpperCase();
+      tierBadge.className = 'px-4 py-2 rounded-full text-sm font-bold tier-' + member.tier;
+
+      // Set stats
+      document.getElementById('totalSpent').textContent = '₵' + (member.total_spent || 0).toFixed(2);
+      document.getElementById('totalOrders').textContent = member.total_orders || 0;
+      const memberSince = new Date(member.created_at);
+      document.getElementById('memberSince').textContent = memberSince.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
+      // Display transactions
+      const transactionsList = document.getElementById('transactionsList');
+      if (!transactions || transactions.length === 0) {
+        transactionsList.innerHTML = '<div class="px-6 py-4 text-center text-gray-500">No transactions yet</div>';
+      } else {
+        transactionsList.innerHTML = transactions.map(t => {
+          const date = new Date(t.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+          const typeConfig = {
+            'earned': { icon: '▼', color: 'text-green-600', bg: 'bg-green-100', label: 'EARNED' },
+            'redeemed': { icon: '▲', color: 'text-red-600', bg: 'bg-red-100', label: 'REDEEMED' },
+            'bonus': { icon: '✦', color: 'text-amber-600', bg: 'bg-amber-100', label: 'BONUS' },
+            'expired': { icon: '✕', color: 'text-gray-600', bg: 'bg-gray-100', label: 'EXPIRED' }
+          };
+          const config = typeConfig[t.transaction_type] || typeConfig['earned'];
+          const sign = (t.transaction_type === 'redeemed' || t.transaction_type === 'expired') ? '-' : '+';
+
+          return `
+            <div class="px-6 py-4 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 ${config.bg} ${config.color} rounded-full flex items-center justify-center font-bold">
+                  ${config.icon}
+                </div>
+                <div>
+                  <div class="font-semibold text-navy">${t.description || config.label}</div>
+                  <div class="text-xs text-gray-500">${date}${t.order_id ? ` • Order #${t.order_id}` : ''}</div>
+                </div>
+              </div>
+              <div class="text-lg font-bold ${config.color}">${sign}${t.points}</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Toggle sections
+      lookupSection.classList.add('hidden');
+      statusSection.classList.remove('hidden');
+      statusSection.classList.add('fade-in');
+    }
+
+    function resetLookup() {
+      statusSection.classList.add('hidden');
+      lookupSection.classList.remove('hidden');
+      lookupSection.classList.add('fade-in');
+      document.getElementById('phoneInput').value = '';
+      lookupError.classList.add('hidden');
+    }
+  </script>
+</body>
+</html>

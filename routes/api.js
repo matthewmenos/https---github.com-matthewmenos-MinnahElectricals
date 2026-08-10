@@ -1241,4 +1241,78 @@ router.post('/push/subscribe', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/loyalty/check
+ * Check loyalty program status by phone number (public route)
+ */
+router.get('/loyalty/check', async (req, res) => {
+  try {
+    const { phone } = req.query;
+
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone number is required',
+      });
+    }
+
+    // Look up loyalty member
+    const result = await pool.query(
+      'SELECT * FROM loyalty_program WHERE customer_phone = $1',
+      [phone]
+    );
+
+    if (!result.rows[0]) {
+      return res.status(404).json({
+        success: false,
+        message: 'No loyalty membership found for this phone number',
+      });
+    }
+
+    const member = result.rows[0];
+
+    // Get recent transactions
+    const transactionsResult = await pool.query(
+      `SELECT id, points, transaction_type, description, order_id, created_at 
+       FROM loyalty_transactions 
+       WHERE customer_phone = $1 
+       ORDER BY created_at DESC 
+       LIMIT 10`,
+      [phone]
+    );
+
+    const transactions = transactionsResult.rows.map(row => ({
+      id: row.id,
+      points: row.points,
+      transaction_type: row.transaction_type,
+      description: row.description,
+      order_id: row.order_id,
+      created_at: row.created_at
+    }));
+
+    return res.status(200).json({
+      success: true,
+      member: {
+        customer_name: member.customer_name,
+        customer_phone: member.customer_phone,
+        customer_email: member.customer_email,
+        points: member.points,
+        tier: member.tier,
+        total_spent: parseFloat(member.total_spent || 0),
+        total_orders: member.total_orders || 0,
+        created_at: member.created_at,
+        updated_at: member.updated_at
+      },
+      recent_transactions: transactions
+    });
+
+  } catch (error) {
+    console.error('✗ Error checking loyalty status:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while checking loyalty status.',
+    });
+  }
+});
+
 module.exports = router;

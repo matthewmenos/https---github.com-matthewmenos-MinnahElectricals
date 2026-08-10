@@ -1335,6 +1335,43 @@ router.patch('/orders/:id', authMiddleware, async (req, res) => {
       });
     }
 
+    const order = checkResult.rows[0];
+
+    // If order is being marked as Completed and it wasn't already, award loyalty points
+    if (status === 'Completed' && order.status !== 'Completed') {
+      const orderTotal = parseFloat(order.product_price) * order.quantity;
+      
+      // Check if customer is a loyalty member
+      const memberResult = await pool.query(
+        'SELECT id, points, total_spent, total_orders FROM loyalty_program WHERE customer_phone = $1',
+        [order.customer_phone]
+      );
+
+      if (memberResult.rows[0]) {
+        const member = memberResult.rows[0];
+        // Award 1 point per 1 GHS spent (rounded down)
+        const pointsEarned = Math.floor(orderTotal);
+        const newPoints = (member.points || 0) + pointsEarned;
+        const newTotalSpent = parseFloat(member.total_spent || 0) + orderTotal;
+        const newTotalOrders = (member.total_orders || 0) + 1;
+
+        // Update member stats
+        await pool.query(
+          'UPDATE loyalty_program SET points = $1, total_spent = $2, total_orders = $3, updated_at = CURRENT_TIMESTAMP WHERE customer_phone = $4',
+          [newPoints, newTotalSpent, newTotalOrders, order.customer_phone]
+        );
+
+        // Record transaction
+        await pool.query(
+          `INSERT INTO loyalty_transactions (customer_phone, points, transaction_type, description, order_id) 
+           VALUES ($1, $2, $3, $4, $5)`,
+          [order.customer_phone, pointsEarned, 'earned', `Points earned from order #${orderId}`, orderId]
+        );
+
+        console.log(`✓ Awarded ${pointsEarned} loyalty points to ${order.customer_phone} for order #${orderId}`);
+      }
+    }
+
     // Update order status
     await pool.query('UPDATE orders SET status = $1 WHERE id = $2', [status, orderId]);
 
@@ -1967,13 +2004,20 @@ router.get('/loyalty/members', authMiddleware, async (req, res) => {
 
     let query = 'SELECT * FROM loyalty_program';
     const params = [];
+    const conditions = [];
 
     if (tier && tier !== 'all') {
-      query += ' WHERE tier = $1';
+      conditions.push(`tier = $${params.length + 1}`);
       params.push(tier);
-    } else if (search) {
-      query += ' WHERE customer_name ILIKE $1 OR customer_phone ILIKE $1 OR customer_email ILIKE $1';
+    }
+
+    if (search) {
+      conditions.push(`(customer_name ILIKE $${params.length + 1} OR customer_phone ILIKE $${params.length + 1} OR customer_email ILIKE $${params.length + 1})`);
       params.push(`%${search}%`);
+    }
+
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
     }
 
     query += ' ORDER BY points DESC, total_spent DESC';
@@ -2076,6 +2120,95 @@ router.post('/loyalty/members', authMiddleware, async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'An error occurred while saving loyalty member.',
+    });
+  }
+});
+
+/**
+ * PUT /api/admin/loyalty/members/:id
+ * Update a loyalty program member by ID (protected route)
+ */
+router.put('/loyalty/members/:id', authMiddleware, async (req, res) => {
+  try {
+    const memberId = parseInt(req.params.id);
+    const { customer_name, customer_phone, customer_email, points, tier } = req.body;
+
+    // Check if member exists
+    const existingResult = await pool.query('SELECT * FROM loyalty_program WHERE id = $1', [memberId]);
+    if (!existingResult.rows[0]) {
+      return res.status(404).json({
+        success: false,
+        message: 'Loyalty member not found',
+      });
+    }
+
+    const updates = [];
+    const params = [];
+    let paramIndex = 1;
+
+    if (customer_name !== undefined) {
+      updates.push(`customer_name = $${paramIndex}`);
+      params.push(customer_name);
+      paramIndex++;
+    }
+
+    if (customer_phone !== undefined) {
+      // Check phone uniqueness if changing
+      if (customer_phone !== existingResult.rows[0].customer_phone) {
+        const phoneCheck = await pool.query(
+          'SELECT id FROM loyalty_program WHERE customer_phone = $1 AND id != $2',
+          [customer_phone, memberId]
+        );
+        if (phoneCheck.rows[0]) {
+          return res.status(400).json({
+            success: false,
+            message: 'Another loyalty member already uses this phone number',
+          });
+        }
+      }
+      updates.push(`customer_phone = $${paramIndex}`);
+      params.push(customer_phone);
+      paramIndex++;
+    }
+
+    if (customer_email !== undefined) {
+      updates.push(`customer_email = $${paramIndex}`);
+      params.push(customer_email);
+      paramIndex++;
+    }
+
+    if (points !== undefined) {
+      updates.push(`points = $${paramIndex}`);
+      params.push(points);
+      paramIndex++;
+    }
+
+    if (tier) {
+      updates.push(`tier = $${paramIndex}`);
+      params.push(tier);
+      paramIndex++;
+    }
+
+    updates.push(`updated_at = CURRENT_TIMESTAMP`);
+    params.push(memberId);
+
+    await pool.query(
+      `UPDATE loyalty_program SET ${updates.join(', ')} WHERE id = $${paramIndex}`,
+      params
+    );
+
+    console.log(`✓ Loyalty member updated: #${memberId}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Loyalty member updated successfully',
+    });
+
+  } catch (error) {
+    console.error('✗ Error updating loyalty member:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while updating loyalty member.',
     });
   }
 });
