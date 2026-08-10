@@ -58,6 +58,24 @@
   </nav>
 
   <main class="container mx-auto px-4 py-8">
+    <!-- Auto-Enrollment Status Banner -->
+    <div id="autoEnrollBanner" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 fade-in">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2l2.4 7.2H22l-6 4.5 2.4 7.3L12 16.5l-6.4 4.5L8 13.7l-6-4.5h7.6z"/>
+          </svg>
+          <div>
+            <div class="font-bold text-green-800">Automatic Loyalty Program: <span id="autoEnrollStatus">Enabled</span></div>
+            <div class="text-sm text-green-700">Customers are auto-enrolled and points are awarded automatically on every order.</div>
+          </div>
+        </div>
+        <button onclick="openSettingsModal()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition text-sm">
+          Configure Settings
+        </button>
+      </div>
+    </div>
+
     <!-- Stats Cards -->
     <div class="grid md:grid-cols-4 gap-6 mb-8">
       <div class="bg-white rounded-lg shadow p-6">
@@ -214,6 +232,46 @@
     </div>
   </div>
 
+  <!-- Loyalty Settings Modal -->
+  <div id="settingsModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Loyalty Program Settings</h2>
+        <span class="close" onclick="closeSettingsModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <form id="settingsForm">
+          <div class="form-group mb-4">
+            <label class="block text-gray-700 font-semibold mb-2">Points per ₵1 Spent</label>
+            <input type="number" id="loyaltyPointsPerGhs" min="0.1" step="0.1" value="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
+          </div>
+          <div class="form-group mb-4">
+            <label class="block text-gray-700 font-semibold mb-2">Silver Tier Threshold (points)</label>
+            <input type="number" id="loyaltySilverThreshold" min="0" value="100" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
+          </div>
+          <div class="form-group mb-4">
+            <label class="block text-gray-700 font-semibold mb-2">Gold Tier Threshold (points)</label>
+            <input type="number" id="loyaltyGoldThreshold" min="0" value="500" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
+          </div>
+          <div class="form-group mb-4">
+            <label class="block text-gray-700 font-semibold mb-2">Platinum Tier Threshold (points)</label>
+            <input type="number" id="loyaltyPlatinumThreshold" min="0" value="1000" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber focus:border-transparent">
+          </div>
+          <div class="form-group mb-4">
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input type="checkbox" id="loyaltyAutoEnroll" checked class="w-5 h-5 text-amber rounded focus:ring-amber">
+              <span class="text-gray-700 font-semibold">Auto-enroll customers on their first order</span>
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="bg-amber hover:bg-amber-dark text-navy px-4 py-2 rounded-lg font-semibold transition">Save Settings</button>
+            <button type="button" onclick="closeSettingsModal()" class="bg-gray-200 hover:bg-gray-300 text-navy px-4 py-2 rounded-lg font-semibold transition">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <script>
     const token = localStorage.getItem('adminToken');
     if (!token) { window.location.href = '/admin/login.html'; }
@@ -227,7 +285,78 @@
     document.addEventListener('DOMContentLoaded', () => {
       loadMembers();
       loadStats();
+      loadSettings();
     });
+
+    async function loadSettings() {
+      try {
+        const response = await fetch('/api/admin/settings', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          const s = data.settings;
+          document.getElementById('loyaltyPointsPerGhs').value = s.loyalty_points_per_ghs || '1';
+          document.getElementById('loyaltySilverThreshold').value = s.loyalty_silver_threshold || '100';
+          document.getElementById('loyaltyGoldThreshold').value = s.loyalty_gold_threshold || '500';
+          document.getElementById('loyaltyPlatinumThreshold').value = s.loyalty_platinum_threshold || '1000';
+          const autoEnroll = s.loyalty_auto_enroll !== 'false';
+          document.getElementById('loyaltyAutoEnroll').checked = autoEnroll;
+          document.getElementById('autoEnrollStatus').textContent = autoEnroll ? 'Enabled' : 'Disabled';
+          document.getElementById('autoEnrollStatus').className = autoEnroll ? 'text-green-600 font-bold' : 'text-red-600 font-bold';
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+      }
+    }
+
+    function openSettingsModal() {
+      document.getElementById('settingsModal').style.display = 'block';
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('settingsModal').style.display = 'none';
+    }
+
+    async function saveSettings(e) {
+      e.preventDefault();
+      
+      const settings = {
+        loyalty_points_per_ghs: document.getElementById('loyaltyPointsPerGhs').value,
+        loyalty_silver_threshold: document.getElementById('loyaltySilverThreshold').value,
+        loyalty_gold_threshold: document.getElementById('loyaltyGoldThreshold').value,
+        loyalty_platinum_threshold: document.getElementById('loyaltyPlatinumThreshold').value,
+        loyalty_auto_enroll: document.getElementById('loyaltyAutoEnroll').checked ? 'true' : 'false'
+      };
+
+      try {
+        const response = await fetch('/api/admin/settings', {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(settings)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          showNotification('Loyalty settings saved successfully', 'success');
+          closeSettingsModal();
+          loadSettings();
+        } else {
+          showNotification(data.message, 'error');
+        }
+      } catch (error) {
+        console.error('Error saving settings:', error);
+        showNotification('Error saving settings', 'error');
+      }
+    }
+
+    // Settings form submission
+    document.getElementById('settingsForm').addEventListener('submit', saveSettings);
 
     async function loadStats() {
       try {

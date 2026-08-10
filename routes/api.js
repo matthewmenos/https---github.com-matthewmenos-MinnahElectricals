@@ -8,6 +8,7 @@ const nodemailer = require('nodemailer');
 const { sendLeadSms } = require('../config/sms');
 const { sendAutoResponder } = require('../config/auto-responder');
 const { sendOrderConfirmationEmail, sendAdminNotificationEmail } = require('../config/email');
+const { processLoyaltyForNewOrder } = require('../config/loyalty');
 require('dotenv').config();
 
 // Initialize Nodemailer transporter
@@ -344,6 +345,11 @@ router.post('/orders', async (req, res) => {
     
     const orderId = orderResult.rows[0].id;
     const created_at = orderResult.rows[0].created_at;
+
+    // Auto-award loyalty points (auto-enrolls customer if not a member)
+    const orderTotal = parseFloat(product.price) * (quantity || 1);
+    processLoyaltyForNewOrder(customer_phone, customer_name, customer_email, orderTotal, orderId)
+      .catch(err => console.error('Loyalty processing error:', err.message));
 
     const newOrder = {
       id: orderId,

@@ -7,6 +7,7 @@ const multer = require('multer');
 const r2Sync = require('../config/r2-sync');
 const { authMiddleware } = require('../middleware/auth');
 const { sendOrderConfirmationEmail, sendAdminNotificationEmail } = require('../config/email');
+const { processLoyaltyForNewOrder, awardPointsForCompletedOrder, getLoyaltySettings } = require('../config/loyalty');
 require('dotenv').config();
 
 // Configure multer for file uploads (memory storage)
@@ -1339,37 +1340,7 @@ router.patch('/orders/:id', authMiddleware, async (req, res) => {
 
     // If order is being marked as Completed and it wasn't already, award loyalty points
     if (status === 'Completed' && order.status !== 'Completed') {
-      const orderTotal = parseFloat(order.product_price) * order.quantity;
-      
-      // Check if customer is a loyalty member
-      const memberResult = await pool.query(
-        'SELECT id, points, total_spent, total_orders FROM loyalty_program WHERE customer_phone = $1',
-        [order.customer_phone]
-      );
-
-      if (memberResult.rows[0]) {
-        const member = memberResult.rows[0];
-        // Award 1 point per 1 GHS spent (rounded down)
-        const pointsEarned = Math.floor(orderTotal);
-        const newPoints = (member.points || 0) + pointsEarned;
-        const newTotalSpent = parseFloat(member.total_spent || 0) + orderTotal;
-        const newTotalOrders = (member.total_orders || 0) + 1;
-
-        // Update member stats
-        await pool.query(
-          'UPDATE loyalty_program SET points = $1, total_spent = $2, total_orders = $3, updated_at = CURRENT_TIMESTAMP WHERE customer_phone = $4',
-          [newPoints, newTotalSpent, newTotalOrders, order.customer_phone]
-        );
-
-        // Record transaction
-        await pool.query(
-          `INSERT INTO loyalty_transactions (customer_phone, points, transaction_type, description, order_id) 
-           VALUES ($1, $2, $3, $4, $5)`,
-          [order.customer_phone, pointsEarned, 'earned', `Points earned from order #${orderId}`, orderId]
-        );
-
-        console.log(`✓ Awarded ${pointsEarned} loyalty points to ${order.customer_phone} for order #${orderId}`);
-      }
+      await awardPointsForCompletedOrder(order);
     }
 
     // Update order status
@@ -1452,6 +1423,11 @@ router.post('/orders/manual', authMiddleware, async (req, res) => {
         status: 'Pending',
         created_at: orderResult.rows[0].created_at
       });
+
+      // Auto-award loyalty points (auto-enrolls customer if not a member)
+      const orderTotal = parseFloat(productData.price) * quantity;
+      processLoyaltyForNewOrder(customer_phone, customer_name, customer_email, orderTotal, orderId)
+        .catch(err => console.error('Loyalty processing error:', err.message));
     }
 
     console.log(`✓ Created ${createdOrders.length} manual order(s) for ${customer_name}`);
@@ -1502,10 +1478,26 @@ router.patch('/orders/bulk-status', authMiddleware, async (req, res) => {
     }
 
     const placeholders = order_ids.map((_, i) => `$${i + 2}`).join(',');
+    
+    // Get current order statuses before updating
+    const currentOrdersResult = await pool.query(
+      `SELECT id, customer_phone, product_price, quantity, status FROM orders WHERE id IN (${placeholders})`,
+      [status, ...order_ids]
+    );
+
     await pool.query(
       `UPDATE orders SET status = $1 WHERE id IN (${placeholders})`,
       [status, ...order_ids]
     );
+
+    // Award loyalty points for orders being marked as Completed
+    if (status === 'Completed') {
+      for (const order of currentOrdersResult.rows) {
+        if (order.status !== 'Completed') {
+          await awardPointsForCompletedOrder(order);
+        }
+      }
+    }
 
     console.log(`✓ Bulk updated ${order_ids.length} orders to status: ${status}`);
 
@@ -1548,7 +1540,7 @@ router.get('/settings', authMiddleware, async (req, res) => {
  */
 router.put('/settings', authMiddleware, async (req, res) => {
   try {
-    const { phone, email, location, whatsapp } = req.body;
+    const { phone, email, location, whatsapp, loyalty_points_per_ghs, loyalty_silver_threshold, loyalty_gold_threshold, loyalty_platinum_threshold, loyalty_auto_enroll } = req.body;
     const existingCount = await pool.query('SELECT COUNT(*) as count FROM settings');
     if (parseInt(existingCount.rows[0].count) === 0) {
       const defaults = [
@@ -1556,6 +1548,11 @@ router.put('/settings', authMiddleware, async (req, res) => {
         ['email', email || process.env.COMPANY_EMAIL || 'info@minnahelectricals.com'],
         ['location', location || process.env.COMPANY_LOCATION || 'Serving the Local Area'],
         ['whatsapp', whatsapp || ''],
+        ['loyalty_points_per_ghs', loyalty_points_per_ghs || '1'],
+        ['loyalty_silver_threshold', loyalty_silver_threshold || '100'],
+        ['loyalty_gold_threshold', loyalty_gold_threshold || '500'],
+        ['loyalty_platinum_threshold', loyalty_platinum_threshold || '1000'],
+        ['loyalty_auto_enroll', 'true'],
       ];
       for (const [key, value] of defaults) {
         await pool.query('INSERT INTO settings (key, value) VALUES ($1, $2)', [key, value]);
@@ -1565,6 +1562,11 @@ router.put('/settings', authMiddleware, async (req, res) => {
       if (email !== undefined) await pool.query('INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2', ['email', email]);
       if (location !== undefined) await pool.query('INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2', ['location', location]);
       if (whatsapp !== undefined) await pool.query('INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2', ['whatsapp', whatsapp]);
+      if (loyalty_points_per_ghs !== undefined) await pool.query('INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2', ['loyalty_points_per_ghs', loyalty_points_per_ghs]);
+      if (loyalty_silver_threshold !== undefined) await pool.query('INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2', ['loyalty_silver_threshold', loyalty_silver_threshold]);
+      if (loyalty_gold_threshold !== undefined) await pool.query('INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2', ['loyalty_gold_threshold', loyalty_gold_threshold]);
+      if (loyalty_platinum_threshold !== undefined) await pool.query('INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2', ['loyalty_platinum_threshold', loyalty_platinum_threshold]);
+      if (loyalty_auto_enroll !== undefined) await pool.query('INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2', ['loyalty_auto_enroll', loyalty_auto_enroll]);
     }
     console.log('Settings updated');
     return res.status(200).json({ success: true, message: 'Settings updated successfully' });
