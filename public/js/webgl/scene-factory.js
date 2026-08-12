@@ -4,7 +4,7 @@
  */
 
 // Floating geometric shapes with electrical theme
-export function createElectricalScene(scene, objects) {
+window.createElectricalScene = function createElectricalScene(scene, objects) {
   // Create floating torus knots (representing electrical currents)
   const torusGeometry = new THREE.TorusKnotGeometry(0.8, 0.25, 100, 16);
   const torusMaterial = new THREE.MeshStandardMaterial({
@@ -102,7 +102,7 @@ export function createElectricalScene(scene, objects) {
 }
 
 // Minimal floating shapes for subtle background
-export function createMinimalScene(scene, objects) {
+window.createMinimalScene = function createMinimalScene(scene, objects) {
   // Single large torus
   const torusGeometry = new THREE.TorusGeometry(1.2, 0.3, 16, 100);
   const torusMaterial = new THREE.MeshStandardMaterial({
@@ -146,7 +146,7 @@ export function createMinimalScene(scene, objects) {
 }
 
 // Interactive button-style 3D element
-export function createButtonScene(scene, objects) {
+window.createButtonScene = function createButtonScene(scene, objects) {
   // Central glowing sphere
   const sphereGeometry = new THREE.SphereGeometry(0.8, 32, 32);
   const sphereMaterial = new THREE.MeshStandardMaterial({
@@ -189,7 +189,7 @@ export function createButtonScene(scene, objects) {
 }
 
 // Particle field background
-export function createParticleField(scene, objects) {
+window.createParticleField = function createParticleField(scene, objects) {
   const particleCount = 50;
   const particleGeometry = new THREE.BufferGeometry();
   const positions = new Float32Array(particleCount * 3);

@@ -7,10 +7,6 @@
   <title>Order Confirmation | Minnah Electricals</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any">
   <link rel="icon" type="image/jpeg" href="/assets/logo.jpg" sizes="32x32">
-  <!-- Three.js import map (required by /js/webgl/webgl-boot.js) -->
-  <script type="importmap">
-  {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
-  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/css/style.css">
   <script>
@@ -253,12 +249,12 @@
   <script src="/js/main.js"></script>
   <script src="/js/3d-tilt-effects.js"></script>
   
-  <!-- Shared WebGL boot: exposes THREE + WebGLScene globals -->
-  <script type="module" src="/js/webgl/webgl-boot.js"></script>
+  <!-- 3D dependencies: Three.js (UMD) + WebGL scene loader -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="/js/webgl/three-loader.js"></script>
+  <script src="/js/webgl/scene-factory.js"></script>
   <!-- 3D Confirmation Header Scene -->
-  <script type="module">
-    import { createMinimalScene } from '/js/webgl/scene-factory.js';
-    
+  <script>
     const init = () => {
       if (typeof WebGLScene === 'undefined') {
         setTimeout(init, 100);

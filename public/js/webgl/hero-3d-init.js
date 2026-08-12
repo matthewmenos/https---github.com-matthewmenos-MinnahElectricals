@@ -1,32 +1,16 @@
 /**
- * Hero 3D Scene Initialization
- * Loads Three.js via ES Module import map and initializes the hero section 3D canvas
- * 
- * Integration: Add this script BEFORE the closing </body> tag in your HTML
- * <script type="module" src="/js/webgl/hero-3d-init.js"></script>
+ * Hero 3D Scene Initialization (classic script)
+ *
+ * Load this script BEFORE the closing </body> tag in your HTML, AFTER:
+ *   <script src=".../three.min.js"></script>
+ *   <script src="/js/webgl/three-loader.js"></script>
+ *   <script src="/js/webgl/scene-factory.js"></script>
  */
 
-// Import map for Three.js CDN (no npm install required)
-const importMap = {
-  imports: {
-    'three': 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js'
-  }
-};
-
-// Create and inject import map
-if (!document.querySelector('script[type="importmap"]')) {
-  const script = document.createElement('script');
-  script.type = 'importmap';
-  script.textContent = JSON.stringify(importMap);
-  document.head.appendChild(script);
-}
-
-// Import Three.js and scene factory
-import * as THREE from 'three';
-import { createElectricalScene } from './scene-factory.js';
-
-// Make THREE globally available for the WebGLScene class
-window.THREE = THREE;
+// Loaded as a classic script. Load the following BEFORE this file:
+//   three.min.js      -> window.THREE
+//   three-loader.js   -> window.WebGLScene
+//   scene-factory.js  -> window.createElectricalScene
 
 // Initialize 3D scene when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
@@ -47,8 +31,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       // Create WebGL scene with electrical theme
-      const scene = new WebGLScene(container, {
-        objectFactory: createElectricalScene,
+      const scene = new window.WebGLScene(container, {
+        objectFactory: window.createElectricalScene,
         pixelRatio: Math.min(window.devicePixelRatio, 2)
       });
 
@@ -64,6 +48,3 @@ document.addEventListener('DOMContentLoaded', () => {
   // Small delay to ensure all scripts are loaded
   setTimeout(initScene, 50);
 });
-
-// Export for potential reuse
-export { };
