@@ -1,7 +1,7 @@
 // Service Worker for Push Notifications
 // Handles push events and displays notifications
 
-const CACHE_NAME = 'minnah-electricals-v1';
+const CACHE_NAME = 'minnah-electricals-v2';
 const urlsToCache = [
   '/',
   '/css/style.css',

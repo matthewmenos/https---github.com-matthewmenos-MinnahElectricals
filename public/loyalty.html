@@ -7,6 +7,10 @@
   <meta name="description" content="Check your loyalty points, tier status, and rewards at Minnah Electricals.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any">
   <link rel="icon" type="image/jpeg" href="/assets/logo.jpg" sizes="32x32">
+  <!-- Three.js import map (required by /js/webgl/webgl-boot.js) -->
+  <script type="importmap">
+  {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/css/style.css">
   <script>
@@ -250,6 +254,8 @@
     </div>
   </footer>
 
+  <!-- Shared WebGL boot: exposes THREE + WebGLScene globals -->
+  <script type="module" src="/js/webgl/webgl-boot.js"></script>
   <!-- 3D Loyalty Header Scene -->
   <script type="module">
     import { createMinimalScene } from '/js/webgl/scene-factory.js';

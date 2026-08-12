@@ -4,6 +4,8 @@
  * and mobile/reduced-motion safeguards
  */
 
+import * as THREE from 'three';
+
 class WebGLScene {
   constructor(container, options = {}) {
     this.container = container;
@@ -237,7 +239,10 @@ class WebGLScene {
   }
 }
 
-// Export for use in other modules
+// Export for use in Node/CommonJS environments
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = WebGLScene;
 }
+
+// ES module default export (browser)
+export default WebGLScene;
