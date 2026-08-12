@@ -58,12 +58,21 @@ class WebGLScene {
     this.setupEventListeners();
     this.setupIntersectionObserver();
 
+    // Animation clock (seconds since creation)
+    this.startTime = performance.now();
+    this.elapsed = 0;
+
     // Start animation loop
     this.animate();
   }
 
   createScene() {
     this.scene = new THREE.Scene();
+
+    // Subtle fog for depth (blends distant objects toward deep navy)
+    if (THREE.Fog) {
+      this.scene.fog = new THREE.Fog(0x0b1220, 9, 17);
+    }
   }
 
   createCamera() {
@@ -75,30 +84,50 @@ class WebGLScene {
   createRenderer() {
     this.renderer = new THREE.WebGLRenderer({
       antialias: this.options.antialias,
-      alpha: this.options.alpha
+      alpha: this.options.alpha,
+      powerPreference: 'high-performance',
+      stencil: false
     });
 
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
     this.renderer.setPixelRatio(this.options.pixelRatio);
     this.renderer.setClearColor(0x000000, 0);
 
+    // Cinematic color grading
+    if (THREE.SRGBColorSpace !== undefined) {
+      this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    }
+    if (THREE.ACESFilmicToneMapping !== undefined) {
+      this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    }
+    this.renderer.toneMappingExposure = 1.1;
+
     this.container.appendChild(this.renderer.domElement);
   }
 
   addLights() {
-    // Ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    // Hemisphere light for gentle ambient color from above/sky
+    const hemiLight = new THREE.HemisphereLight(0xfef3c7, 0x0b1220, 0.55);
+    this.scene.add(hemiLight);
+
+    // Soft base fill
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.25);
     this.scene.add(ambientLight);
 
-    // Directional light
-    const directionalLight = new THREE.DirectionalLight(0xf59e0b, 1);
-    directionalLight.position.set(5, 5, 5);
+    // Warm key light
+    const directionalLight = new THREE.DirectionalLight(0xf59e0b, 1.2);
+    directionalLight.position.set(5, 6, 4);
     this.scene.add(directionalLight);
 
-    // Point light for accent
-    const pointLight = new THREE.PointLight(0xf59e0b, 0.5);
-    pointLight.position.set(-5, -5, 5);
-    this.scene.add(pointLight);
+    // Central glow light (pulsed in animate())
+    this.keyLight = new THREE.PointLight(0xf59e0b, 1.0, 22);
+    this.keyLight.position.set(0, 2, 4);
+    this.scene.add(this.keyLight);
+
+    // Cool accent light (pulsed in animate())
+    this.accentLight = new THREE.PointLight(0x8b5cf6, 0.6, 18);
+    this.accentLight.position.set(-4, -2, 3);
+    this.scene.add(this.accentLight);
   }
 
   createObjects() {
@@ -174,23 +203,50 @@ class WebGLScene {
 
     this.animationId = requestAnimationFrame(() => this.animate());
 
-    // Smooth mouse follow
-    this.mouse.x += (this.targetMouse.x - this.mouse.x) * 0.05;
-    this.mouse.y += (this.targetMouse.y - this.mouse.y) * 0.05;
+    // Elapsed clock (seconds since start) for smooth, frame-rate independent motion
+    const t = (performance.now() - this.startTime) / 1000;
+    this.elapsed = t;
 
-    // Update objects
+    // Smooth mouse follow (damped)
+    const damp = this.options.enableDamping ? this.options.dampingFactor : 1;
+    this.mouse.x += (this.targetMouse.x - this.mouse.x) * damp;
+    this.mouse.y += (this.targetMouse.y - this.mouse.y) * damp;
+
+    const reduced = this.prefersReducedMotion;
+    const active = !reduced;
+
+    // Update objects (pass elapsed time as a third argument)
     this.objects.forEach(obj => {
       if (obj.update) {
-        obj.update(this.mouse, this.prefersReducedMotion);
+        obj.update(this.mouse, reduced, t);
       }
     });
 
-    // Auto-rotate camera slightly
-    if (this.options.autoRotate && !this.prefersReducedMotion) {
-      this.camera.position.x = Math.sin(Date.now() * 0.0001 * this.options.rotateSpeed) * 0.5;
-      this.camera.position.y = Math.cos(Date.now() * 0.0001 * this.options.rotateSpeed) * 0.5;
-      this.camera.lookAt(this.scene.position);
+    // Pulsing accent lights for a "live" glow
+    if (this.keyLight) {
+      this.keyLight.intensity = active ? 1.0 + Math.sin(t * 2.2) * 0.3 : 0.8;
     }
+    if (this.accentLight) {
+      this.accentLight.intensity = active ? 0.6 + Math.sin(t * 3.0 + 1.2) * 0.25 : 0.4;
+    }
+
+    // Camera: gentle auto-drift + mouse parallax, smoothly damped
+    const auto = this.options.autoRotate && active;
+    const bx = auto ? Math.sin(t * 0.3) * 0.45 : 0;
+    const by = auto ? Math.sin(t * 0.22 + 1.7) * 0.3 : 0;
+    const bz = auto ? Math.sin(t * 0.16) * 0.25 : 0;
+
+    const mx = reduced ? 0.12 : 0.6;
+    const my = reduced ? 0.12 : 0.42;
+
+    const tx = bx + this.mouse.x * mx;
+    const ty = by + this.mouse.y * my;
+    const tz = 5 + bz;
+
+    this.camera.position.x += (tx - this.camera.position.x) * damp;
+    this.camera.position.y += (ty - this.camera.position.y) * damp;
+    this.camera.position.z += (tz - this.camera.position.z) * damp;
+    this.camera.lookAt(0, 0, 0);
 
     this.renderer.render(this.scene, this.camera);
   }
@@ -213,15 +269,14 @@ class WebGLScene {
       window.removeEventListener('resize', this.resizeHandler);
     }
 
-    // Dispose geometries and materials
+    // Dispose geometries, materials and their textures
     this.objects.forEach(obj => {
       if (obj.geometry) obj.geometry.dispose();
       if (obj.material) {
-        if (Array.isArray(obj.material)) {
-          obj.material.forEach(m => m.dispose());
-        } else {
-          obj.material.dispose();
-        }
+        (Array.isArray(obj.material) ? obj.material : [obj.material]).forEach(m => {
+          if (m.map) m.map.dispose();
+          m.dispose();
+        });
       }
     });
 
