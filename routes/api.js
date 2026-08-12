@@ -9,6 +9,7 @@ const { sendLeadSms } = require('../config/sms');
 const { sendAutoResponder } = require('../config/auto-responder');
 const { sendOrderConfirmationEmail, sendAdminNotificationEmail } = require('../config/email');
 const { processLoyaltyForNewOrder } = require('../config/loyalty');
+const { fallbackPortfolio, fallbackGallery } = require('../config/fallback-data');
 require('dotenv').config();
 
 // Initialize Nodemailer transporter
@@ -592,17 +593,30 @@ router.get('/portfolio', async (req, res) => {
       created_at: row.created_at
     }));
 
-    return res.status(200).json({
+        // If database query succeeds but returns no rows, use fallback data
+    if (portfolio.length === 0) {
+      console.log('ℹ Portfolio table empty, returning fallback data');
+      return res.status(200).json({
+        success: true,
+        count: fallbackPortfolio.length,
+        portfolio: fallbackPortfolio,
+        source: 'fallback',
+      });
+    }
+
+            return res.status(200).json({
       success: true,
       count: portfolio.length,
       portfolio: portfolio,
+      source: 'database',
     });
-
   } catch (error) {
-    console.error('✗ Error fetching portfolio:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while fetching portfolio.',
+    console.error('✗ Error fetching portfolio from database, using fallback:', error.message);
+    return res.status(200).json({
+      success: true,
+      count: fallbackPortfolio.length,
+      portfolio: fallbackPortfolio,
+      source: 'fallback',
     });
   }
 });
@@ -628,19 +642,35 @@ router.get('/portfolio/featured', async (req, res) => {
       featured: row.featured,
       display_order: row.display_order,
       created_at: row.created_at
-    }));
+        }));
+
+    // If database query succeeds but returns no rows, use fallback data
+    if (portfolio.length === 0) {
+      const featured = fallbackPortfolio.filter(item => item.featured === true || item.featured === 1);
+      console.log('ℹ Featured portfolio table empty, returning fallback data');
+      return res.status(200).json({
+        success: true,
+        count: featured.length,
+        portfolio: featured,
+        source: 'fallback',
+      });
+    }
 
     return res.status(200).json({
       success: true,
       count: portfolio.length,
       portfolio: portfolio,
+      source: 'database',
     });
 
   } catch (error) {
-    console.error('✗ Error fetching featured portfolio:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while fetching featured portfolio.',
+    console.error('✗ Error fetching featured portfolio from database, using fallback:', error.message);
+    const featured = fallbackPortfolio.filter(item => item.featured === true || item.featured === 1);
+    return res.status(200).json({
+      success: true,
+      count: featured.length,
+      portfolio: featured,
+      source: 'fallback',
     });
   }
 });
@@ -663,19 +693,32 @@ router.get('/gallery', async (req, res) => {
       description: row.description,
       display_order: row.display_order,
       created_at: row.created_at
-    }));
+        }));
 
-    return res.status(200).json({
+    // If database query succeeds but returns no rows, use fallback data
+    if (gallery.length === 0) {
+      console.log('ℹ Gallery table empty, returning fallback data');
+      return res.status(200).json({
+        success: true,
+        count: fallbackGallery.length,
+        gallery: fallbackGallery,
+        source: 'fallback',
+      });
+    }
+
+            return res.status(200).json({
       success: true,
       count: gallery.length,
       gallery: gallery,
+      source: 'database',
     });
-
   } catch (error) {
-    console.error('✗ Error fetching gallery:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while fetching gallery.',
+    console.error('✗ Error fetching gallery from database, using fallback:', error.message);
+    return res.status(200).json({
+      success: true,
+      count: fallbackGallery.length,
+      gallery: fallbackGallery,
+      source: 'fallback',
     });
   }
 });
@@ -699,16 +742,23 @@ router.get('/settings', async (req, res) => {
     if (!settings.location) settings.location = process.env.COMPANY_LOCATION || 'Serving the Local Area';
     if (!settings.whatsapp) settings.whatsapp = '';
 
-    return res.status(200).json({
+        return res.status(200).json({
       success: true,
       settings: settings,
+      source: 'database',
     });
 
   } catch (error) {
-    console.error('✗ Error fetching settings:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while fetching settings.',
+    console.error('✗ Error fetching settings from database, using env fallbacks:', error.message);
+    return res.status(200).json({
+      success: true,
+      settings: {
+        phone: process.env.COMPANY_PHONE || '(555) 123-4567',
+        email: process.env.COMPANY_EMAIL || 'info@minnahelectricals.com',
+        location: process.env.COMPANY_LOCATION || 'Serving the Local Area',
+        whatsapp: process.env.COMPANY_WHATSAPP || '',
+      },
+      source: 'fallback',
     });
   }
 });

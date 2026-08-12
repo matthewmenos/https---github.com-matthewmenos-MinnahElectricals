@@ -104,13 +104,18 @@ app.use((err, req, res, next) => {
 // Initialize R2 sync and start server
 async function startServer() {
   try {
-    // Initialize R2 sync FIRST (download database from R2 if exists)
+        // Initialize R2 sync FIRST (download database from R2 if exists)
     console.log('Checking R2 for existing database...');
     await r2Sync.initialize();
     
-    // Note: Database is already initialized in config/db.js on load
-    // No need to call initDB() again here
-    console.log('✓ Database initialized');
+    // Check database connectivity status
+    const dbUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+    if (dbUrl) {
+      console.log('✓ Database configured (will use real data)');
+    } else {
+      console.log('⚠ Database not configured — falling back to sample data');
+      console.log('  Set POSTGRES_URL in .env to enable database features');
+    }
 
     // Start Express server
     app.listen(PORT, () => {
