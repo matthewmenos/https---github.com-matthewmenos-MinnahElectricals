@@ -186,13 +186,6 @@
   <script>
     document.getElementById('currentYear').textContent = new Date().getFullYear();
 
-    // Mobile menu
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const mobileMenu = document.getElementById('mobileMenu');
-    if (mobileMenuBtn && mobileMenu) {
-      mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
-    }
-
     // Track order form
     document.getElementById('trackForm').addEventListener('submit', async (e) => {
       e.preventDefault();
