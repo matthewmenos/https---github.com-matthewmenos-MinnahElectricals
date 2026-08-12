@@ -241,3 +241,8 @@ class WebGLScene {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = WebGLScene;
 }
+
+// Expose as a global for classic (non-module) browser scripts
+if (typeof window !== 'undefined') {
+  window.WebGLScene = WebGLScene;
+}
