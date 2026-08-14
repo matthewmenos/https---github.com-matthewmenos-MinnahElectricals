@@ -6,7 +6,7 @@ const urlsToCache = [
   '/',
   '/css/style.css',
   '/js/main.js',
-  '/favicon.svg'
+  '/assets/logo.jpg'
 ];
 
 // Install event - cache static assets
@@ -44,16 +44,16 @@ self.addEventListener('push', (event) => {
     data = {
       title: 'Minnah Electricals',
       body: event.data.text(),
-      icon: '/favicon.svg',
-      badge: '/favicon.svg'
+      icon: '/assets/logo.jpg',
+      badge: '/assets/logo.jpg'
     };
   }
 
   const title = data.title || 'Minnah Electricals';
   const options = {
     body: data.body || '',
-    icon: data.icon || '/favicon.svg',
-    badge: data.badge || '/favicon.svg',
+    icon: data.icon || '/assets/logo.jpg',
+    badge: data.badge || '/assets/logo.jpg',
     image: data.image || undefined,
     tag: data.tag || 'notification',
     data: data.url ? { url: data.url } : {},
