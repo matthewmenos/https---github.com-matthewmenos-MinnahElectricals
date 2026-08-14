@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const cors = require('cors');
 const compression = require('compression');
 const multer = require('multer');
@@ -89,15 +90,20 @@ app.get('/admin/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin', 'login.html'));
 });
 
-// Serve all other HTML files
+// Serve all other HTML files (existing pages are served by express.static;
+// this is a fallback that also routes missing .html requests to the 404 page)
 app.get('/*.html', (req, res) => {
-  const page = req.path.replace('/', '');
-  res.sendFile(path.join(__dirname, 'public', page + '.html'));
+  const filePath = path.join(__dirname, 'public', req.path);
+  if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+    res.sendFile(filePath);
+  } else {
+    res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+  }
 });
 
-// Catch-all for SPA-like routing (optional, for future expansion)
+// Catch-all for unknown routes — render the 404 page with a 404 status
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
 });
 
 // Error handling middleware
