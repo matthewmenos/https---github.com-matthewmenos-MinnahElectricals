@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
+const compression = require('compression');
 const multer = require('multer');
 require('dotenv').config();
 const r2Sync = require('./config/r2-sync');
@@ -35,8 +36,15 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from public directory
-app.use(express.static(path.join(__dirname, 'public')));
+// Compress all responses (gzip/brotli) to reduce transfer size
+app.use(compression());
+
+// Serve static files from public directory with caching for long-lived assets
+const publicDir = path.join(__dirname, 'public');
+app.use('/js', express.static(path.join(publicDir, 'js'), { maxAge: '7d' }));
+app.use('/css', express.static(path.join(publicDir, 'css'), { maxAge: '7d' }));
+app.use('/assets', express.static(path.join(publicDir, 'assets'), { maxAge: '30d' }));
+app.use(express.static(publicDir));
 
 // Inject push-notifications.js script into HTML responses (public pages only)
 app.use((req, res, next) => {
