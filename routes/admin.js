@@ -1263,7 +1263,7 @@ router.get('/customers', authMiddleware, async (req, res) => {
       params.push(`%${search}%`);
     }
 
-    query += ` GROUP BY customer_phone ORDER BY last_order_date DESC`;
+    query += ` GROUP BY customer_name, customer_phone, customer_email ORDER BY last_order_date DESC`;
 
     const result = await pool.query(query, params);
     const customers = result.rows.map(row => ({
