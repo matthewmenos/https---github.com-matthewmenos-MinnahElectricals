@@ -66,9 +66,25 @@
     </div>
 
     <div class="bg-white rounded-lg shadow p-4 mb-6">
-      <div class="flex gap-4">
-        <button onclick="loadInventory()" class="bg-amber hover:bg-amber-dark text-navy px-4 py-2 rounded-lg font-semibold transition">All Products</button>
-        <button onclick="loadInventory(true)" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition">Low Stock Only</button>
+      <div class="flex flex-wrap items-center gap-3">
+        <label class="text-sm font-semibold text-gray-700">Filter:</label>
+
+        <select id="statusFilter" onchange="applyInventoryFilters()" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-amber focus:border-transparent bg-white cursor-pointer appearance-none">
+          <option value="all">All Products</option>
+          <option value="in_stock">In Stock</option>
+          <option value="out_of_stock">Out of Stock</option>
+        </select>
+
+        <select id="categoryFilter" onchange="applyInventoryFilters()" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-amber focus:border-transparent bg-white cursor-pointer appearance-none">
+          <option value="all">All Categories</option>
+        </select>
+
+        <select id="sortFilter" onchange="applyInventoryFilters()" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-amber focus:border-transparent bg-white cursor-pointer appearance-none">
+          <option value="newest">Newest</option>
+          <option value="price_low">Price: Low to High</option>
+          <option value="price_high">Price: High to Low</option>
+          <option value="most_ordered">Most Ordered</option>
+        </select>
       </div>
     </div>
 
@@ -102,13 +118,53 @@
       window.location.href = '/admin/login.html';
     });
 
-    async function loadInventory(lowStockOnly = false) {
+    let inventoryProducts = [];
+
+    async function loadInventory() {
       try {
-        const url = lowStockOnly ? '/api/admin/inventory?low_stock=true' : '/api/admin/inventory';
-        const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+        const response = await fetch('/api/admin/inventory', { headers: { 'Authorization': `Bearer ${token}` } });
         const data = await response.json();
-        if (data.success) renderInventory(data.products);
+        if (data.success) {
+          inventoryProducts = data.products;
+          populateCategories();
+          applyInventoryFilters();
+        }
       } catch (error) { console.error('Error loading inventory:', error); showMessage('Failed to load inventory', 'error'); }
+    }
+
+    function populateCategories() {
+      const select = document.getElementById('categoryFilter');
+      const categories = [...new Set(inventoryProducts.map(p => p.category).filter(Boolean))].sort();
+      select.innerHTML = '<option value="all">All Categories</option>' +
+        categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    }
+
+    function applyInventoryFilters() {
+      const status = document.getElementById('statusFilter').value;
+      const category = document.getElementById('categoryFilter').value;
+      const sort = document.getElementById('sortFilter').value;
+
+      let products = [...inventoryProducts];
+
+      if (status === 'in_stock') products = products.filter(p => p.in_stock);
+      else if (status === 'out_of_stock') products = products.filter(p => !p.in_stock);
+
+      if (category !== 'all') products = products.filter(p => p.category === category);
+
+      switch (sort) {
+        case 'price_low': products.sort((a, b) => a.price - b.price); break;
+        case 'price_high': products.sort((a, b) => b.price - a.price); break;
+        case 'most_ordered': products.sort((a, b) => (b.order_count || 0) - (a.order_count || 0)); break;
+        default: break;
+      }
+
+      renderInventory(products);
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
     }
 
     function renderInventory(products) {
