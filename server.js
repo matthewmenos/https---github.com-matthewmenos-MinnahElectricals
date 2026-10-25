@@ -45,7 +45,6 @@ const publicDir = path.join(__dirname, 'public');
 app.use('/js', express.static(path.join(publicDir, 'js'), { maxAge: '7d' }));
 app.use('/css', express.static(path.join(publicDir, 'css'), { maxAge: '7d' }));
 app.use('/assets', express.static(path.join(publicDir, 'assets'), { maxAge: '30d' }));
-app.use(express.static(publicDir));
 
 // Build list of public and admin HTML pages (without .html extension) for clean URLs
 const publicHtmlPages = fs.readdirSync(publicDir)
@@ -118,16 +117,7 @@ adminHtmlPages.forEach(page => {
   });
 });
 
-// Serve all other HTML files (existing pages are served by express.static;
-// this is a fallback that also routes missing .html requests to the 404 page)
-app.get('/*.html', (req, res) => {
-  const filePath = path.join(__dirname, 'public', req.path);
-  if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-    res.sendFile(filePath);
-  } else {
-    res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
-  }
-});
+
 
 // Catch-all for unknown routes — render the 404 page with a 404 status
 app.get('*', (req, res) => {
@@ -170,8 +160,13 @@ async function startServer() {
       console.log('='.repeat(60));
       console.log('Available pages:');
       console.log(`  - Home: http://localhost:${PORT}/`);
-      console.log(`  - Services: http://localhost:${PORT}/services.html`);
-      console.log(`  - Contact: http://localhost:${PORT}/contact.html`);
+      console.log(`  - Services: http://localhost:${PORT}/services`);
+      console.log(`  - Contact: http://localhost:${PORT}/contact`);
+      console.log(`  - About: http://localhost:${PORT}/about`);
+      console.log(`  - Portfolio: http://localhost:${PORT}/portfolio`);
+      console.log(`  - Gallery: http://localhost:${PORT}/gallery`);
+      console.log(`  - Loyalty: http://localhost:${PORT}/loyalty`);
+      console.log(`  - Order Confirmation: http://localhost:${PORT}/order-confirmation`);
       console.log(`  - Admin Login: http://localhost:${PORT}/admin/login`);
       console.log('='.repeat(60));
     });
