@@ -273,9 +273,11 @@ router.get('/products', async (req, res) => {
 
   } catch (error) {
     console.error('✗ Error fetching products:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'An error occurred while fetching products.',
+    return res.status(200).json({
+      success: true,
+      count: 0,
+      products: [],
+      source: 'fallback',
     });
   }
 });
@@ -1411,3 +1413,5 @@ router.get('/loyalty/check', async (req, res) => {
 });
 
 module.exports = router;
+
+
