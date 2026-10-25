@@ -47,9 +47,23 @@ app.use('/css', express.static(path.join(publicDir, 'css'), { maxAge: '7d' }));
 app.use('/assets', express.static(path.join(publicDir, 'assets'), { maxAge: '30d' }));
 app.use(express.static(publicDir));
 
+// Build list of public and admin HTML pages (without .html extension) for clean URLs
+const publicHtmlPages = fs.readdirSync(publicDir)
+  .filter(f => f.endsWith('.html'))
+  .map(f => f.replace(/\.html$/, ''));
+const adminHtmlPages = fs.readdirSync(path.join(publicDir, 'admin'))
+  .filter(f => f.endsWith('.html'))
+  .map(f => f.replace(/\.html$/, ''));
+
+// Helper: check if a path is a public HTML page (with or without .html extension)
+function isPublicHtmlPage(reqPath) {
+  const clean = reqPath.replace(/\.html$/, '');
+  return publicHtmlPages.includes(clean) && !reqPath.includes('/admin/');
+}
+
 // Inject push-notifications.js script into HTML responses (public pages only)
 app.use((req, res, next) => {
-  if (req.path.endsWith('.html') && !req.path.includes('/admin/')) {
+  if (isPublicHtmlPage(req.path)) {
     const originalSend = res.send;
     res.send = function(content) {
       if (typeof content === 'string' && content.includes('</body>')) {
@@ -88,6 +102,20 @@ app.get('/admin', (req, res) => {
 
 app.get('/admin/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin', 'login.html'));
+});
+
+// Clean URL routes for public pages (e.g., /shop instead of /shop.html)
+publicHtmlPages.forEach(page => {
+  app.get(`/${page}`, (req, res) => {
+    res.sendFile(path.join(publicDir, `${page}.html`));
+  });
+});
+
+// Clean URL routes for admin pages (e.g., /admin/leads instead of /admin/leads.html)
+adminHtmlPages.forEach(page => {
+  app.get(`/admin/${page}`, (req, res) => {
+    res.sendFile(path.join(publicDir, 'admin', `${page}.html`));
+  });
 });
 
 // Serve all other HTML files (existing pages are served by express.static;
