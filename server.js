@@ -115,6 +115,11 @@ publicHtmlPages.forEach(page => {
   });
 });
 
+// Special case: Root URL (home page) — serve index.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(publicDir, 'index.html'));
+});
+
 // Clean URL routes for admin pages (e.g., /admin/leads or /admin/leads.html)
 adminHtmlPages.forEach(page => {
   // Route without .html extension (clean URLs)
