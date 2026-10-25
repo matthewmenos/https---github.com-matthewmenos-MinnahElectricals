@@ -103,16 +103,26 @@ app.get('/admin/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin', 'login.html'));
 });
 
-// Clean URL routes for public pages (e.g., /shop instead of /shop.html)
+// Clean URL routes for public pages (e.g., /shop or /shop.html)
 publicHtmlPages.forEach(page => {
+  // Route without .html extension (clean URLs)
   app.get(`/${page}`, (req, res) => {
+    res.sendFile(path.join(publicDir, `${page}.html`));
+  });
+  // Route with .html extension for backward compatibility
+  app.get(`/${page}.html`, (req, res) => {
     res.sendFile(path.join(publicDir, `${page}.html`));
   });
 });
 
-// Clean URL routes for admin pages (e.g., /admin/leads instead of /admin/leads.html)
+// Clean URL routes for admin pages (e.g., /admin/leads or /admin/leads.html)
 adminHtmlPages.forEach(page => {
+  // Route without .html extension (clean URLs)
   app.get(`/admin/${page}`, (req, res) => {
+    res.sendFile(path.join(publicDir, 'admin', `${page}.html`));
+  });
+  // Route with .html extension for backward compatibility
+  app.get(`/admin/${page}.html`, (req, res) => {
     res.sendFile(path.join(publicDir, 'admin', `${page}.html`));
   });
 });
